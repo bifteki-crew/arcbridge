@@ -1,7 +1,7 @@
 import type { PhasesFile, TaskFile } from "../../schemas/phases.js";
 import type { InitProjectInput } from "../types.js";
 
-export function phasePlanTemplate(input: InitProjectInput): PhasesFile {
+export function phasePlanTemplate(_input: InitProjectInput): PhasesFile {
   const phases = [
     {
       id: "phase-0-setup",
@@ -59,7 +59,7 @@ export function phasePlanTemplate(input: InitProjectInput): PhasesFile {
 }
 
 export function phaseTasksTemplate(
-  input: InitProjectInput,
+  _input: InitProjectInput,
   phaseId: string,
 ): TaskFile | null {
   const tasksByPhase: Record<string, TaskFile> = {

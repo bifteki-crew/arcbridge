@@ -88,7 +88,7 @@ export function registerInitProject(
           const adapter = getAdapter(platform);
           adapter.generateProjectConfig(targetDir, config);
           adapter.generateAgentConfigs(targetDir, roles);
-        } catch (e) {
+        } catch {
           // Skip unknown platforms with a warning in output
         }
       }

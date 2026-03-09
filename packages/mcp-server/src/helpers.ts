@@ -20,11 +20,13 @@ export function ensureDb(
   return ctx.db;
 }
 
-export const NOT_INITIALIZED = {
-  content: [
-    {
-      type: "text" as const,
-      text: "ArchLens is not initialized in this directory. Run `archlens_init_project` first.",
-    },
-  ],
-} as const;
+export function notInitialized() {
+  return {
+    content: [
+      {
+        type: "text" as const,
+        text: "ArchLens is not initialized in this directory. Run `archlens_init_project` first.",
+      },
+    ],
+  };
+}

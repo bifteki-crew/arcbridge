@@ -5,7 +5,17 @@ export function buildingBlocksTemplate(
 ): TemplateOutput {
   const now = new Date().toISOString();
 
-  const defaultBlocks = [
+  const defaultBlocks: Array<{
+    id: string;
+    name: string;
+    level: number;
+    code_paths: string[];
+    interfaces: string[];
+    quality_scenarios: string[];
+    adrs: string[];
+    responsibility: string;
+    service: string;
+  }> = [
     {
       id: "app-shell",
       name: "App Shell",

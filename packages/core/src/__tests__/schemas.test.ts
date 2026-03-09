@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { ArchLensConfigSchema } from "../schemas/config.js";
-import { QualityScenarioSchema, QualityScenariosFileSchema } from "../schemas/quality-scenarios.js";
+import { QualityScenarioSchema } from "../schemas/quality-scenarios.js";
 import { BuildingBlockSchema } from "../schemas/building-blocks.js";
 import { PhaseSchema, TaskSchema } from "../schemas/phases.js";
 import { AdrFrontmatterSchema } from "../schemas/adrs.js";

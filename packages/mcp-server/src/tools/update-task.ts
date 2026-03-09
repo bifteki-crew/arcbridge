@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, NOT_INITIALIZED } from "../helpers.js";
+import { ensureDb, notInitialized } from "../helpers.js";
 
 interface TaskRow {
   id: string;
@@ -32,7 +32,7 @@ export function registerUpdateTask(
     },
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
-      if (!db) return NOT_INITIALIZED;
+      if (!db) return notInitialized();
 
       // Check task exists
       const task = db

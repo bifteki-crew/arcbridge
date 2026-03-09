@@ -23,7 +23,7 @@ const TEST_INPUT: InitProjectInput = {
 
 let tempDir: string;
 let db: Database.Database;
-let ctx: ServerContext;
+let _ctx: ServerContext;
 
 beforeEach(() => {
   tempDir = mkdtempSync(join(tmpdir(), "archlens-tool-test-"));
@@ -35,7 +35,7 @@ beforeEach(() => {
   generateAgentRoles(tempDir);
   db = generateDatabase(tempDir, TEST_INPUT);
 
-  ctx = { db, projectRoot: tempDir };
+  _ctx = { db, projectRoot: tempDir };
 });
 
 afterEach(() => {
