@@ -122,17 +122,18 @@ describe("generatePlan", () => {
 });
 
 describe("generateAgentRoles", () => {
-  it("creates all 6 agent role files", () => {
+  it("creates all 7 agent role files", () => {
     const roles = generateAgentRoles(tempDir);
     const agentsDir = join(tempDir, ".archlens", "agents");
 
-    expect(roles).toHaveLength(6);
+    expect(roles).toHaveLength(7);
     expect(existsSync(join(agentsDir, "architect.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "implementer.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "security-reviewer.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "quality-guardian.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "phase-manager.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "onboarding.md"))).toBe(true);
+    expect(existsSync(join(agentsDir, "code-reviewer.md"))).toBe(true);
   });
 
   it("produces parseable frontmatter", () => {

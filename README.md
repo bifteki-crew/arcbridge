@@ -37,7 +37,8 @@ When you run `archlens_init_project`, it creates:
     ├── security-reviewer.md
     ├── quality-guardian.md
     ├── phase-manager.md
-    └── onboarding.md
+    ├── onboarding.md
+    └── code-reviewer.md
 ```
 
 Plus platform-specific configs (`CLAUDE.md`, `.claude/agents/`, `.github/copilot-instructions.md`, `.github/agents/`).
@@ -97,6 +98,24 @@ Add to your Claude Code MCP config (`~/.claude/settings.json`):
 | `archlens_get_current_tasks` | Tasks for the active phase |
 | `archlens_update_task` | Mark tasks in-progress, done, or blocked |
 | `archlens_create_task` | Add a task to any phase |
+
+## Agent Roles
+
+ArchLens ships with 7 predefined agent roles that specialize AI behavior for different tasks. Each role has a system prompt, tool access constraints, and quality focus areas. Platform adapters translate these canonical definitions into Claude Code agents (`.claude/agents/`) and Copilot agents (`.github/agents/`).
+
+| Role | Purpose | Automatic? |
+|------|---------|------------|
+| **Architect** | Design decisions, building block decomposition, ADR creation | Phase gates |
+| **Implementer** | Feature development within established architecture | Phase gates |
+| **Security Reviewer** | Security posture checks (OWASP, auth, secrets, boundaries) | Phase gates |
+| **Quality Guardian** | Enforces quality scenarios — performance, accessibility, coverage | Phase gates |
+| **Phase Manager** | Tracks progress, manages task transitions, triggers arc42 sync | Phase gates |
+| **Onboarding** | Explains the project to new team members or returning developers | On-demand |
+| **Code Reviewer** | Reviews code for correctness, patterns, edge cases, simplicity | On-demand |
+
+The first 5 roles participate in the automatic Plan → Build → Sync → Review loop. The **Onboarding** and **Code Reviewer** roles are opt-in — invoke them when you want a second pair of eyes or need to get up to speed.
+
+The Code Reviewer focuses on what a senior developer would catch in a pull request: logic bugs, unhandled edge cases, pattern violations, and over-engineering. It deliberately does not overlap with the Security Reviewer (OWASP, auth, secrets) or the Quality Guardian (metrics, coverage, accessibility).
 
 ## Development
 

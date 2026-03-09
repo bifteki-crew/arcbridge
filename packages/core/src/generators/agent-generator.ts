@@ -8,6 +8,7 @@ import { securityReviewerTemplate } from "../templates/agents/security-reviewer.
 import { qualityGuardianTemplate } from "../templates/agents/quality-guardian.js";
 import { phaseManagerTemplate } from "../templates/agents/phase-manager.js";
 import { onboardingTemplate } from "../templates/agents/onboarding.js";
+import { codeReviewerTemplate } from "../templates/agents/code-reviewer.js";
 
 function writeAgentRole(dir: string, role: AgentRole): void {
   const { system_prompt, ...frontmatter } = role;
@@ -26,6 +27,7 @@ export function generateAgentRoles(targetDir: string): AgentRole[] {
     qualityGuardianTemplate(),
     phaseManagerTemplate(),
     onboardingTemplate(),
+    codeReviewerTemplate(),
   ];
 
   for (const role of roles) {
