@@ -1,9 +1,7 @@
 import { z } from "zod";
-import { join } from "node:path";
-import { existsSync } from "node:fs";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { openDatabase } from "@archlens/core";
 import type { ServerContext } from "../context.js";
+import { ensureDb, NOT_INITIALIZED } from "../helpers.js";
 
 interface CountRow {
   count: number;
@@ -34,19 +32,6 @@ interface MetaRow {
   value: string;
 }
 
-function ensureDb(ctx: ServerContext, targetDir: string) {
-  if (ctx.db) return ctx.db;
-
-  const dbPath = join(targetDir, ".archlens", "index.db");
-  if (!existsSync(dbPath)) {
-    return null;
-  }
-
-  ctx.db = openDatabase(dbPath);
-  ctx.projectRoot = targetDir;
-  return ctx.db;
-}
-
 export function registerGetProjectStatus(
   server: McpServer,
   ctx: ServerContext,
@@ -63,14 +48,7 @@ export function registerGetProjectStatus(
       const db = ensureDb(ctx, params.target_dir);
 
       if (!db) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: "ArchLens is not initialized in this directory. Run `archlens_init_project` first.",
-            },
-          ],
-        };
+        return NOT_INITIALIZED;
       }
 
       // Project name
