@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized } from "../helpers.js";
+import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
 
 interface ScenarioRow {
   id: string;
@@ -120,9 +120,9 @@ export function registerGetQualityScenarios(
         );
 
         for (const s of items) {
-          const linkedCode = JSON.parse(s.linked_code) as string[];
-          const linkedTests = JSON.parse(s.linked_tests) as string[];
-          const linkedBlocks = JSON.parse(s.linked_blocks) as string[];
+          const linkedCode = safeParseJson<string[]>(s.linked_code, []);
+          const linkedTests = safeParseJson<string[]>(s.linked_tests, []);
+          const linkedBlocks = safeParseJson<string[]>(s.linked_blocks, []);
 
           lines.push(
             `### ${statusIcon(s.status)} ${s.id}: ${s.name}`,

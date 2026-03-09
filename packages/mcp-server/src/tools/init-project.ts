@@ -78,18 +78,20 @@ export function registerInitProject(
       const roles = generateAgentRoles(targetDir);
 
       // 5. Initialize database from generated files
-      const db = generateDatabase(targetDir, input);
+      const { db, warnings } = generateDatabase(targetDir, input);
       ctx.db = db;
       ctx.projectRoot = targetDir;
 
       // 6. Generate platform-specific configs
+      const platformWarnings: string[] = [];
       for (const platform of params.platforms) {
         try {
           const adapter = getAdapter(platform);
           adapter.generateProjectConfig(targetDir, config);
           adapter.generateAgentConfigs(targetDir, roles);
-        } catch {
-          // Skip unknown platforms with a warning in output
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          platformWarnings.push(`Platform '${platform}': ${msg}`);
         }
       }
 
@@ -106,6 +108,8 @@ export function registerInitProject(
       const taskCount = db
         .prepare("SELECT COUNT(*) as count FROM tasks")
         .get() as { count: number };
+
+      const allWarnings = [...warnings, ...platformWarnings];
 
       const summary = [
         `# ArchLens Initialized: ${input.name}`,
@@ -135,6 +139,14 @@ export function registerInitProject(
         ...params.platforms.includes("copilot")
           ? ["- `.github/copilot-instructions.md` — Copilot instructions", "- `.github/agents/` — Copilot agent configs"]
           : [],
+        ...(allWarnings.length > 0
+          ? [
+              "",
+              "## Warnings",
+              "",
+              ...allWarnings.map((w) => `- ${w}`),
+            ]
+          : []),
         "",
         "Use `archlens_get_project_status` to see the full project status.",
       ];

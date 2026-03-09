@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized } from "../helpers.js";
+import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
 
 interface TaskRow {
   id: string;
@@ -102,14 +102,14 @@ export function registerGetCurrentTasks(
             lines.push(`**Building block:** \`${task.building_block}\``);
           }
 
-          const qScenarios = JSON.parse(task.quality_scenarios) as string[];
+          const qScenarios = safeParseJson<string[]>(task.quality_scenarios, []);
           if (qScenarios.length > 0) {
             lines.push(
               `**Quality scenarios:** ${qScenarios.join(", ")}`,
             );
           }
 
-          const criteria = JSON.parse(task.acceptance_criteria) as string[];
+          const criteria = safeParseJson<string[]>(task.acceptance_criteria, []);
           if (criteria.length > 0) {
             lines.push("", "**Acceptance criteria:**");
             for (const c of criteria) {

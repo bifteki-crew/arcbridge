@@ -30,3 +30,22 @@ export function notInitialized() {
     ],
   };
 }
+
+export function textResult(text: string) {
+  return {
+    content: [{ type: "text" as const, text }],
+  };
+}
+
+/**
+ * Safely parse a JSON string from a database column.
+ * Returns the fallback value if parsing fails.
+ */
+export function safeParseJson<T>(value: string | null, fallback: T): T {
+  if (value === null || value === undefined) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}

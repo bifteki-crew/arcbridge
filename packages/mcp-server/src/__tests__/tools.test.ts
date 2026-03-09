@@ -33,7 +33,7 @@ beforeEach(() => {
   generateArc42(tempDir, TEST_INPUT);
   generatePlan(tempDir, TEST_INPUT);
   generateAgentRoles(tempDir);
-  db = generateDatabase(tempDir, TEST_INPUT);
+  ({ db } = generateDatabase(tempDir, TEST_INPUT));
 
   _ctx = { db, projectRoot: tempDir };
 });

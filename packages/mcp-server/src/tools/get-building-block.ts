@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized } from "../helpers.js";
+import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
 
 interface BlockRow {
   id: string;
@@ -80,8 +80,8 @@ export function registerGetBuildingBlock(
         };
       }
 
-      const codePaths = JSON.parse(block.code_paths) as string[];
-      const interfaces = JSON.parse(block.interfaces) as string[];
+      const codePaths = safeParseJson<string[]>(block.code_paths, []);
+      const interfaces = safeParseJson<string[]>(block.interfaces, []);
 
       const lines: string[] = [
         `# ${block.name} (\`${block.id}\`)`,

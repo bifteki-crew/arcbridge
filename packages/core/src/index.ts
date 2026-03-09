@@ -46,7 +46,10 @@ export { generateConfig } from "./generators/config-generator.js";
 export { generateArc42 } from "./generators/arc42-generator.js";
 export { generatePlan } from "./generators/plan-generator.js";
 export { generateAgentRoles } from "./generators/agent-generator.js";
-export { generateDatabase } from "./generators/db-generator.js";
+export {
+  generateDatabase,
+  type GenerateDatabaseResult,
+} from "./generators/db-generator.js";
 
 // Template types
 export type { InitProjectInput } from "./templates/types.js";

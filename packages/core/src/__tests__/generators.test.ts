@@ -157,7 +157,9 @@ describe("generateDatabase", () => {
     generatePlan(tempDir, TEST_INPUT);
     generateAgentRoles(tempDir);
 
-    const db = generateDatabase(tempDir, TEST_INPUT);
+    const { db, warnings } = generateDatabase(tempDir, TEST_INPUT);
+
+    expect(warnings).toHaveLength(0);
 
     // Check metadata
     const projectName = db
@@ -195,6 +197,41 @@ describe("generateDatabase", () => {
       .get() as { count: number };
     expect(adrs.count).toBeGreaterThan(0);
 
+    db.close();
+  });
+
+  it("is idempotent — running twice does not crash", () => {
+    generateConfig(tempDir, TEST_INPUT);
+    generateArc42(tempDir, TEST_INPUT);
+    generatePlan(tempDir, TEST_INPUT);
+    generateAgentRoles(tempDir);
+
+    const { db: db1, warnings: w1 } = generateDatabase(tempDir, TEST_INPUT);
+    const count1 = (
+      db1.prepare("SELECT COUNT(*) as count FROM building_blocks").get() as { count: number }
+    ).count;
+    db1.close();
+
+    // Run again — should not throw, counts should stay the same
+    const { db: db2, warnings: w2 } = generateDatabase(tempDir, TEST_INPUT);
+    const count2 = (
+      db2.prepare("SELECT COUNT(*) as count FROM building_blocks").get() as { count: number }
+    ).count;
+
+    expect(w1).toHaveLength(0);
+    expect(w2).toHaveLength(0);
+    expect(count2).toBe(count1);
+    db2.close();
+  });
+
+  it("returns warnings for missing files", () => {
+    // Don't generate arc42 files — only config
+    generateConfig(tempDir, TEST_INPUT);
+
+    const { db, warnings } = generateDatabase(tempDir, TEST_INPUT);
+
+    expect(warnings.length).toBeGreaterThan(0);
+    expect(warnings.some((w) => w.includes("not found"))).toBe(true);
     db.close();
   });
 });

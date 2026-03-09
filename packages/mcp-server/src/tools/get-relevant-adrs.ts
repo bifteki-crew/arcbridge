@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized } from "../helpers.js";
+import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
 
 interface AdrRow {
   id: string;
@@ -113,8 +113,8 @@ function formatAdrs(adrs: AdrRow[], title: string) {
   const lines: string[] = [`# ${title}`, ""];
 
   for (const adr of adrs) {
-    const affectedBlocks = JSON.parse(adr.affected_blocks) as string[];
-    const affectedFiles = JSON.parse(adr.affected_files) as string[];
+    const affectedBlocks = safeParseJson<string[]>(adr.affected_blocks, []);
+    const affectedFiles = safeParseJson<string[]>(adr.affected_files, []);
 
     lines.push(
       `## ${adr.id}: ${adr.title}`,
