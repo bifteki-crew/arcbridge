@@ -3,11 +3,13 @@ import type Database from "better-sqlite3";
 import type { IndexerOptions, IndexResult } from "./types.js";
 import { createTsProgram } from "./program.js";
 import { extractSymbols } from "./symbol-extractor.js";
+import { extractDependencies, buildSymbolLookup } from "./dependency-extractor.js";
 import { hashContent } from "./content-hash.js";
 import {
   getExistingHashes,
   removeSymbolsForFiles,
   writeSymbols,
+  writeDependencies,
 } from "./db-writer.js";
 
 export function indexProject(
@@ -65,11 +67,31 @@ export function indexProject(
     extractSymbols(f.sourceFile, checker, f.relativePath, f.hash),
   );
 
-  // 6. Write to DB
+  // 6. Write symbols to DB
   writeSymbols(db, allSymbols, service);
+
+  // 7. Extract dependencies across ALL source files
+  //    (dependencies can cross file boundaries, so we need all symbols for lookup)
+  const allDbSymbols = db
+    .prepare("SELECT id, file_path as filePath, name FROM symbols WHERE service = ?")
+    .all(service) as Array<{ id: string; filePath: string; name: string }>;
+
+  const lookup = buildSymbolLookup(allDbSymbols);
+
+  // Clear existing dependencies for changed files (already done in removeSymbolsForFiles)
+  // Now extract fresh dependencies from all source files
+  const allDeps = sourceFiles.flatMap((sf) => {
+    const relPath = relative(projectRoot, sf.fileName);
+    return extractDependencies(sf, checker, relPath, projectRoot, lookup);
+  });
+
+  // Clear all deps and re-insert (simpler than incremental for cross-file edges)
+  db.prepare("DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE service = ?)").run(service);
+  writeDependencies(db, allDeps);
 
   return {
     symbolsIndexed: allSymbols.length,
+    dependenciesIndexed: allDeps.length,
     filesProcessed: changed.length,
     filesSkipped,
     filesRemoved: removed.length,

@@ -96,6 +96,19 @@ export function registerGetProjectStatus(
         )
         .all() as ScenarioRow[];
 
+      // Code intelligence
+      const symbolCount = (
+        db.prepare("SELECT COUNT(*) as count FROM symbols").get() as CountRow
+      ).count;
+      const depCount = (
+        db.prepare("SELECT COUNT(*) as count FROM dependencies").get() as CountRow
+      ).count;
+      const lastIndexed = (
+        db
+          .prepare("SELECT MAX(indexed_at) as value FROM symbols")
+          .get() as MetaRow | undefined
+      )?.value;
+
       // Drift
       const driftCount = (
         db
@@ -141,11 +154,27 @@ export function registerGetProjectStatus(
         "",
       ];
 
+      // Code intelligence section
+      lines.push("## Code Intelligence", "");
+      if (symbolCount > 0) {
+        lines.push(
+          `- **Symbols indexed:** ${symbolCount}`,
+          `- **Dependencies indexed:** ${depCount}`,
+          `- **Last indexed:** ${lastIndexed ?? "unknown"}`,
+          "",
+        );
+      } else {
+        lines.push(
+          "*Not indexed yet.* Run `archlens_reindex` to index TypeScript symbols.",
+          "",
+        );
+      }
+
       if (driftCount > 0) {
         lines.push(
           "## Drift Warnings",
           "",
-          `**${driftCount}** unresolved drift issue(s) detected. Run \`archlens_check_drift\` for details.`,
+          `**${driftCount}** unresolved drift issue(s) detected.`,
           "",
         );
       }

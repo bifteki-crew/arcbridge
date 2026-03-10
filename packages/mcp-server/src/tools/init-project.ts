@@ -8,6 +8,7 @@ import {
   generatePlan,
   generateAgentRoles,
   generateDatabase,
+  indexProject,
   type InitProjectInput,
 } from "@archlens/core";
 import { getAdapter } from "@archlens/adapters";
@@ -95,6 +96,15 @@ export function registerInitProject(
         }
       }
 
+      // 7. Index TypeScript symbols (if tsconfig exists)
+      let indexResult: { symbolsIndexed: number; dependenciesIndexed: number } | null = null;
+      try {
+        const result = indexProject(db, { projectRoot: targetDir });
+        indexResult = { symbolsIndexed: result.symbolsIndexed, dependenciesIndexed: result.dependenciesIndexed };
+      } catch {
+        // Indexing is optional — project may not have tsconfig.json yet
+      }
+
       // Count what was created
       const blockCount = db
         .prepare("SELECT COUNT(*) as count FROM building_blocks")
@@ -125,6 +135,12 @@ export function registerInitProject(
         `- **Phases:** ${phaseCount.count}`,
         `- **Tasks:** ${taskCount.count}`,
         `- **Agent roles:** ${roles.length}`,
+        ...(indexResult
+          ? [
+              `- **Symbols indexed:** ${indexResult.symbolsIndexed}`,
+              `- **Dependencies indexed:** ${indexResult.dependenciesIndexed}`,
+            ]
+          : [`- **Code indexing:** skipped (no tsconfig.json found — run \`archlens_reindex\` later)`]),
         "",
         "## Files",
         "",

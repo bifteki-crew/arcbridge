@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import type { ExtractedSymbol } from "./types.js";
+import type { ExtractedDependency } from "./dependency-extractor.js";
 
 export function getExistingHashes(
   db: Database.Database,
@@ -93,6 +94,26 @@ export function writeSymbols(
         s.contentHash,
         now,
       );
+    }
+  });
+
+  run();
+}
+
+export function writeDependencies(
+  db: Database.Database,
+  dependencies: ExtractedDependency[],
+): void {
+  if (dependencies.length === 0) return;
+
+  const insert = db.prepare(`
+    INSERT OR IGNORE INTO dependencies (source_symbol, target_symbol, kind)
+    VALUES (?, ?, ?)
+  `);
+
+  const run = db.transaction(() => {
+    for (const dep of dependencies) {
+      insert.run(dep.sourceSymbolId, dep.targetSymbolId, dep.kind);
     }
   });
 

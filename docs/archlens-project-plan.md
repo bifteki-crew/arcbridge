@@ -1011,9 +1011,14 @@ get_practice_review: {
 - Symbol search returns results with resolved type signatures
 - Re-indexing only processes changed files
 
-**Known limitations (Phase 1a):**
+**Known limitations:**
 - Incremental indexing tracks file hashes via the `symbols` table. Files with no extractable symbols (e.g. barrel/re-export-only files) have no stored hash and are reprocessed on every run. A dedicated file-hash table would fix this — deferred until it becomes a performance concern.
-- Dependency extraction (imports, calls, extends, implements, uses_type) is deferred to Phase 1b. Phase 1a covers symbol extraction only.
+- Dependencies are fully re-extracted on every indexing run (cleared and re-inserted) because cross-file edges can't be incrementally updated per-file. This is fast enough for typical projects but could be optimized for very large codebases.
+
+**Implementation notes (Phase 1a + 1b):**
+- Phase 1a delivered symbol extraction (functions, classes, interfaces, types, enums, constants, variables, class methods)
+- Phase 1b added dependency extraction: `imports`, `calls`, `extends`, `implements`, `uses_type`
+- The `renders`, `provides_context`, `consumes_context` dependency kinds are deferred to Phase 2 (React analysis)
 
 ### Phase 2: React & Next.js Analysis (Weeks 6–8)
 **Goal:** Layers 2 and 3 — React semantic analysis and Next.js convention detection.
@@ -1038,13 +1043,15 @@ get_practice_review: {
 - Quality scenario ↔ test/code location mapping
 - ADR ↔ affected file mapping
 - Architecture drift detection
-- MCP tools: `get_building_blocks`, `get_building_block`, `get_quality_scenarios`, `get_relevant_adrs`, `check_drift`
+- Proactive guidance tools (see "Proactive Guidance Tools" section above)
+- MCP tools: `check_drift`, `propose_arc42_update`, `get_guidance`, `get_open_questions`, `get_practice_review`
 
 **Acceptance criteria:**
 - Can answer "which building block does this file belong to?" for any file
 - Quality scenarios link to specific test files and code locations
 - Drift detection catches: undocumented modules, missing documented modules, dependency violations
 - Building block queries return code-level details (interfaces, key symbols) alongside arc42 descriptions
+- `get_guidance` surfaces relevant quality scenarios, patterns, and constraints when adding/modifying code
 
 ### Phase 4: Planning & Sync Loop (Weeks 12–14)
 **Goal:** Phase management, task tracking, and the arc42 sync loop — both interactive and CI/CD.

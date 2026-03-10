@@ -148,8 +148,7 @@ packages/
 ## Roadmap
 
 - **Phase 0** (done): Scaffolding, schemas, templates, generators, 10 MCP tools
-- **Phase 1a** (done): TypeScript Compiler API — symbol extraction, search, 14 MCP tools
-- **Phase 1b** (next): Dependency extraction — imports, calls, extends, implements, type usage
+- **Phase 1** (done): TypeScript Compiler API — symbol extraction, dependency graphs, 14 MCP tools
 - **Phase 2**: React + Next.js analysis — component graphs, route maps, server/client boundaries
 - **Phase 3**: Architecture bridge — drift detection, auto-sync proposals
 

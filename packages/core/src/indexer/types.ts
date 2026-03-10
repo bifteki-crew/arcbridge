@@ -1,5 +1,3 @@
-import type Database from "better-sqlite3";
-
 export interface IndexerOptions {
   projectRoot: string;
   tsconfigPath?: string;
@@ -38,13 +36,10 @@ export interface ExtractedSymbol {
 
 export interface IndexResult {
   symbolsIndexed: number;
+  dependenciesIndexed: number;
   filesProcessed: number;
   filesSkipped: number;
   filesRemoved: number;
   durationMs: number;
 }
 
-export interface IndexProjectDeps {
-  db: Database.Database;
-  options: IndexerOptions;
-}

@@ -146,3 +146,46 @@ describe("file-level graph queries", () => {
     expect(exported.count).toBeLessThanOrEqual(total.count);
   });
 });
+
+describe("dependency graph queries", () => {
+  it("has dependency edges", () => {
+    const count = (
+      db.prepare("SELECT COUNT(*) as count FROM dependencies").get() as {
+        count: number;
+      }
+    ).count;
+
+    expect(count).toBeGreaterThan(0);
+  });
+
+  it("can query dependencies for a module", () => {
+    const deps = db
+      .prepare(
+        `SELECT d.source_symbol, d.target_symbol, d.kind
+         FROM dependencies d
+         JOIN symbols s ON s.id = d.source_symbol
+         WHERE s.file_path LIKE 'src/models/admin%'`,
+      )
+      .all() as { source_symbol: string; target_symbol: string; kind: string }[];
+
+    expect(deps.length).toBeGreaterThan(0);
+
+    const kinds = new Set(deps.map((d) => d.kind));
+    expect(kinds.has("extends")).toBe(true);
+  });
+
+  it("can find dependents (what depends on a symbol)", () => {
+    // Find what depends on UserEntity
+    const dependents = db
+      .prepare(
+        `SELECT d.source_symbol, d.kind
+         FROM dependencies d
+         WHERE d.target_symbol LIKE '%UserEntity%class'`,
+      )
+      .all() as { source_symbol: string; kind: string }[];
+
+    expect(dependents.length).toBeGreaterThan(0);
+    // AdminEntity extends UserEntity
+    expect(dependents.some((d) => d.source_symbol.includes("AdminEntity") && d.kind === "extends")).toBe(true);
+  });
+});

@@ -42,6 +42,7 @@ export function registerReindex(
           `- **Files skipped (unchanged):** ${result.filesSkipped}`,
           `- **Files removed:** ${result.filesRemoved}`,
           `- **Symbols indexed:** ${result.symbolsIndexed}`,
+          `- **Dependencies indexed:** ${result.dependenciesIndexed}`,
           `- **Duration:** ${result.durationMs}ms`,
         ];
 
