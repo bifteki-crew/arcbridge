@@ -10,6 +10,10 @@ import { registerGetCurrentTasks } from "./tools/get-current-tasks.js";
 import { registerUpdateTask } from "./tools/update-task.js";
 import { registerCreateTask } from "./tools/create-task.js";
 import { registerGetRelevantAdrs } from "./tools/get-relevant-adrs.js";
+import { registerReindex } from "./tools/reindex.js";
+import { registerSearchSymbols } from "./tools/search-symbols.js";
+import { registerGetSymbol } from "./tools/get-symbol.js";
+import { registerGetDependencyGraph } from "./tools/get-dependency-graph.js";
 
 export function createArchLensServer(): McpServer {
   const server = new McpServer({
@@ -34,6 +38,12 @@ export function createArchLensServer(): McpServer {
   registerGetCurrentTasks(server, ctx);
   registerUpdateTask(server, ctx);
   registerCreateTask(server, ctx);
+
+  // Code Intelligence
+  registerReindex(server, ctx);
+  registerSearchSymbols(server, ctx);
+  registerGetSymbol(server, ctx);
+  registerGetDependencyGraph(server, ctx);
 
   return server;
 }

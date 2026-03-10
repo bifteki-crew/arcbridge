@@ -52,5 +52,14 @@ export {
   type GenerateDatabaseResult,
 } from "./generators/db-generator.js";
 
+// Indexer
+export {
+  indexProject,
+  type IndexerOptions,
+  type IndexResult,
+  type ExtractedSymbol,
+  type SymbolKind,
+} from "./indexer/index.js";
+
 // Template types
 export type { InitProjectInput } from "./templates/types.js";

@@ -1002,7 +1002,7 @@ get_practice_review: {
 - TS compiler API wrapper that indexes a project: symbols, types, dependencies
 - Import/export dependency graph stored in SQLite
 - MCP tools: `get_symbol`, `search_symbols`, `get_dependency_graph`
-- Incremental re-indexing based on file modification timestamps
+- Incremental re-indexing based on content hashing (file-level)
 - Stable symbol ID scheme compatible with jCodeMunch format
 
 **Acceptance criteria:**
@@ -1010,6 +1010,10 @@ get_practice_review: {
 - Dependency graph correctly resolves path aliases and barrel exports
 - Symbol search returns results with resolved type signatures
 - Re-indexing only processes changed files
+
+**Known limitations (Phase 1a):**
+- Incremental indexing tracks file hashes via the `symbols` table. Files with no extractable symbols (e.g. barrel/re-export-only files) have no stored hash and are reprocessed on every run. A dedicated file-hash table would fix this — deferred until it becomes a performance concern.
+- Dependency extraction (imports, calls, extends, implements, uses_type) is deferred to Phase 1b. Phase 1a covers symbol extraction only.
 
 ### Phase 2: React & Next.js Analysis (Weeks 6–8)
 **Goal:** Layers 2 and 3 — React semantic analysis and Next.js convention detection.

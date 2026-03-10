@@ -18,7 +18,11 @@
     "better-sqlite3": "^11.0.0",
     "globby": "^14.0.0",
     "gray-matter": "^4.0.3",
+    "typescript": "^5.9.3",
     "yaml": "^2.7.0",
     "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
   }
 }

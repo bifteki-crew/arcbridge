@@ -99,6 +99,15 @@ Add to your Claude Code MCP config (`~/.claude/settings.json`):
 | `archlens_update_task` | Mark tasks in-progress, done, or blocked |
 | `archlens_create_task` | Add a task to any phase |
 
+### Code Intelligence
+
+| Tool | Description |
+|------|-------------|
+| `archlens_reindex` | Index/re-index TypeScript symbols (incremental) |
+| `archlens_search_symbols` | Search symbols by name, kind, file path, or building block |
+| `archlens_get_symbol` | Full symbol detail: signature, source code, relationships |
+| `archlens_get_dependency_graph` | Import/dependency graph for a module |
+
 ## Agent Roles
 
 ArchLens ships with 7 predefined agent roles that specialize AI behavior for different tasks. Each role has a system prompt, tool access constraints, and quality focus areas. Platform adapters translate these canonical definitions into Claude Code agents (`.claude/agents/`) and Copilot agents (`.github/agents/`).
@@ -139,7 +148,8 @@ packages/
 ## Roadmap
 
 - **Phase 0** (done): Scaffolding, schemas, templates, generators, 10 MCP tools
-- **Phase 1** (next): TypeScript Compiler API code intelligence — symbol indexing, dependency graphs
+- **Phase 1a** (done): TypeScript Compiler API — symbol extraction, search, 14 MCP tools
+- **Phase 1b** (next): Dependency extraction — imports, calls, extends, implements, type usage
 - **Phase 2**: React + Next.js analysis — component graphs, route maps, server/client boundaries
 - **Phase 3**: Architecture bridge — drift detection, auto-sync proposals
 
