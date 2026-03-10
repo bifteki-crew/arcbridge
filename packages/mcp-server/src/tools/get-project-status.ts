@@ -103,6 +103,12 @@ export function registerGetProjectStatus(
       const depCount = (
         db.prepare("SELECT COUNT(*) as count FROM dependencies").get() as CountRow
       ).count;
+      const componentCount = (
+        db.prepare("SELECT COUNT(*) as count FROM components").get() as CountRow
+      ).count;
+      const routeCount = (
+        db.prepare("SELECT COUNT(*) as count FROM routes").get() as CountRow
+      ).count;
       const lastIndexed = (
         db
           .prepare("SELECT MAX(indexed_at) as value FROM symbols")
@@ -160,6 +166,8 @@ export function registerGetProjectStatus(
         lines.push(
           `- **Symbols indexed:** ${symbolCount}`,
           `- **Dependencies indexed:** ${depCount}`,
+          `- **Components analyzed:** ${componentCount}`,
+          `- **Routes analyzed:** ${routeCount}`,
           `- **Last indexed:** ${lastIndexed ?? "unknown"}`,
           "",
         );

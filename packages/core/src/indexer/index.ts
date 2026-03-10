@@ -4,6 +4,8 @@ import type { IndexerOptions, IndexResult } from "./types.js";
 import { createTsProgram } from "./program.js";
 import { extractSymbols } from "./symbol-extractor.js";
 import { extractDependencies, buildSymbolLookup } from "./dependency-extractor.js";
+import { analyzeComponents } from "./component-analyzer.js";
+import { analyzeRoutes } from "./route-analyzer.js";
 import { hashContent } from "./content-hash.js";
 import {
   getExistingHashes,
@@ -89,9 +91,17 @@ export function indexProject(
   db.prepare("DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE service = ?)").run(service);
   writeDependencies(db, allDeps);
 
+  // 8. Analyze React components (populates components table)
+  const componentsAnalyzed = analyzeComponents(sourceFiles, checker, projectRoot, db);
+
+  // 9. Analyze Next.js routes (populates routes table)
+  const routesAnalyzed = analyzeRoutes(projectRoot, db, service);
+
   return {
     symbolsIndexed: allSymbols.length,
     dependenciesIndexed: allDeps.length,
+    componentsAnalyzed,
+    routesAnalyzed,
     filesProcessed: changed.length,
     filesSkipped,
     filesRemoved: removed.length,

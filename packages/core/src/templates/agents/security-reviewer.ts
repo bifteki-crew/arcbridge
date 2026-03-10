@@ -13,7 +13,9 @@ export function securityReviewerTemplate(): AgentRole {
       "archlens_get_relevant_adrs",
       "archlens_search_symbols",
       "archlens_get_symbol",
-      // Phase 2+: "archlens_get_route_map", "archlens_get_boundary_analysis", "archlens_run_role_check"
+      "archlens_get_route_map",
+      "archlens_get_boundary_analysis",
+      // Phase 3+: "archlens_run_role_check"
     ],
     denied_tools: [],
     read_only: true,

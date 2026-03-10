@@ -97,10 +97,20 @@ export function registerInitProject(
       }
 
       // 7. Index TypeScript symbols (if tsconfig exists)
-      let indexResult: { symbolsIndexed: number; dependenciesIndexed: number } | null = null;
+      let indexResult: {
+        symbolsIndexed: number;
+        dependenciesIndexed: number;
+        componentsAnalyzed: number;
+        routesAnalyzed: number;
+      } | null = null;
       try {
         const result = indexProject(db, { projectRoot: targetDir });
-        indexResult = { symbolsIndexed: result.symbolsIndexed, dependenciesIndexed: result.dependenciesIndexed };
+        indexResult = {
+          symbolsIndexed: result.symbolsIndexed,
+          dependenciesIndexed: result.dependenciesIndexed,
+          componentsAnalyzed: result.componentsAnalyzed,
+          routesAnalyzed: result.routesAnalyzed,
+        };
       } catch {
         // Indexing is optional — project may not have tsconfig.json yet
       }
@@ -139,6 +149,8 @@ export function registerInitProject(
           ? [
               `- **Symbols indexed:** ${indexResult.symbolsIndexed}`,
               `- **Dependencies indexed:** ${indexResult.dependenciesIndexed}`,
+              `- **Components analyzed:** ${indexResult.componentsAnalyzed}`,
+              `- **Routes analyzed:** ${indexResult.routesAnalyzed}`,
             ]
           : [`- **Code indexing:** skipped (no tsconfig.json found — run \`archlens_reindex\` later)`]),
         "",

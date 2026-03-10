@@ -14,6 +14,9 @@ import { registerReindex } from "./tools/reindex.js";
 import { registerSearchSymbols } from "./tools/search-symbols.js";
 import { registerGetSymbol } from "./tools/get-symbol.js";
 import { registerGetDependencyGraph } from "./tools/get-dependency-graph.js";
+import { registerGetComponentGraph } from "./tools/get-component-graph.js";
+import { registerGetRouteMap } from "./tools/get-route-map.js";
+import { registerGetBoundaryAnalysis } from "./tools/get-boundary-analysis.js";
 
 export function createArchLensServer(): McpServer {
   const server = new McpServer({
@@ -44,6 +47,11 @@ export function createArchLensServer(): McpServer {
   registerSearchSymbols(server, ctx);
   registerGetSymbol(server, ctx);
   registerGetDependencyGraph(server, ctx);
+
+  // React & Next.js Analysis
+  registerGetComponentGraph(server, ctx);
+  registerGetRouteMap(server, ctx);
+  registerGetBoundaryAnalysis(server, ctx);
 
   return server;
 }

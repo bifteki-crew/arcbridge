@@ -85,15 +85,114 @@ export function extractSymbols(
     );
   }
 
+  // ---- React detection helpers ----
+
+  /**
+   * Check if a node's subtree contains JSX elements (JsxElement, JsxSelfClosingElement, JsxFragment).
+   * Used to classify functions as React components.
+   */
+  function containsJsx(node: ts.Node): boolean {
+    let found = false;
+    function walk(n: ts.Node): void {
+      if (found) return;
+      if (
+        ts.isJsxElement(n) ||
+        ts.isJsxSelfClosingElement(n) ||
+        ts.isJsxFragment(n)
+      ) {
+        found = true;
+        return;
+      }
+      ts.forEachChild(n, walk);
+    }
+    walk(node);
+    return found;
+  }
+
+  /**
+   * Check if a name follows the React hook convention: starts with "use" followed by uppercase.
+   */
+  function isHookName(name: string): boolean {
+    return /^use[A-Z]/.test(name);
+  }
+
+  /**
+   * Check if an initializer is a createContext() call.
+   */
+  function isCreateContextCall(init: ts.Expression | undefined): boolean {
+    if (!init || !ts.isCallExpression(init)) return false;
+    const expr = init.expression;
+    // createContext(...)
+    if (ts.isIdentifier(expr) && expr.text === "createContext") return true;
+    // React.createContext(...)
+    if (
+      ts.isPropertyAccessExpression(expr) &&
+      ts.isIdentifier(expr.name) &&
+      expr.name.text === "createContext"
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Check if an initializer is a React.memo() or React.forwardRef() wrapper
+   * containing a function that returns JSX.
+   */
+  function isReactWrapperCall(init: ts.Expression | undefined): boolean {
+    if (!init || !ts.isCallExpression(init)) return false;
+    const expr = init.expression;
+    const wrapperNames = ["memo", "forwardRef"];
+
+    let isWrapper = false;
+    // memo(...) / forwardRef(...)
+    if (ts.isIdentifier(expr) && wrapperNames.includes(expr.text)) {
+      isWrapper = true;
+    }
+    // React.memo(...) / React.forwardRef(...)
+    if (
+      ts.isPropertyAccessExpression(expr) &&
+      ts.isIdentifier(expr.name) &&
+      wrapperNames.includes(expr.name.text)
+    ) {
+      isWrapper = true;
+    }
+    if (!isWrapper) return false;
+
+    // Check if any argument contains JSX
+    for (const arg of init.arguments) {
+      if (containsJsx(arg)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Classify a function-like symbol: is it a component, hook, or plain function?
+   */
+  function classifyFunction(
+    name: string,
+    body: ts.Node | undefined,
+    init?: ts.Expression | undefined,
+  ): SymbolKind {
+    // React.memo() / React.forwardRef() wrappers
+    if (init && isReactWrapperCall(init)) return "component";
+    // Hook: starts with "use" + uppercase
+    if (isHookName(name)) return "hook";
+    // Component: PascalCase function that returns JSX
+    if (body && /^[A-Z]/.test(name) && containsJsx(body)) return "component";
+    return "function";
+  }
+
   function visit(node: ts.Node): void {
     // Function declarations
     if (ts.isFunctionDeclaration(node) && node.name) {
       const name = node.name.text;
+      const kind = classifyFunction(name, node.body);
       symbols.push({
-        id: makeId(name, "function"),
+        id: makeId(name, kind),
         name,
         qualifiedName: name,
-        kind: "function",
+        kind,
         filePath: relativePath,
         ...getLocation(node),
         signature: getSignature(node),
@@ -233,11 +332,18 @@ export function extractSymbols(
         const name = decl.name.text;
         const callable = isCallableInitializer(decl.initializer);
 
-        const kind: SymbolKind = callable
-          ? "function"
-          : node.declarationList.flags & ts.NodeFlags.Const
+        let kind: SymbolKind;
+        if (isCreateContextCall(decl.initializer)) {
+          kind = "context";
+        } else if (callable) {
+          kind = classifyFunction(name, decl.initializer!.body, undefined);
+        } else if (isReactWrapperCall(decl.initializer)) {
+          kind = "component";
+        } else {
+          kind = node.declarationList.flags & ts.NodeFlags.Const
             ? "constant"
             : "variable";
+        }
 
         symbols.push({
           id: makeId(name, kind),
@@ -246,8 +352,8 @@ export function extractSymbols(
           kind,
           filePath: relativePath,
           ...getLocation(decl),
-          signature: callable ? getSignature(decl) : null,
-          returnType: callable ? getReturnType(decl) : null,
+          signature: callable || kind === "component" ? getSignature(decl) : null,
+          returnType: callable || kind === "component" ? getReturnType(decl) : null,
           docComment: getDocComment(decl),
           isExported: exported,
           isAsync: callable

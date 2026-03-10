@@ -37,6 +37,8 @@ export interface ExtractedSymbol {
 export interface IndexResult {
   symbolsIndexed: number;
   dependenciesIndexed: number;
+  componentsAnalyzed: number;
+  routesAnalyzed: number;
   filesProcessed: number;
   filesSkipped: number;
   filesRemoved: number;

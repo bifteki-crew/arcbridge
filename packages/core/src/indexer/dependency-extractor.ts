@@ -1,10 +1,20 @@
 import ts from "typescript";
 import { relative } from "node:path";
 
+export type DependencyKind =
+  | "imports"
+  | "calls"
+  | "extends"
+  | "implements"
+  | "uses_type"
+  | "renders"
+  | "provides_context"
+  | "consumes_context";
+
 export interface ExtractedDependency {
   sourceSymbolId: string;
   targetSymbolId: string;
-  kind: "imports" | "calls" | "extends" | "implements" | "uses_type";
+  kind: DependencyKind;
 }
 
 /**
@@ -269,10 +279,138 @@ export function extractDependencies(
     });
   }
 
+  // ---- Extract JSX renders (component A renders component B) ----
+  function extractRenders(): void {
+    ts.forEachChild(sourceFile, function visitTopLevel(node) {
+      const ownerName = getOwnerName(node);
+      if (!ownerName) return;
+
+      const ownerIdOrUndef = lookup.byFileAndName.get(`${relativePath}::${ownerName}`);
+      if (!ownerIdOrUndef) return;
+      const ownerId: string = ownerIdOrUndef;
+
+      function walkForJsx(n: ts.Node): void {
+        // <Component /> or <Component>...</Component>
+        const tagName = ts.isJsxOpeningElement(n)
+          ? n.tagName
+          : ts.isJsxSelfClosingElement(n)
+            ? n.tagName
+            : null;
+
+        if (tagName) {
+          const jsxSymbol = checker.getSymbolAtLocation(tagName);
+          if (jsxSymbol) {
+            const resolved = jsxSymbol.flags & ts.SymbolFlags.Alias
+              ? checker.getAliasedSymbol(jsxSymbol)
+              : jsxSymbol;
+            const targetId = resolveSymbolId(resolved);
+            if (targetId) {
+              addDep(ownerId, targetId, "renders");
+            }
+          }
+
+          // Check for .Provider pattern: <XContext.Provider>
+          if (
+            ts.isPropertyAccessExpression(tagName) &&
+            ts.isIdentifier(tagName.name) &&
+            tagName.name.text === "Provider"
+          ) {
+            const ctxSymbol = checker.getSymbolAtLocation(tagName.expression);
+            if (ctxSymbol) {
+              const resolved = ctxSymbol.flags & ts.SymbolFlags.Alias
+                ? checker.getAliasedSymbol(ctxSymbol)
+                : ctxSymbol;
+              const targetId = resolveSymbolId(resolved);
+              if (targetId) {
+                addDep(ownerId, targetId, "provides_context");
+              }
+            }
+          }
+        }
+
+        ts.forEachChild(n, walkForJsx);
+      }
+
+      // Walk function/arrow function bodies for JSX
+      if (ts.isFunctionDeclaration(node) && node.body) {
+        walkForJsx(node.body);
+      } else if (ts.isVariableStatement(node)) {
+        for (const decl of node.declarationList.declarations) {
+          if (decl.initializer) {
+            if (ts.isArrowFunction(decl.initializer) || ts.isFunctionExpression(decl.initializer)) {
+              if (decl.initializer.body) {
+                walkForJsx(decl.initializer.body);
+              }
+            }
+            // React.memo/forwardRef wrappers
+            if (ts.isCallExpression(decl.initializer)) {
+              for (const arg of decl.initializer.arguments) {
+                if (ts.isArrowFunction(arg) || ts.isFunctionExpression(arg)) {
+                  if (arg.body) walkForJsx(arg.body);
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ---- Extract useContext → consumes_context ----
+  function extractContextConsumption(): void {
+    ts.forEachChild(sourceFile, function visitTopLevel(node) {
+      const ownerName = getOwnerName(node);
+      if (!ownerName) return;
+
+      const ownerIdOrUndef = lookup.byFileAndName.get(`${relativePath}::${ownerName}`);
+      if (!ownerIdOrUndef) return;
+      const ownerId: string = ownerIdOrUndef;
+
+      function walkForContext(n: ts.Node): void {
+        if (
+          ts.isCallExpression(n) &&
+          ts.isIdentifier(n.expression) &&
+          n.expression.text === "useContext" &&
+          n.arguments.length > 0
+        ) {
+          const arg = n.arguments[0]!;
+          const ctxSymbol = checker.getSymbolAtLocation(arg);
+          if (ctxSymbol) {
+            const resolved = ctxSymbol.flags & ts.SymbolFlags.Alias
+              ? checker.getAliasedSymbol(ctxSymbol)
+              : ctxSymbol;
+            const targetId = resolveSymbolId(resolved);
+            if (targetId) {
+              addDep(ownerId, targetId, "consumes_context");
+            }
+          }
+        }
+        ts.forEachChild(n, walkForContext);
+      }
+
+      // Walk function bodies
+      if (ts.isFunctionDeclaration(node) && node.body) {
+        walkForContext(node.body);
+      } else if (ts.isVariableStatement(node)) {
+        for (const decl of node.declarationList.declarations) {
+          if (decl.initializer) {
+            if (ts.isArrowFunction(decl.initializer) || ts.isFunctionExpression(decl.initializer)) {
+              if (decl.initializer.body) {
+                walkForContext(decl.initializer.body);
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
   extractImports();
   extractHeritage();
   extractCalls();
   extractTypeUsage();
+  extractRenders();
+  extractContextConsumption();
 
   return deps;
 }

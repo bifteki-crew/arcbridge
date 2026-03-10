@@ -43,6 +43,8 @@ export function registerReindex(
           `- **Files removed:** ${result.filesRemoved}`,
           `- **Symbols indexed:** ${result.symbolsIndexed}`,
           `- **Dependencies indexed:** ${result.dependenciesIndexed}`,
+          `- **Components analyzed:** ${result.componentsAnalyzed}`,
+          `- **Routes analyzed:** ${result.routesAnalyzed}`,
           `- **Duration:** ${result.durationMs}ms`,
         ];
 
