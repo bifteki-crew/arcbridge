@@ -10,7 +10,8 @@ export function qualityGuardianTemplate(): AgentRole {
     required_tools: [
       "archlens_get_quality_scenarios",
       "archlens_get_project_status",
-      "archlens_run_role_check",
+      "archlens_get_building_blocks",
+      // Phase 3+: "archlens_run_role_check"
     ],
     denied_tools: [],
     read_only: true,

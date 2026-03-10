@@ -28,7 +28,7 @@ function generateClaudeMd(config: ArchLensConfig): string {
     "",
     "## Agent Roles",
     "",
-    "Available agent roles are defined in `.archlens/agents/`. Use `archlens_activate_role` to switch roles.",
+    "Available agent roles are defined in `.archlens/agents/` and `.claude/agents/`.",
     "",
   ];
 

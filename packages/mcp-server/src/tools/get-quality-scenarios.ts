@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { QualityCategorySchema, QualityScenarioStatusSchema } from "@archlens/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
 
@@ -28,20 +29,8 @@ export function registerGetQualityScenarios(
       target_dir: z
         .string()
         .describe("Absolute path to the project directory"),
-      category: z
-        .enum([
-          "security",
-          "performance",
-          "accessibility",
-          "reliability",
-          "maintainability",
-        ])
-        .optional()
-        .describe("Filter by category"),
-      status: z
-        .enum(["passing", "failing", "untested", "partial"])
-        .optional()
-        .describe("Filter by status"),
+      category: QualityCategorySchema.optional().describe("Filter by category"),
+      status: QualityScenarioStatusSchema.optional().describe("Filter by status"),
     },
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);

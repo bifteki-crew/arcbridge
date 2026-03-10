@@ -10,9 +10,8 @@ export function phaseManagerTemplate(): AgentRole {
     required_tools: [
       "archlens_get_phase_plan",
       "archlens_get_current_tasks",
-      "archlens_complete_phase",
-      "archlens_check_drift",
-      "archlens_propose_arc42_update",
+      "archlens_update_task",
+      // Phase 3+: "archlens_complete_phase", "archlens_check_drift", "archlens_propose_arc42_update"
     ],
     denied_tools: [],
     read_only: false,

@@ -9,9 +9,9 @@ export function securityReviewerTemplate(): AgentRole {
     version: 1,
     required_tools: [
       "archlens_get_quality_scenarios",
-      "archlens_get_route_map",
-      "archlens_get_boundary_analysis",
-      "archlens_run_role_check",
+      "archlens_get_building_blocks",
+      "archlens_get_relevant_adrs",
+      // Phase 2+: "archlens_get_route_map", "archlens_get_boundary_analysis", "archlens_run_role_check"
     ],
     denied_tools: [],
     read_only: true,

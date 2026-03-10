@@ -38,6 +38,13 @@ export function textResult(text: string) {
 }
 
 /**
+ * Escape SQL LIKE wildcards (%, _) in user-provided values.
+ */
+export function escapeLike(value: string): string {
+  return value.replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+/**
  * Safely parse a JSON string from a database column.
  * Returns the fallback value if parsing fails.
  */

@@ -6,6 +6,7 @@ export {
 } from "./schemas/config.js";
 export {
   QualityScenarioSchema,
+  QualityScenarioStatusSchema,
   QualityScenariosFileSchema,
   QualityCategorySchema,
   type QualityScenario,

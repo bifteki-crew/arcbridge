@@ -91,7 +91,7 @@ export function registerUpdateTask(
         if (phaseStats.done === phaseStats.total) {
           lines.push(
             "",
-            "All tasks in this phase are complete! Consider running `archlens_complete_phase` to advance.",
+            "All tasks in this phase are complete! The phase is ready to advance.",
           );
         }
       }

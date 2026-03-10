@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
+import { ensureDb, notInitialized, safeParseJson, escapeLike } from "../helpers.js";
 
 interface AdrRow {
   id: string;
@@ -58,9 +58,9 @@ export function registerGetRelevantAdrs(
       if (params.building_block) {
         const blockAdrs = db
           .prepare(
-            "SELECT id, title, status, date, context, decision, consequences, affected_blocks, affected_files, quality_scenarios FROM adrs WHERE affected_blocks LIKE ?",
+            "SELECT id, title, status, date, context, decision, consequences, affected_blocks, affected_files, quality_scenarios FROM adrs WHERE affected_blocks LIKE ? ESCAPE '\\'",
           )
-          .all(`%"${params.building_block}"%`) as AdrRow[];
+          .all(`%"${escapeLike(params.building_block)}"%`) as AdrRow[];
 
         for (const adr of blockAdrs) {
           if (!seen.has(adr.id)) {
@@ -74,9 +74,9 @@ export function registerGetRelevantAdrs(
       if (params.file_path) {
         const fileAdrs = db
           .prepare(
-            "SELECT id, title, status, date, context, decision, consequences, affected_blocks, affected_files, quality_scenarios FROM adrs WHERE affected_files LIKE ?",
+            "SELECT id, title, status, date, context, decision, consequences, affected_blocks, affected_files, quality_scenarios FROM adrs WHERE affected_files LIKE ? ESCAPE '\\'",
           )
-          .all(`%${params.file_path}%`) as AdrRow[];
+          .all(`%${escapeLike(params.file_path)}%`) as AdrRow[];
 
         for (const adr of fileAdrs) {
           if (!seen.has(adr.id)) {

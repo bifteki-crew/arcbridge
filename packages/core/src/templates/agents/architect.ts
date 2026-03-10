@@ -11,8 +11,7 @@ export function architectTemplate(): AgentRole {
       "archlens_get_building_blocks",
       "archlens_get_quality_scenarios",
       "archlens_get_relevant_adrs",
-      "archlens_check_drift",
-      "archlens_propose_arc42_update",
+      // Phase 3+: "archlens_check_drift", "archlens_propose_arc42_update"
     ],
     denied_tools: [],
     read_only: false,
