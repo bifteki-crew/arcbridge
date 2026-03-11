@@ -17,7 +17,9 @@ export function architectTemplate(): AgentRole {
       "archlens_get_component_graph",
       "archlens_get_route_map",
       "archlens_get_boundary_analysis",
-      // Phase 3+: "archlens_check_drift", "archlens_propose_arc42_update"
+      "archlens_propose_arc42_update",
+      "archlens_check_drift",
+      "archlens_get_open_questions",
     ],
     denied_tools: [],
     read_only: false,

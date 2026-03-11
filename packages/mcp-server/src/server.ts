@@ -17,6 +17,11 @@ import { registerGetDependencyGraph } from "./tools/get-dependency-graph.js";
 import { registerGetComponentGraph } from "./tools/get-component-graph.js";
 import { registerGetRouteMap } from "./tools/get-route-map.js";
 import { registerGetBoundaryAnalysis } from "./tools/get-boundary-analysis.js";
+import { registerCheckDrift } from "./tools/check-drift.js";
+import { registerGetGuidance } from "./tools/get-guidance.js";
+import { registerGetOpenQuestions } from "./tools/get-open-questions.js";
+import { registerProposeArc42Update } from "./tools/propose-arc42-update.js";
+import { registerGetPracticeReview } from "./tools/get-practice-review.js";
 
 export function createArchLensServer(): McpServer {
   const server = new McpServer({
@@ -52,6 +57,13 @@ export function createArchLensServer(): McpServer {
   registerGetComponentGraph(server, ctx);
   registerGetRouteMap(server, ctx);
   registerGetBoundaryAnalysis(server, ctx);
+
+  // Architecture Bridge
+  registerCheckDrift(server, ctx);
+  registerGetGuidance(server, ctx);
+  registerGetOpenQuestions(server, ctx);
+  registerProposeArc42Update(server, ctx);
+  registerGetPracticeReview(server, ctx);
 
   return server;
 }

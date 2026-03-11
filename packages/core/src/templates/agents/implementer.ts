@@ -15,7 +15,7 @@ export function implementerTemplate(): AgentRole {
       "archlens_get_symbol",
       "archlens_reindex",
       "archlens_get_component_graph",
-      // Phase 3+: "archlens_get_guidance" (proactive context-aware guidance)
+      "archlens_get_guidance",
     ],
     denied_tools: [],
     read_only: false,

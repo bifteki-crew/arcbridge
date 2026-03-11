@@ -61,5 +61,25 @@ export {
   type SymbolKind,
 } from "./indexer/index.js";
 
+// Drift detection
+export {
+  detectDrift,
+  writeDriftLog,
+  type DriftEntry,
+  type DriftKind,
+  type DriftSeverity,
+} from "./drift/detector.js";
+
+// Git helpers
+export {
+  resolveRef,
+  getChangedFiles,
+  getUncommittedChanges,
+  getHeadSha,
+  setSyncCommit,
+  type ChangedFile,
+  type GitRef,
+} from "./git/helpers.js";
+
 // Template types
 export type { InitProjectInput } from "./templates/types.js";

@@ -56,3 +56,11 @@ export function safeParseJson<T>(value: string | null, fallback: T): T {
     return fallback;
   }
 }
+
+/**
+ * Normalize a code_path glob pattern to a plain prefix for matching.
+ * Strips trailing glob patterns: "src/lib/**" → "src/lib/", "src/lib/*" → "src/lib/"
+ */
+export function normalizeCodePath(codePath: string): string {
+  return codePath.replace(/\*+\/?$/, "");
+}

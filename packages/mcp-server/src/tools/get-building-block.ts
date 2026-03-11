@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
+import { ensureDb, notInitialized, safeParseJson, escapeLike, normalizeCodePath } from "../helpers.js";
 
 interface BlockRow {
   id: string;
@@ -82,6 +82,7 @@ export function registerGetBuildingBlock(
 
       const codePaths = safeParseJson<string[]>(block.code_paths, []);
       const interfaces = safeParseJson<string[]>(block.interfaces, []);
+      const escapedBlockId = escapeLike(block.id);
 
       const lines: string[] = [
         `# ${block.name} (\`${block.id}\`)`,
@@ -109,6 +110,57 @@ export function registerGetBuildingBlock(
         lines.push("*No code paths mapped yet.*");
       }
 
+      // Mapped symbols (query symbols matching code_paths)
+      if (codePaths.length > 0) {
+        const pathConditions = codePaths.map(() => "file_path LIKE ? ESCAPE '\\'");
+        const pathParams = codePaths.map((cp) => {
+          const prefix = normalizeCodePath(cp);
+          return `${escapeLike(prefix)}%`;
+        });
+
+        const symbolQuery = `
+          SELECT name, kind, file_path, is_exported
+          FROM symbols
+          WHERE (${pathConditions.join(" OR ")})
+          ORDER BY file_path, name
+          LIMIT 30
+        `;
+        const mappedSymbols = db.prepare(symbolQuery).all(...pathParams) as {
+          name: string;
+          kind: string;
+          file_path: string;
+          is_exported: number;
+        }[];
+
+        if (mappedSymbols.length > 0) {
+          const totalCount = db
+            .prepare(
+              `SELECT COUNT(*) as count FROM symbols WHERE (${pathConditions.join(" OR ")})`,
+            )
+            .get(...pathParams) as { count: number };
+
+          lines.push("", `## Mapped Symbols (${totalCount.count} total)`, "");
+
+          // Group by kind for summary
+          const byKind = new Map<string, number>();
+          for (const s of mappedSymbols) {
+            byKind.set(s.kind, (byKind.get(s.kind) ?? 0) + 1);
+          }
+          lines.push(
+            [...byKind.entries()].map(([k, c]) => `**${c}** ${k}s`).join(", "),
+            "",
+          );
+
+          for (const s of mappedSymbols) {
+            const exported = s.is_exported ? "" : " (internal)";
+            lines.push(`- \`${s.file_path}\` → **${s.name}** (${s.kind})${exported}`);
+          }
+          if (totalCount.count > 30) {
+            lines.push(`- *... and ${totalCount.count - 30} more*`);
+          }
+        }
+      }
+
       // Interfaces
       if (interfaces.length > 0) {
         lines.push("", "## Interfaces", "");
@@ -134,9 +186,9 @@ export function registerGetBuildingBlock(
       // Quality scenarios (linked via JSON array in linked_blocks)
       const scenarios = db
         .prepare(
-          "SELECT id, name, category, priority, status, scenario, expected FROM quality_scenarios WHERE linked_blocks LIKE ?",
+          "SELECT id, name, category, priority, status, scenario, expected FROM quality_scenarios WHERE linked_blocks LIKE ? ESCAPE '\\'",
         )
-        .all(`%"${block.id}"%`) as ScenarioRow[];
+        .all(`%"${escapedBlockId}"%`) as ScenarioRow[];
 
       if (scenarios.length > 0) {
         lines.push("", "## Quality Scenarios", "");
@@ -155,9 +207,9 @@ export function registerGetBuildingBlock(
       // ADRs affecting this block
       const adrs = db
         .prepare(
-          "SELECT id, title, status, date FROM adrs WHERE affected_blocks LIKE ?",
+          "SELECT id, title, status, date FROM adrs WHERE affected_blocks LIKE ? ESCAPE '\\'",
         )
-        .all(`%"${block.id}"%`) as AdrRow[];
+        .all(`%"${escapedBlockId}"%`) as AdrRow[];
 
       if (adrs.length > 0) {
         lines.push("", "## Related ADRs", "");
