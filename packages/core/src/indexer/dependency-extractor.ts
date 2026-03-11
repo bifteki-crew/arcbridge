@@ -367,12 +367,19 @@ export function extractDependencies(
       const ownerId: string = ownerIdOrUndef;
 
       function walkForContext(n: ts.Node): void {
-        if (
+        const isUseContextCall =
           ts.isCallExpression(n) &&
-          ts.isIdentifier(n.expression) &&
-          n.expression.text === "useContext" &&
-          n.arguments.length > 0
-        ) {
+          n.arguments.length > 0 &&
+          (
+            // useContext(X)
+            (ts.isIdentifier(n.expression) && n.expression.text === "useContext") ||
+            // React.useContext(X)
+            (ts.isPropertyAccessExpression(n.expression) &&
+              ts.isIdentifier(n.expression.name) &&
+              n.expression.name.text === "useContext")
+          );
+
+        if (isUseContextCall && ts.isCallExpression(n)) {
           const arg = n.arguments[0]!;
           const ctxSymbol = checker.getSymbolAtLocation(arg);
           if (ctxSymbol) {

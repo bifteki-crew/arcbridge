@@ -97,7 +97,7 @@ function walkAppDir(
           kind,
           httpMethods: [],
           hasAuth: false,
-          parentLayout: kind !== "layout" ? currentLayout : (layoutStack.length > 1 ? layoutStack[layoutStack.length - 2]! : null),
+          parentLayout: currentLayout,
           service,
         };
 
@@ -121,9 +121,13 @@ function walkAppDir(
   // Recurse into subdirectories
   for (const entry of entries.sort()) {
     const fullPath = join(dir, entry);
-    if (!statSync(fullPath).isDirectory()) continue;
-    // Skip hidden dirs and special dirs
-    if (entry.startsWith(".") || entry === "node_modules") continue;
+    try {
+      if (!statSync(fullPath).isDirectory()) continue;
+    } catch {
+      continue;
+    }
+    // Skip hidden dirs, node_modules, and parallel route slots (@modal, @sidebar)
+    if (entry.startsWith(".") || entry.startsWith("@") || entry === "node_modules") continue;
 
     const childPath = buildRoutePath(routePath, entry);
     walkAppDir(fullPath, childPath, routes, [...layoutStack], service, projectRoot);
@@ -138,6 +142,13 @@ function buildRoutePath(parentPath: string, segment: string): string {
   // Route groups: (auth) → no URL segment
   if (segment.startsWith("(") && segment.endsWith(")")) {
     return parentPath;
+  }
+
+  // Optional catch-all: [[...slug]] → *slug?
+  const optionalCatchAll = segment.match(/^\[\[\.\.\.(.+)\]\]$/);
+  if (optionalCatchAll) {
+    const name = optionalCatchAll[1]!;
+    return parentPath === "/" ? `/*${name}?` : `${parentPath}/*${name}?`;
   }
 
   // Dynamic segments: [param] → :param

@@ -1,6 +1,7 @@
 import ts from "typescript";
 import { relative } from "node:path";
 import type Database from "better-sqlite3";
+import { containsJsx } from "./react-utils.js";
 
 export interface ComponentInfo {
   symbolId: string;
@@ -223,24 +224,6 @@ export function analyzeComponents(
   return components.length;
 }
 
-function containsJsx(node: ts.Node): boolean {
-  let found = false;
-  function walk(n: ts.Node): void {
-    if (found) return;
-    if (
-      ts.isJsxElement(n) ||
-      ts.isJsxSelfClosingElement(n) ||
-      ts.isJsxFragment(n)
-    ) {
-      found = true;
-      return;
-    }
-    ts.forEachChild(n, walk);
-  }
-  walk(node);
-  return found;
-}
-
 function writeComponents(
   db: Database.Database,
   components: ComponentInfo[],
@@ -257,13 +240,14 @@ function writeComponents(
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
+  // Build set of existing symbol IDs for bulk lookup (avoids N+1 queries)
+  const existingIds = new Set(
+    (db.prepare("SELECT id FROM symbols").all() as { id: string }[]).map((r) => r.id),
+  );
+
   const run = db.transaction(() => {
     for (const c of components) {
-      // Only insert if the symbol exists in the symbols table
-      const exists = db
-        .prepare("SELECT 1 FROM symbols WHERE id = ?")
-        .get(c.symbolId);
-      if (!exists) continue;
+      if (!existingIds.has(c.symbolId)) continue;
 
       insert.run(
         c.symbolId,

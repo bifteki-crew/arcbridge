@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult, safeParseJson } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, safeParseJson, escapeLike } from "../helpers.js";
 
 interface RouteRow {
   id: string;
@@ -46,8 +46,8 @@ export function registerGetRouteMap(
         queryParams.push(params.kind);
       }
       if (params.route_prefix) {
-        conditions.push("route_path LIKE ?");
-        queryParams.push(`${params.route_prefix}%`);
+        conditions.push("route_path LIKE ? ESCAPE '\\'");
+        queryParams.push(`${escapeLike(params.route_prefix)}%`);
       }
 
       if (conditions.length > 0) {

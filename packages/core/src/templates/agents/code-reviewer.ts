@@ -16,6 +16,7 @@ export function codeReviewerTemplate(): AgentRole {
       "archlens_get_symbol",
       "archlens_get_dependency_graph",
       "archlens_get_component_graph",
+      "archlens_get_route_map",
       "archlens_get_boundary_analysis",
     ],
     denied_tools: [],

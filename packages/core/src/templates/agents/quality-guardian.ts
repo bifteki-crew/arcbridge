@@ -13,6 +13,8 @@ export function qualityGuardianTemplate(): AgentRole {
       "archlens_get_building_blocks",
       "archlens_search_symbols",
       "archlens_get_symbol",
+      "archlens_get_component_graph",
+      "archlens_get_boundary_analysis",
       // Phase 3+: "archlens_run_role_check"
     ],
     denied_tools: [],

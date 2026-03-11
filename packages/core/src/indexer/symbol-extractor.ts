@@ -1,5 +1,6 @@
 import ts from "typescript";
 import type { ExtractedSymbol, SymbolKind } from "./types.js";
+import { containsJsx } from "./react-utils.js";
 
 export function extractSymbols(
   sourceFile: ts.SourceFile,
@@ -86,28 +87,6 @@ export function extractSymbols(
   }
 
   // ---- React detection helpers ----
-
-  /**
-   * Check if a node's subtree contains JSX elements (JsxElement, JsxSelfClosingElement, JsxFragment).
-   * Used to classify functions as React components.
-   */
-  function containsJsx(node: ts.Node): boolean {
-    let found = false;
-    function walk(n: ts.Node): void {
-      if (found) return;
-      if (
-        ts.isJsxElement(n) ||
-        ts.isJsxSelfClosingElement(n) ||
-        ts.isJsxFragment(n)
-      ) {
-        found = true;
-        return;
-      }
-      ts.forEachChild(n, walk);
-    }
-    walk(node);
-    return found;
-  }
 
   /**
    * Check if a name follows the React hook convention: starts with "use" followed by uppercase.

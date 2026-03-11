@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult, safeParseJson } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, safeParseJson, escapeLike } from "../helpers.js";
 
 interface ComponentRow {
   symbol_id: string;
@@ -64,8 +64,8 @@ export function registerGetComponentGraph(
       const queryParams: (string | number)[] = [];
 
       if (params.file_path) {
-        conditions.push("s.file_path LIKE ?");
-        queryParams.push(`${params.file_path}%`);
+        conditions.push("s.file_path LIKE ? ESCAPE '\\'");
+        queryParams.push(`${escapeLike(params.file_path)}%`);
       }
       if (params.client_only) {
         conditions.push("c.is_client = 1");
