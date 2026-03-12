@@ -47,6 +47,21 @@ export const ArchLensConfigSchema = z.object({
     })
     .default({}),
 
+  testing: z
+    .object({
+      test_command: z
+        .string()
+        .default("npx vitest run")
+        .describe("Command to run tests. File paths are appended as arguments."),
+      timeout_ms: z
+        .number()
+        .int()
+        .min(1000)
+        .default(60000)
+        .describe("Timeout per test run in milliseconds"),
+    })
+    .default({}),
+
   sync: z
     .object({
       auto_detect_drift: z.boolean().default(true),

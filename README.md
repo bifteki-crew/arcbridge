@@ -72,7 +72,7 @@ Add to your Claude Code MCP config (`~/.claude/settings.json`):
 }
 ```
 
-## MCP Tools
+## MCP Tools (25)
 
 ### Lifecycle
 
@@ -108,6 +108,32 @@ Add to your Claude Code MCP config (`~/.claude/settings.json`):
 | `archlens_get_symbol` | Full symbol detail: signature, source code, relationships |
 | `archlens_get_dependency_graph` | Import/dependency graph for a module |
 
+### React & Next.js
+
+| Tool | Description |
+|------|-------------|
+| `archlens_get_component_graph` | Component hierarchy with props, state, and context flow |
+| `archlens_get_route_map` | Next.js App Router routes with layouts, middleware, auth |
+| `archlens_get_boundary_analysis` | Server/client boundary analysis and potential leaks |
+
+### Architecture Bridge
+
+| Tool | Description |
+|------|-------------|
+| `archlens_check_drift` | Detect drift between architecture docs and code |
+| `archlens_get_guidance` | Context-aware guidance for a file path or building block |
+| `archlens_get_open_questions` | Unresolved architectural questions and risks |
+| `archlens_propose_arc42_update` | Generate arc42 update proposals from recent code changes |
+| `archlens_get_practice_review` | 5-dimension review: architecture, security, testing, docs, complexity |
+
+### Roles & Sync
+
+| Tool | Description |
+|------|-------------|
+| `archlens_complete_phase` | Validate phase gates (tasks, drift, quality) and transition |
+| `archlens_activate_role` | Load agent role with tools, quality focus, and pre-loaded context |
+| `archlens_verify_scenarios` | Run linked tests for quality scenarios and update pass/fail status |
+
 ## Agent Roles
 
 ArchLens ships with 7 predefined agent roles that specialize AI behavior for different tasks. Each role has a system prompt, tool access constraints, and quality focus areas. Platform adapters translate these canonical definitions into Claude Code agents (`.claude/agents/`) and Copilot agents (`.github/agents/`).
@@ -126,6 +152,23 @@ The first 5 roles participate in the automatic Plan → Build → Sync → Revie
 
 The Code Reviewer focuses on what a senior developer would catch in a pull request: logic bugs, unhandled edge cases, pattern violations, and over-engineering. It deliberately does not overlap with the Security Reviewer (OWASP, auth, secrets) or the Quality Guardian (metrics, coverage, accessibility).
 
+Roles are loaded from `.archlens/agents/*.md` files when available, falling back to built-in defaults. Edit the markdown frontmatter to customize tools, quality focus, and model preferences per role.
+
+## CLI
+
+The `archlens` CLI enables CI integration and command-line workflows.
+
+```bash
+archlens sync              # Reindex, detect drift, infer tasks, update sync point
+archlens status            # Show project status
+archlens drift             # Check for architecture drift
+
+archlens sync --json       # JSON output for CI pipelines
+archlens status --dir /path/to/project
+```
+
+The `sync` command runs the full sync loop: reindex TypeScript symbols, detect drift, infer task statuses, and store a git sync point. The generated GitHub Action workflow (`.github/workflows/archlens-sync.yml`) uses this command automatically.
+
 ## Development
 
 ```bash
@@ -140,17 +183,21 @@ pnpm build       # tsup (all packages)
 
 ```
 packages/
-├── core/        # Schemas, DB, templates, generators (no MCP dependency)
+├── core/        # Schemas, DB, templates, generators, indexer, drift, git, sync (no MCP dependency)
 ├── adapters/    # Claude + Copilot config generators
+├── cli/         # CLI binary (archlens sync, status, drift)
 └── mcp-server/  # MCP server with tool registration
 ```
 
 ## Roadmap
 
-- **Phase 0** (done): Scaffolding, schemas, templates, generators, 10 MCP tools
-- **Phase 1** (done): TypeScript Compiler API — symbol extraction, dependency graphs, 14 MCP tools
-- **Phase 2**: React + Next.js analysis — component graphs, route maps, server/client boundaries
-- **Phase 3**: Architecture bridge — drift detection, auto-sync proposals
+- **Phase 0** (done): Scaffolding, schemas, templates, generators — 10 MCP tools
+- **Phase 1** (done): TypeScript Compiler API — symbol extraction, dependency graphs — 14 MCP tools
+- **Phase 2** (done): React & Next.js — component graphs, route maps, server/client boundaries — 17 MCP tools
+- **Phase 3** (done): Architecture bridge — drift detection, guidance, open questions — 20 MCP tools
+- **Phase 3.5** (done): Git integration — arc42 update proposals, practice reviews — 22 MCP tools
+- **Phase 4** (done): Planning & sync loop — phase gates, role activation, task inference, sync triggers — 24 MCP tools, 171 tests
+- **Phase 5** (done): Polish & hardening — roles loaded from files, CLI binary with sync/status/drift commands, test runner integration (`verify_scenarios`), 3 project templates (nextjs-app-router, react-vite, api-service) — 25 MCP tools, 191 tests
 
 See [`docs/archlens-project-plan.md`](docs/archlens-project-plan.md) for the full specification.
 

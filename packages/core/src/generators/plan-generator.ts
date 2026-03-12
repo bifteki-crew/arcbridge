@@ -1,11 +1,29 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { stringify } from "yaml";
+import type { PhasesFile, TaskFile } from "../schemas/phases.js";
 import type { InitProjectInput } from "../templates/types.js";
 import {
-  phasePlanTemplate,
-  phaseTasksTemplate,
+  phasePlanTemplate as nextjsPlan,
+  phaseTasksTemplate as nextjsTasks,
 } from "../templates/phases/nextjs-app-router.js";
+import {
+  phasePlanTemplate as reactVitePlan,
+  phaseTasksTemplate as reactViteTasks,
+} from "../templates/phases/react-vite.js";
+import {
+  phasePlanTemplate as apiServicePlan,
+  phaseTasksTemplate as apiServiceTasks,
+} from "../templates/phases/api-service.js";
+
+type PlanFn = (input: InitProjectInput) => PhasesFile;
+type TasksFn = (input: InitProjectInput, phaseId: string) => TaskFile | null;
+
+const planTemplates: Record<string, { plan: PlanFn; tasks: TasksFn }> = {
+  "nextjs-app-router": { plan: nextjsPlan, tasks: nextjsTasks },
+  "react-vite": { plan: reactVitePlan, tasks: reactViteTasks },
+  "api-service": { plan: apiServicePlan, tasks: apiServiceTasks },
+};
 
 export function generatePlan(
   targetDir: string,
@@ -18,12 +36,13 @@ export function generatePlan(
   mkdirSync(tasksDir, { recursive: true });
 
   // Write phases.yaml
-  const phasePlan = phasePlanTemplate(input);
+  const tmpl = planTemplates[input.template] ?? planTemplates["nextjs-app-router"]!;
+  const phasePlan = tmpl.plan(input);
   writeFileSync(join(planDir, "phases.yaml"), stringify(phasePlan), "utf-8");
 
   // Write task files for each phase
   for (const phase of phasePlan.phases) {
-    const taskFile = phaseTasksTemplate(input, phase.id);
+    const taskFile = tmpl.tasks(input, phase.id);
     if (taskFile) {
       writeFileSync(
         join(tasksDir, `${phase.id}.yaml`),

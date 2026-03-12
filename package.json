@@ -7,7 +7,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint packages/",
-    "typecheck": "tsc --noEmit -p packages/core/tsconfig.json && tsc --noEmit -p packages/adapters/tsconfig.json && tsc --noEmit -p packages/mcp-server/tsconfig.json",
+    "typecheck": "tsc --noEmit -p packages/core/tsconfig.json && tsc --noEmit -p packages/adapters/tsconfig.json && tsc --noEmit -p packages/mcp-server/tsconfig.json && tsc --noEmit -p packages/cli/tsconfig.json",
     "check": "pnpm typecheck && pnpm lint && pnpm test",
     "clean": "pnpm -r clean"
   },

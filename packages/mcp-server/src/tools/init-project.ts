@@ -8,6 +8,7 @@ import {
   generatePlan,
   generateAgentRoles,
   generateDatabase,
+  generateSyncFiles,
   indexProject,
   type InitProjectInput,
 } from "@archlens/core";
@@ -24,7 +25,7 @@ export function registerInitProject(
     {
       name: z.string().min(1).describe("Project name"),
       template: z
-        .enum(["nextjs-app-router"])
+        .enum(["nextjs-app-router", "react-vite", "api-service"])
         .default("nextjs-app-router")
         .describe("Project template"),
       features: z
@@ -83,7 +84,10 @@ export function registerInitProject(
       ctx.db = db;
       ctx.projectRoot = targetDir;
 
-      // 6. Generate platform-specific configs
+      // 6. Generate sync loop files (skill, action, hook)
+      const syncFiles = generateSyncFiles(targetDir, config);
+
+      // 7. Generate platform-specific configs
       const platformWarnings: string[] = [];
       for (const platform of params.platforms) {
         try {
@@ -96,7 +100,7 @@ export function registerInitProject(
         }
       }
 
-      // 7. Index TypeScript symbols (if tsconfig exists)
+      // 8. Index TypeScript symbols (if tsconfig exists)
       let indexResult: {
         symbolsIndexed: number;
         dependenciesIndexed: number;
@@ -167,6 +171,7 @@ export function registerInitProject(
         ...params.platforms.includes("copilot")
           ? ["- `.github/copilot-instructions.md` — Copilot instructions", "- `.github/agents/` — Copilot agent configs"]
           : [],
+        ...syncFiles.map((f) => `- \`${f}\` — Sync loop trigger`),
         ...(allWarnings.length > 0
           ? [
               "",

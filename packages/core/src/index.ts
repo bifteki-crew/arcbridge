@@ -70,6 +70,14 @@ export {
   type DriftSeverity,
 } from "./drift/detector.js";
 
+// Sync
+export {
+  inferTaskStatuses,
+  applyInferences,
+  type TaskInferenceResult,
+} from "./sync/task-inference.js";
+export { generateSyncFiles } from "./generators/sync-generator.js";
+
 // Git helpers
 export {
   resolveRef,
@@ -80,6 +88,23 @@ export {
   type ChangedFile,
   type GitRef,
 } from "./git/helpers.js";
+
+// Testing
+export {
+  verifyScenarios,
+  type ScenarioTestResult,
+  type VerifyResult,
+} from "./testing/runner.js";
+
+// Role loader
+export {
+  loadRoles,
+  loadRole,
+  type LoadRolesResult,
+} from "./roles/loader.js";
+
+// Config loader
+export { loadConfig } from "./config/loader.js";
 
 // Template types
 export type { InitProjectInput } from "./templates/types.js";

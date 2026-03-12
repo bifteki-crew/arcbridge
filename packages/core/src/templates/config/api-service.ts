@@ -8,9 +8,9 @@ export function configTemplate(input: InitProjectInput): ArchLensConfig {
     project_type: input.template,
     services: [
       {
-        name: "main",
+        name: "api",
         path: ".",
-        type: "nextjs",
+        type: "express",
         tsconfig: "tsconfig.json",
       },
     ],
@@ -18,8 +18,8 @@ export function configTemplate(input: InitProjectInput): ArchLensConfig {
     quality_priorities:
       input.quality_priorities as ArchLensConfig["quality_priorities"],
     indexing: {
-      include: ["src/**/*", "app/**/*"],
-      exclude: ["node_modules", "dist", ".next", "coverage"],
+      include: ["src/**/*"],
+      exclude: ["node_modules", "dist", "coverage"],
       default_mode: "fast",
     },
     testing: {

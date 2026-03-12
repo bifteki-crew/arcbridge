@@ -22,6 +22,9 @@ import { registerGetGuidance } from "./tools/get-guidance.js";
 import { registerGetOpenQuestions } from "./tools/get-open-questions.js";
 import { registerProposeArc42Update } from "./tools/propose-arc42-update.js";
 import { registerGetPracticeReview } from "./tools/get-practice-review.js";
+import { registerCompletePhase } from "./tools/complete-phase.js";
+import { registerActivateRole } from "./tools/activate-role.js";
+import { registerVerifyScenarios } from "./tools/verify-scenarios.js";
 
 export function createArchLensServer(): McpServer {
   const server = new McpServer({
@@ -64,6 +67,9 @@ export function createArchLensServer(): McpServer {
   registerGetOpenQuestions(server, ctx);
   registerProposeArc42Update(server, ctx);
   registerGetPracticeReview(server, ctx);
+  registerCompletePhase(server, ctx);
+  registerActivateRole(server, ctx);
+  registerVerifyScenarios(server, ctx);
 
   return server;
 }
