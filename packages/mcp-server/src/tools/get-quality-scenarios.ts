@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { QualityCategorySchema, QualityScenarioStatusSchema } from "@archlens/core";
+import { QualityCategorySchema, QualityPrioritySchema, QualityScenarioStatusSchema } from "@archlens/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
 
@@ -31,6 +31,7 @@ export function registerGetQualityScenarios(
         .describe("Absolute path to the project directory"),
       category: QualityCategorySchema.optional().describe("Filter by category"),
       status: QualityScenarioStatusSchema.optional().describe("Filter by status"),
+      priority: QualityPrioritySchema.optional().describe("Filter by priority (must/should/could)"),
     },
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
@@ -49,6 +50,10 @@ export function registerGetQualityScenarios(
         conditions.push("status = ?");
         queryParams.push(params.status);
       }
+      if (params.priority) {
+        conditions.push("priority = ?");
+        queryParams.push(params.priority);
+      }
 
       if (conditions.length > 0) {
         query += " WHERE " + conditions.join(" AND ");
@@ -58,7 +63,7 @@ export function registerGetQualityScenarios(
       const scenarios = db.prepare(query).all(...queryParams) as ScenarioRow[];
 
       if (scenarios.length === 0) {
-        const filter = [params.category, params.status]
+        const filter = [params.category, params.status, params.priority]
           .filter(Boolean)
           .join(", ");
         return {

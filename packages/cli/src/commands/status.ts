@@ -1,9 +1,24 @@
 import { openProjectDb } from "../project.js";
 
+interface TaskDetail {
+  id: string;
+  title: string;
+  status: string;
+}
+
+interface QualitySummary {
+  total: number;
+  passing: number;
+  failing: number;
+  untested: number;
+}
+
 interface StatusResult {
   project_name: string;
   current_phase: { id: string; name: string; status: string } | null;
   tasks: { total: number; done: number; in_progress: number; blocked: number };
+  current_tasks: TaskDetail[];
+  quality: QualitySummary;
   building_blocks: number;
   symbols: number;
   drift: { total: number; errors: number; warnings: number };
@@ -47,6 +62,26 @@ export async function status(dir: string, json: boolean): Promise<void> {
       db.prepare("SELECT COUNT(*) as c FROM symbols").get() as { c: number }
     ).c;
 
+    // Current phase tasks
+    const currentTasks: TaskDetail[] = currentPhase
+      ? (db
+          .prepare(
+            "SELECT id, title, status FROM tasks WHERE phase_id = ? ORDER BY sort_order, id",
+          )
+          .all(currentPhase.id) as TaskDetail[])
+      : [];
+
+    // Quality scenarios summary
+    const scenarioStatuses = db
+      .prepare("SELECT status FROM quality_scenarios")
+      .all() as { status: string }[];
+    const quality: QualitySummary = {
+      total: scenarioStatuses.length,
+      passing: scenarioStatuses.filter((s) => s.status === "passing").length,
+      failing: scenarioStatuses.filter((s) => s.status === "failing").length,
+      untested: scenarioStatuses.filter((s) => s.status === "untested").length,
+    };
+
     const driftEntries = db
       .prepare(
         "SELECT severity FROM drift_log WHERE resolved_at IS NULL",
@@ -62,6 +97,8 @@ export async function status(dir: string, json: boolean): Promise<void> {
       project_name: projectName,
       current_phase: currentPhase ?? null,
       tasks,
+      current_tasks: currentTasks,
+      quality,
       building_blocks: blockCount,
       symbols: symbolCount,
       drift: driftInfo,
@@ -77,6 +114,31 @@ export async function status(dir: string, json: boolean): Promise<void> {
       console.log(
         `Tasks:   ${result.tasks.done}/${result.tasks.total} done, ${result.tasks.in_progress} in-progress, ${result.tasks.blocked} blocked`,
       );
+
+      if (result.current_tasks.length > 0) {
+        console.log("");
+        console.log(`Current phase tasks:`);
+        for (const task of result.current_tasks) {
+          const icon =
+            task.status === "done"
+              ? "[x]"
+              : task.status === "in-progress"
+                ? "[~]"
+                : task.status === "blocked"
+                  ? "[!]"
+                  : "[ ]";
+          console.log(`  ${icon} ${task.title}`);
+        }
+      }
+
+      if (result.quality.total > 0) {
+        console.log("");
+        console.log(
+          `Quality: ${result.quality.passing} passing, ${result.quality.failing} failing, ${result.quality.untested} untested (${result.quality.total} total)`,
+        );
+      }
+
+      console.log("");
       console.log(`Blocks:  ${result.building_blocks}`);
       console.log(`Symbols: ${result.symbols}`);
       if (result.drift.total > 0) {

@@ -25,6 +25,7 @@ import { registerGetPracticeReview } from "./tools/get-practice-review.js";
 import { registerCompletePhase } from "./tools/complete-phase.js";
 import { registerActivateRole } from "./tools/activate-role.js";
 import { registerVerifyScenarios } from "./tools/verify-scenarios.js";
+import { registerRunRoleCheck } from "./tools/run-role-check.js";
 
 export function createArchLensServer(): McpServer {
   const server = new McpServer({
@@ -70,6 +71,7 @@ export function createArchLensServer(): McpServer {
   registerCompletePhase(server, ctx);
   registerActivateRole(server, ctx);
   registerVerifyScenarios(server, ctx);
+  registerRunRoleCheck(server, ctx);
 
   return server;
 }

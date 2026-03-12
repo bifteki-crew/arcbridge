@@ -18,6 +18,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@archlens/core": "workspace:*"
+    "@archlens/core": "workspace:*",
+    "@archlens/adapters": "workspace:*"
   }
 }

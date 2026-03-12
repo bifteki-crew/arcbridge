@@ -9,6 +9,7 @@ export {
   QualityScenarioStatusSchema,
   QualityScenariosFileSchema,
   QualityCategorySchema,
+  QualityPrioritySchema,
   type QualityScenario,
   type QualityScenariosFile,
 } from "./schemas/quality-scenarios.js";

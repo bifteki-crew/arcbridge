@@ -2,13 +2,15 @@ import { resolve } from "node:path";
 import { sync } from "./commands/sync.js";
 import { status } from "./commands/status.js";
 import { drift } from "./commands/drift.js";
+import { generateConfigs } from "./commands/generate-configs.js";
 
 const USAGE = `Usage: archlens <command> [options]
 
 Commands:
-  sync       Run the sync loop: reindex, detect drift, infer tasks, propose updates
-  status     Show project status (phase, tasks, drift)
-  drift      Check for architecture drift
+  sync              Run the sync loop: reindex, detect drift, infer tasks, propose updates
+  status            Show project status (phase, tasks, drift)
+  drift             Check for architecture drift
+  generate-configs  Regenerate platform agent configs from .archlens/agents/
 
 Options:
   --dir <path>    Project directory (default: current directory)
@@ -64,6 +66,9 @@ async function main(): Promise<void> {
         break;
       case "drift":
         await drift(dir, json);
+        break;
+      case "generate-configs":
+        await generateConfigs(dir, json);
         break;
       default:
         console.error(`Unknown command: ${command}`);
