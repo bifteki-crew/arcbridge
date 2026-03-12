@@ -14,7 +14,6 @@ export const ArchLensConfigSchema = z.object({
     .enum([
       "nextjs-app-router",
       "react-vite",
-      "fullstack-monorepo",
       "api-service",
     ])
     .default("nextjs-app-router"),
@@ -51,8 +50,9 @@ export const ArchLensConfigSchema = z.object({
     .object({
       test_command: z
         .string()
+        .min(1)
         .default("npx vitest run")
-        .describe("Command to run tests. File paths are appended as arguments."),
+        .describe("Command to run tests (space-separated, no shell syntax). File paths are appended as arguments."),
       timeout_ms: z
         .number()
         .int()

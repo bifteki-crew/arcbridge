@@ -146,4 +146,34 @@ describe("verifyScenarios", () => {
     expect(result.results[0]!.passed).toBe(true);
     expect(result.updated).toBe(0); // Already "passing", no change
   });
+
+  it("reports error for invalid linked_tests JSON", () => {
+    db.prepare(
+      `INSERT INTO quality_scenarios (id, name, category, scenario, expected, verification, linked_tests, status)
+       VALUES ('SEC-01', 'Auth', 'security', 'scenario', 'expected', 'automatic', '{bad json}', 'untested')`,
+    ).run();
+
+    const result = verifyScenarios(db, process.cwd(), {
+      testCommand: "echo",
+      timeoutMs: 5000,
+    });
+
+    expect(result.results).toHaveLength(0);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toContain("SEC-01");
+    expect(result.errors[0]).toContain("invalid");
+  });
+
+  it("treats empty scenarioIds array as no filter", () => {
+    insertScenario("SEC-01", "Auth check", "automatic", ["test.ts"]);
+
+    const result = verifyScenarios(db, process.cwd(), {
+      testCommand: "echo",
+      timeoutMs: 5000,
+      scenarioIds: [],
+    });
+
+    // Empty array should behave like no filter — run all automatic scenarios
+    expect(result.results).toHaveLength(1);
+  });
 });
