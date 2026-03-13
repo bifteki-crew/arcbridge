@@ -74,6 +74,9 @@ function inferSingleTask(
   task: TaskRow,
 ): TaskInferenceResult | null {
   // Check 1: Does the building block have indexed code?
+  // Only infer in-progress if a majority of the block's code_paths have symbols.
+  // This prevents marking all tasks for a block as in-progress when only one
+  // sub-area (e.g. types) has been implemented but others (e.g. API routes) haven't.
   if (task.building_block) {
     const block = db
       .prepare("SELECT id, code_paths FROM building_blocks WHERE id = ?")
@@ -82,20 +85,25 @@ function inferSingleTask(
     if (block) {
       const codePaths = safeParseJson<string[]>(block.code_paths, []);
       if (codePaths.length > 0) {
-        const hasCode = codePaths.some((cp) => {
+        let pathsWithCode = 0;
+        for (const cp of codePaths) {
           const prefix = cp.replace(/\*+\/?$/, "");
           const match = db
             .prepare("SELECT 1 FROM symbols WHERE file_path LIKE ? ESCAPE '\\' LIMIT 1")
             .get(`${escapeLike(prefix)}%`);
-          return !!match;
-        });
+          if (match) pathsWithCode++;
+        }
 
-        if (hasCode && task.status === "todo") {
+        // For single-path blocks, any code triggers in-progress.
+        // For multi-path blocks, require majority coverage to avoid
+        // marking unrelated tasks as started.
+        const threshold = codePaths.length === 1 ? 1 : Math.ceil(codePaths.length / 2);
+        if (pathsWithCode >= threshold && task.status === "todo") {
           return {
             taskId: task.id,
             previousStatus: task.status,
             inferredStatus: "in-progress",
-            reason: `Building block \`${task.building_block}\` has indexed code`,
+            reason: `Building block \`${task.building_block}\` has indexed code in ${pathsWithCode}/${codePaths.length} paths`,
           };
         }
       }

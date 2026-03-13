@@ -66,7 +66,7 @@ export async function status(dir: string, json: boolean): Promise<void> {
     const currentTasks: TaskDetail[] = currentPhase
       ? (db
           .prepare(
-            "SELECT id, title, status FROM tasks WHERE phase_id = ? ORDER BY sort_order, id",
+            "SELECT id, title, status FROM tasks WHERE phase_id = ? ORDER BY id",
           )
           .all(currentPhase.id) as TaskDetail[])
       : [];

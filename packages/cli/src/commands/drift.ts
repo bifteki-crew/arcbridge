@@ -1,11 +1,16 @@
-import { detectDrift, writeDriftLog } from "@archlens/core";
+import { detectDrift, writeDriftLog, loadConfig, type DriftOptions } from "@archlens/core";
 import { openProjectDb } from "../project.js";
 
 export async function drift(dir: string, json: boolean): Promise<void> {
   const db = openProjectDb(dir);
 
   try {
-    const entries = detectDrift(db);
+    const configResult = loadConfig(dir);
+    const driftOpts: DriftOptions = {
+      projectType: configResult.config?.project_type,
+      ignorePaths: configResult.config?.drift?.ignore_paths,
+    };
+    const entries = detectDrift(db, driftOpts);
     writeDriftLog(db, entries);
 
     if (json) {

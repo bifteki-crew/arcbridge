@@ -15,6 +15,7 @@ import {
   type TaskInferenceResult,
   type ChangedFile,
   type ScenarioTestResult,
+  type DriftOptions,
 } from "@archlens/core";
 import { openProjectDb } from "../project.js";
 
@@ -42,7 +43,12 @@ export async function sync(dir: string, json: boolean): Promise<void> {
 
     // Step 2: Detect drift
     if (!json) console.log("Checking drift...");
-    const driftEntries = detectDrift(db);
+    const configForDrift = loadConfig(dir);
+    const driftOpts: DriftOptions = {
+      projectType: configForDrift.config?.project_type,
+      ignorePaths: configForDrift.config?.drift?.ignore_paths,
+    };
+    const driftEntries = detectDrift(db, driftOpts);
     writeDriftLog(db, driftEntries);
     if (!json) {
       if (driftEntries.length === 0) {

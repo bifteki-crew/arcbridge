@@ -30,15 +30,54 @@ interface AdrRow {
   affected_files: string;
 }
 
+export interface DriftOptions {
+  /** File paths/prefixes to ignore in undocumented_module checks */
+  ignorePaths?: string[];
+  /** Project type — used to auto-ignore common framework files */
+  projectType?: string;
+}
+
+/** Built-in ignore patterns for known project types */
+const FRAMEWORK_IGNORES: Record<string, string[]> = {
+  "nextjs-app-router": [
+    "next.config",
+    "src/app/layout.",
+    "src/app/page.",
+    "src/app/not-found.",
+    "src/app/loading.",
+    "src/app/error.",
+    "src/app/global-error.",
+    "src/middleware.",
+    "app/layout.",
+    "app/page.",
+    "app/not-found.",
+    "app/loading.",
+    "app/error.",
+    "app/global-error.",
+    "middleware.",
+  ],
+  "react-vite": ["src/main.", "src/App.", "vite.config"],
+  "api-service": ["src/index.", "src/app.", "src/server."],
+};
+
 /**
  * Run architecture drift detection against the indexed codebase.
  * Compares building block code_paths against actual indexed files,
  * checks cross-block dependencies, and validates ADR references.
  */
-export function detectDrift(db: Database.Database): DriftEntry[] {
+export function detectDrift(
+  db: Database.Database,
+  options?: DriftOptions,
+): DriftEntry[] {
   const entries: DriftEntry[] = [];
 
-  detectUndocumentedModules(db, entries);
+  // Build ignore list from options + framework defaults
+  const ignorePaths = [...(options?.ignorePaths ?? [])];
+  if (options?.projectType && FRAMEWORK_IGNORES[options.projectType]) {
+    ignorePaths.push(...FRAMEWORK_IGNORES[options.projectType]);
+  }
+
+  detectUndocumentedModules(db, entries, ignorePaths);
   detectMissingModules(db, entries);
   detectDependencyViolations(db, entries);
   detectUnlinkedTests(db, entries);
@@ -84,6 +123,7 @@ export function writeDriftLog(
 function detectUndocumentedModules(
   db: Database.Database,
   entries: DriftEntry[],
+  ignorePaths: string[] = [],
 ): void {
   const blocks = db
     .prepare("SELECT id, name, code_paths FROM building_blocks")
@@ -110,6 +150,10 @@ function detectUndocumentedModules(
   for (const { file_path } of filePaths) {
     const matched = allPrefixes.some((prefix) => fileMatchesPath(file_path, prefix));
     if (!matched) {
+      // Skip files matching ignore patterns (framework files, config files, etc.)
+      const ignored = ignorePaths.some((pattern) => file_path.startsWith(pattern));
+      if (ignored) continue;
+
       entries.push({
         kind: "undocumented_module",
         severity: "warning",

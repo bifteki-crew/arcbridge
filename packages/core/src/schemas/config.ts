@@ -62,6 +62,18 @@ export const ArchLensConfigSchema = z.object({
     })
     .default({}),
 
+  drift: z
+    .object({
+      ignore_paths: z
+        .array(z.string())
+        .default([])
+        .describe(
+          "File paths or prefixes to ignore in undocumented_module drift checks. " +
+          "Framework files (e.g. next.config.ts, root layout/page) are auto-ignored for known project types.",
+        ),
+    })
+    .default({}),
+
   sync: z
     .object({
       auto_detect_drift: z.boolean().default(true),

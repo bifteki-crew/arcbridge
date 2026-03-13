@@ -69,6 +69,7 @@ export {
   type DriftEntry,
   type DriftKind,
   type DriftSeverity,
+  type DriftOptions,
 } from "./drift/detector.js";
 
 // Sync
