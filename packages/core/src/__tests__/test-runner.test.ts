@@ -1,18 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import { verifyScenarios } from "../testing/runner.js";
 import type Database from "better-sqlite3";
 
 let db: Database.Database;
+let tempDir: string;
 
 beforeEach(() => {
   db = openMemoryDatabase();
   initializeSchema(db);
+  tempDir = mkdtempSync(join(tmpdir(), "archlens-test-runner-"));
 });
 
 afterEach(() => {
   db.close();
+  rmSync(tempDir, { recursive: true, force: true });
 });
 
 function insertScenario(
@@ -54,10 +60,11 @@ describe("verifyScenarios", () => {
   });
 
   it("runs tests for automatic scenarios with linked_tests", () => {
-    // Use 'echo' as test command — always succeeds
+    // Create a real test file so it passes the existence check
+    writeFileSync(join(tempDir, "test-file.ts"), "// test");
     insertScenario("SEC-01", "Auth check", "automatic", ["test-file.ts"]);
 
-    const result = verifyScenarios(db, process.cwd(), {
+    const result = verifyScenarios(db, tempDir, {
       testCommand: "echo",
       timeoutMs: 5000,
     });
@@ -65,25 +72,44 @@ describe("verifyScenarios", () => {
     expect(result.results).toHaveLength(1);
     expect(result.results[0]!.scenarioId).toBe("SEC-01");
     expect(result.results[0]!.passed).toBe(true);
+    expect(result.results[0]!.outcome).toBe("passed");
     expect(result.results[0]!.durationMs).toBeGreaterThanOrEqual(0);
   });
 
   it("detects failing tests via non-zero exit code", () => {
-    insertScenario("SEC-01", "Auth check", "automatic", ["nonexistent.ts"]);
+    writeFileSync(join(tempDir, "failing.ts"), "// test");
+    insertScenario("SEC-01", "Auth check", "automatic", ["failing.ts"]);
 
-    const result = verifyScenarios(db, process.cwd(), {
+    const result = verifyScenarios(db, tempDir, {
       testCommand: "false", // Always exits 1
       timeoutMs: 5000,
     });
 
     expect(result.results).toHaveLength(1);
     expect(result.results[0]!.passed).toBe(false);
+    expect(result.results[0]!.outcome).toBe("failed");
+  });
+
+  it("reports missing test files without running", () => {
+    insertScenario("SEC-01", "Auth check", "automatic", ["nonexistent.ts"]);
+
+    const result = verifyScenarios(db, tempDir, {
+      testCommand: "echo",
+      timeoutMs: 5000,
+    });
+
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]!.passed).toBe(false);
+    expect(result.results[0]!.outcome).toBe("missing");
+    expect(result.results[0]!.output).toContain("nonexistent.ts");
+    expect(result.results[0]!.durationMs).toBe(0);
   });
 
   it("updates scenario status in the database", () => {
+    writeFileSync(join(tempDir, "test.ts"), "// test");
     insertScenario("SEC-01", "Auth check", "automatic", ["test.ts"], "untested");
 
-    verifyScenarios(db, process.cwd(), {
+    verifyScenarios(db, tempDir, {
       testCommand: "echo",
       timeoutMs: 5000,
     });
@@ -95,9 +121,10 @@ describe("verifyScenarios", () => {
   });
 
   it("updates scenario to failing status", () => {
+    writeFileSync(join(tempDir, "test.ts"), "// test");
     insertScenario("SEC-01", "Auth check", "automatic", ["test.ts"], "passing");
 
-    verifyScenarios(db, process.cwd(), {
+    verifyScenarios(db, tempDir, {
       testCommand: "false",
       timeoutMs: 5000,
     });
@@ -109,10 +136,12 @@ describe("verifyScenarios", () => {
   });
 
   it("filters by specific scenario IDs", () => {
+    writeFileSync(join(tempDir, "test1.ts"), "// test");
+    writeFileSync(join(tempDir, "test2.ts"), "// test");
     insertScenario("SEC-01", "Auth check", "automatic", ["test1.ts"]);
     insertScenario("SEC-02", "Input val", "automatic", ["test2.ts"]);
 
-    const result = verifyScenarios(db, process.cwd(), {
+    const result = verifyScenarios(db, tempDir, {
       testCommand: "echo",
       timeoutMs: 5000,
       scenarioIds: ["SEC-01"],
@@ -123,9 +152,10 @@ describe("verifyScenarios", () => {
   });
 
   it("includes semi-automatic scenarios", () => {
+    writeFileSync(join(tempDir, "test.ts"), "// test");
     insertScenario("PERF-01", "LCP check", "semi-automatic", ["test.ts"]);
 
-    const result = verifyScenarios(db, process.cwd(), {
+    const result = verifyScenarios(db, tempDir, {
       testCommand: "echo",
       timeoutMs: 5000,
     });
@@ -135,9 +165,10 @@ describe("verifyScenarios", () => {
   });
 
   it("does not update status if unchanged", () => {
+    writeFileSync(join(tempDir, "test.ts"), "// test");
     insertScenario("SEC-01", "Auth check", "automatic", ["test.ts"], "passing");
 
-    const result = verifyScenarios(db, process.cwd(), {
+    const result = verifyScenarios(db, tempDir, {
       testCommand: "echo",
       timeoutMs: 5000,
     });
@@ -153,7 +184,7 @@ describe("verifyScenarios", () => {
        VALUES ('SEC-01', 'Auth', 'security', 'scenario', 'expected', 'automatic', '{bad json}', 'untested')`,
     ).run();
 
-    const result = verifyScenarios(db, process.cwd(), {
+    const result = verifyScenarios(db, tempDir, {
       testCommand: "echo",
       timeoutMs: 5000,
     });
@@ -165,9 +196,10 @@ describe("verifyScenarios", () => {
   });
 
   it("treats empty scenarioIds array as no filter", () => {
+    writeFileSync(join(tempDir, "test.ts"), "// test");
     insertScenario("SEC-01", "Auth check", "automatic", ["test.ts"]);
 
-    const result = verifyScenarios(db, process.cwd(), {
+    const result = verifyScenarios(db, tempDir, {
       testCommand: "echo",
       timeoutMs: 5000,
       scenarioIds: [],

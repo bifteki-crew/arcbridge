@@ -1,11 +1,16 @@
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import type Database from "better-sqlite3";
+
+export type TestOutcome = "passed" | "failed" | "missing" | "error";
 
 export interface ScenarioTestResult {
   scenarioId: string;
   scenarioName: string;
   testPaths: string[];
   passed: boolean;
+  outcome: TestOutcome;
   output: string;
   durationMs: number;
 }
@@ -89,12 +94,36 @@ export function verifyScenarios(
 
     if (testPaths.length === 0) continue;
 
+    // Check if test files actually exist before trying to run them
+    const missingPaths = testPaths.filter(
+      (tp) => !existsSync(resolve(projectRoot, tp)),
+    );
+    if (missingPaths.length === testPaths.length) {
+      // All test files are missing — don't run, report as missing
+      results.push({
+        scenarioId: scenario.id,
+        scenarioName: scenario.name,
+        testPaths,
+        passed: false,
+        outcome: "missing",
+        output: `Test file(s) not found: ${missingPaths.join(", ")}`,
+        durationMs: 0,
+      });
+      continue;
+    }
+
+    // Only pass existing test paths to the runner
+    const existingPaths = testPaths.filter(
+      (tp) => existsSync(resolve(projectRoot, tp)),
+    );
+
     const start = Date.now();
     let passed = false;
+    let outcome: TestOutcome = "failed";
     let output = "";
 
     try {
-      const result = execFileSync(executable, [...baseArgs, ...testPaths], {
+      const result = execFileSync(executable, [...baseArgs, ...existingPaths], {
         cwd: projectRoot,
         encoding: "utf-8",
         timeout: options.timeoutMs,
@@ -102,15 +131,23 @@ export function verifyScenarios(
         stdio: ["pipe", "pipe", "pipe"],
       });
       passed = true;
+      outcome = "passed";
       output = result.slice(-2000); // Keep last 2000 chars
     } catch (err) {
       passed = false;
       if (err && typeof err === "object" && "stdout" in err) {
         const execErr = err as { stdout?: string; stderr?: string; status?: number };
         output = (execErr.stdout ?? execErr.stderr ?? "").slice(-2000);
+        outcome = "failed";
       } else {
         output = err instanceof Error ? err.message : String(err);
+        outcome = "error";
       }
+    }
+
+    // If some paths were missing, note it in output
+    if (missingPaths.length > 0) {
+      output = `Warning: ${missingPaths.length} test file(s) not found: ${missingPaths.join(", ")}\n${output}`;
     }
 
     const durationMs = Date.now() - start;
@@ -127,6 +164,7 @@ export function verifyScenarios(
       scenarioName: scenario.name,
       testPaths,
       passed,
+      outcome,
       output,
       durationMs,
     });

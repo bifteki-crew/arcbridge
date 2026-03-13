@@ -63,6 +63,14 @@ export function getChangedFiles(
   ref: string,
 ): ChangedFile[] {
   try {
+    // Verify the ref is valid before diffing — catches HEAD~1 on single-commit repos
+    execFileSync("git", ["rev-parse", "--verify", ref], {
+      cwd: projectRoot,
+      encoding: "utf-8",
+      timeout: 5000,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
     const output = execFileSync(
       "git",
       ["diff", "--name-status", "--no-renames", ref, "HEAD"],

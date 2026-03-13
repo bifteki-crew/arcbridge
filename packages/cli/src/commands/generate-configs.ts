@@ -1,10 +1,11 @@
 import { resolve } from "node:path";
-import { loadConfig, loadRoles } from "@archlens/core";
+import { loadConfig, loadRoles, generateAgentRoles } from "@archlens/core";
 import { getAdapter } from "@archlens/adapters";
 
 interface GenerateResult {
   platforms: string[];
   roles: string[];
+  rolesSource: "custom" | "built-in";
   errors: string[];
 }
 
@@ -28,10 +29,17 @@ export async function generateConfigs(
     return;
   }
 
-  // Load roles from files
-  const { roles, errors: roleErrors } = loadRoles(projectRoot);
+  // Load roles from files, fall back to generating built-in roles
+  let { roles, errors: roleErrors } = loadRoles(projectRoot);
+  let rolesSource: "custom" | "built-in" = "custom";
   if (roleErrors.length > 0) {
     errors.push(...roleErrors);
+  }
+  if (roles.length === 0) {
+    // No custom roles found — generate built-in role files and use them
+    if (!json) console.log("No custom roles found, generating built-in roles...");
+    roles = generateAgentRoles(projectRoot);
+    rolesSource = "built-in";
   }
 
   // Determine platforms from config
@@ -56,6 +64,7 @@ export async function generateConfigs(
   const result: GenerateResult = {
     platforms: generatedPlatforms,
     roles: roles.map((r) => r.role_id),
+    rolesSource,
     errors,
   };
 
@@ -68,11 +77,10 @@ export async function generateConfigs(
       );
     }
     if (roles.length > 0) {
+      const source = rolesSource === "built-in" ? " (built-in)" : "";
       console.log(
-        `Roles: ${roles.map((r) => r.role_id).join(", ")}`,
+        `Roles${source}: ${roles.map((r) => r.role_id).join(", ")}`,
       );
-    } else {
-      console.log("No custom roles found in .archlens/agents/");
     }
     for (const err of errors) {
       console.error(`Warning: ${err}`);

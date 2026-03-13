@@ -95,6 +95,7 @@ export {
 export {
   verifyScenarios,
   type ScenarioTestResult,
+  type TestOutcome,
   type VerifyResult,
 } from "./testing/runner.js";
 
