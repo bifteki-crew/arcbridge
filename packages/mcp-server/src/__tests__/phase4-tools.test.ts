@@ -246,6 +246,9 @@ describe("sync file generation", () => {
         test_command: "npx vitest run",
         timeout_ms: 60000,
       },
+      drift: {
+        ignore_paths: [],
+      },
       sync: {
         auto_detect_drift: true,
         drift_severity_threshold: "warning",
@@ -287,6 +290,9 @@ describe("sync file generation", () => {
       testing: {
         test_command: "npx vitest run",
         timeout_ms: 60000,
+      },
+      drift: {
+        ignore_paths: [],
       },
       sync: {
         auto_detect_drift: true,

@@ -15,6 +15,7 @@ const TEST_CONFIG: ArchLensConfig = {
   quality_priorities: ["security", "performance"],
   indexing: { include: ["src/**/*.ts"], exclude: ["node_modules"], default_mode: "fast" },
   testing: { test_command: "npx vitest run", timeout_ms: 60000 },
+  drift: { ignore_paths: [] },
   sync: { auto_detect_drift: true, drift_severity_threshold: "warning", propose_updates_on: "phase-complete" },
 };
 

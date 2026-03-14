@@ -2,12 +2,14 @@ import { resolve } from "node:path";
 import { sync } from "./commands/sync.js";
 import { status } from "./commands/status.js";
 import { drift } from "./commands/drift.js";
+import { init } from "./commands/init.js";
 import { generateConfigs } from "./commands/generate-configs.js";
 import { updateTask } from "./commands/update-task.js";
 
 const USAGE = `Usage: archlens <command> [options]
 
 Commands:
+  init              Initialize ArchLens in a project directory
   sync              Run the sync loop: reindex, detect drift, infer tasks, propose updates
   status            Show project status (phase, tasks, drift)
   drift             Check for architecture drift
@@ -15,22 +17,38 @@ Commands:
   generate-configs  Regenerate platform agent configs from .archlens/agents/
 
 Options:
-  --dir <path>    Project directory (default: current directory)
-  --json          Output as JSON (for CI integration)
-  --help          Show this help message
-  --version       Show version
+  --dir <path>       Project directory (default: current directory)
+  --json             Output as JSON (for CI integration)
+  --help             Show this help message
+  --version          Show version
+
+Init options:
+  --name <name>      Project name (default: auto-detect from package.json)
+  --template <type>  Project template: nextjs-app-router, react-vite, api-service
+  --platform <name>  Target platform (can be repeated, default: claude)
+  --spec <file>      Path to a requirements/spec file to include
 `;
 
-function parseArgs(args: string[]): {
+interface ParsedArgs {
   command: string | null;
   positional: string[];
   dir: string;
   json: boolean;
-} {
+  name?: string;
+  template?: string;
+  platforms?: string[];
+  spec?: string;
+}
+
+function parseArgs(args: string[]): ParsedArgs {
   let command: string | null = null;
   const positional: string[] = [];
   let dir = process.cwd();
   let json = false;
+  let name: string | undefined;
+  let template: string | undefined;
+  const platforms: string[] = [];
+  let spec: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
@@ -38,6 +56,14 @@ function parseArgs(args: string[]): {
       dir = resolve(args[++i]!);
     } else if (arg === "--json") {
       json = true;
+    } else if (arg === "--name" && i + 1 < args.length) {
+      name = args[++i]!;
+    } else if (arg === "--template" && i + 1 < args.length) {
+      template = args[++i]!;
+    } else if (arg === "--platform" && i + 1 < args.length) {
+      platforms.push(args[++i]!);
+    } else if (arg === "--spec" && i + 1 < args.length) {
+      spec = args[++i]!;
     } else if (arg === "--help" || arg === "-h") {
       console.log(USAGE);
       process.exit(0);
@@ -51,11 +77,21 @@ function parseArgs(args: string[]): {
     }
   }
 
-  return { command, positional, dir, json };
+  return {
+    command,
+    positional,
+    dir,
+    json,
+    name,
+    template,
+    platforms: platforms.length > 0 ? platforms : undefined,
+    spec,
+  };
 }
 
 async function main(): Promise<void> {
-  const { command, positional, dir, json } = parseArgs(process.argv.slice(2));
+  const parsed = parseArgs(process.argv.slice(2));
+  const { command, positional, dir, json } = parsed;
 
   if (!command) {
     console.log(USAGE);
@@ -64,6 +100,14 @@ async function main(): Promise<void> {
 
   try {
     switch (command) {
+      case "init":
+        await init(dir, {
+          name: parsed.name,
+          template: parsed.template,
+          platforms: parsed.platforms,
+          spec: parsed.spec,
+        }, json);
+        break;
       case "sync":
         await sync(dir, json);
         break;

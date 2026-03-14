@@ -26,6 +26,9 @@ export function configTemplate(input: InitProjectInput): ArchLensConfig {
       test_command: "npx vitest run",
       timeout_ms: 60000,
     },
+    drift: {
+      ignore_paths: [],
+    },
     sync: {
       auto_detect_drift: true,
       drift_severity_threshold: "warning",
