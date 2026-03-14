@@ -1,7 +1,15 @@
 {
   "name": "archlens",
   "version": "0.1.0",
+  "description": "CLI for ArchLens — architectural awareness for AI coding agents",
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bifteki-crew/project-archlens.git",
+    "directory": "packages/cli"
+  },
+  "keywords": ["archlens", "architecture", "arc42", "cli", "ai-agents"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {

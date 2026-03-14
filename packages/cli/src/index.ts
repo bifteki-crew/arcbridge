@@ -1,10 +1,18 @@
 import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { sync } from "./commands/sync.js";
 import { status } from "./commands/status.js";
 import { drift } from "./commands/drift.js";
 import { init } from "./commands/init.js";
 import { generateConfigs } from "./commands/generate-configs.js";
 import { updateTask } from "./commands/update-task.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(
+  readFileSync(join(__dirname, "..", "package.json"), "utf-8"),
+) as { version: string };
 
 const USAGE = `Usage: archlens <command> [options]
 
@@ -68,7 +76,7 @@ function parseArgs(args: string[]): ParsedArgs {
       console.log(USAGE);
       process.exit(0);
     } else if (arg === "--version" || arg === "-v") {
-      console.log("archlens 0.1.0");
+      console.log(`archlens ${pkg.version}`);
       process.exit(0);
     } else if (!arg.startsWith("-") && !command) {
       command = arg;

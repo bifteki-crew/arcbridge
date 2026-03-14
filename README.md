@@ -198,9 +198,10 @@ packages/
 - **Phase 3.5** (done): Git integration — arc42 update proposals, practice reviews — 22 MCP tools
 - **Phase 4** (done): Planning & sync loop — phase gates, role activation, task inference, sync triggers — 24 MCP tools, 171 tests
 - **Phase 5** (done): Polish & hardening — roles loaded from files, CLI binary with sync/status/drift commands, test runner integration (`verify_scenarios`), 3 project templates (nextjs-app-router, react-vite, api-service) — 25 MCP tools, 191 tests
+- **Phase 5.5** (done): Release prep — `archlens init` CLI command, walkthrough docs, CI workflows, npm publish setup — 26 MCP tools, 194 tests
 
 See [`docs/archlens-project-plan.md`](docs/archlens-project-plan.md) for the full specification.
 
 ## License
 
-TBD
+[MIT](LICENSE)
