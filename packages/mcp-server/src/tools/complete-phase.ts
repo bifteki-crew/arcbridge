@@ -9,6 +9,7 @@ import {
   applyInferences,
   verifyScenarios,
   loadConfig,
+  refreshFromDocs,
   syncPhaseToYaml,
   syncTaskToYaml,
 } from "@arcbridge/core";
@@ -67,6 +68,9 @@ export function registerCompletePhase(
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
+
+      // Refresh DB from docs to pick up any YAML edits (new tasks, phase changes, etc.)
+      refreshFromDocs(db, params.target_dir);
 
       // Find the target phase
       let phase: PhaseRow | undefined;

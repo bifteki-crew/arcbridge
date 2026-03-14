@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized } from "../helpers.js";
 
@@ -50,6 +51,9 @@ export function registerGetProjectStatus(
       if (!db) {
         return notInitialized();
       }
+
+      // Refresh DB from docs to pick up any YAML edits
+      refreshFromDocs(db, params.target_dir);
 
       // Project name
       const projectName = (

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -8,6 +8,7 @@ import {
   generatePlan,
   generateAgentRoles,
   generateDatabase,
+  refreshFromDocs,
   type InitProjectInput,
 } from "@arcbridge/core";
 import type Database from "better-sqlite3";
@@ -197,6 +198,98 @@ describe("task mutations", () => {
     expect(created.title).toBe("Custom task");
     expect(created.building_block).toBe("app-shell");
     expect(JSON.parse(created.quality_scenarios)).toEqual(["SEC-01"]);
+  });
+});
+
+describe("refreshFromDocs picks up YAML-only changes", () => {
+  it("loads new tasks added to YAML after initial generation", () => {
+    // DB has the initial tasks from generateDatabase
+    const initialTasks = db
+      .prepare("SELECT COUNT(*) as count FROM tasks")
+      .get() as { count: number };
+
+    // Append a new phase to phases.yaml
+    const phasesPath = join(tempDir, ".arcbridge", "plan", "phases.yaml");
+    const phasesRaw = readFileSync(phasesPath, "utf-8");
+    const phasesWithExtra = phasesRaw + `  - id: phase-extra
+    name: Extra Phase
+    phase_number: 99
+    status: planned
+    description: Added after initial generation
+`;
+    writeFileSync(phasesPath, phasesWithExtra, "utf-8");
+
+    // Create task file for the new phase
+    const tasksDir = join(tempDir, ".arcbridge", "plan", "tasks");
+    writeFileSync(
+      join(tasksDir, "phase-extra.yaml"),
+      `schema_version: 1
+phase_id: phase-extra
+tasks:
+  - id: task-extra.1-new
+    title: New task from YAML
+    status: todo
+    quality_scenarios: []
+    acceptance_criteria: []
+`,
+      "utf-8",
+    );
+
+    // Before refresh: new task is NOT in DB
+    const before = db
+      .prepare("SELECT id FROM tasks WHERE id = 'task-extra.1-new'")
+      .get();
+    expect(before).toBeUndefined();
+
+    // Refresh picks it up
+    refreshFromDocs(db, tempDir);
+
+    const after = db
+      .prepare("SELECT id, title, status FROM tasks WHERE id = 'task-extra.1-new'")
+      .get() as { id: string; title: string; status: string } | undefined;
+    expect(after).toBeDefined();
+    expect(after!.title).toBe("New task from YAML");
+    expect(after!.status).toBe("todo");
+
+    // Original tasks still exist
+    const totalAfter = db
+      .prepare("SELECT COUNT(*) as count FROM tasks")
+      .get() as { count: number };
+    expect(totalAfter.count).toBe(initialTasks.count + 1);
+  });
+
+  it("preserves DB task statuses when YAML is refreshed", () => {
+    // Mark a task as done in DB
+    const task = db
+      .prepare("SELECT id FROM tasks LIMIT 1")
+      .get() as { id: string };
+    db.prepare("UPDATE tasks SET status = 'done', completed_at = '2024-06-01' WHERE id = ?")
+      .run(task.id);
+
+    // Refresh from docs (YAML still has status: todo)
+    refreshFromDocs(db, tempDir);
+
+    // DB status should be preserved (not overwritten by YAML's "todo")
+    const after = db
+      .prepare("SELECT status, completed_at FROM tasks WHERE id = ?")
+      .get(task.id) as { status: string; completed_at: string | null };
+    expect(after.status).toBe("done");
+    expect(after.completed_at).toBe("2024-06-01");
+  });
+
+  it("preserves scenario statuses across refresh", () => {
+    const scenario = db
+      .prepare("SELECT id FROM quality_scenarios LIMIT 1")
+      .get() as { id: string };
+    db.prepare("UPDATE quality_scenarios SET status = 'passing' WHERE id = ?")
+      .run(scenario.id);
+
+    refreshFromDocs(db, tempDir);
+
+    const after = db
+      .prepare("SELECT status FROM quality_scenarios WHERE id = ?")
+      .get(scenario.id) as { status: string };
+    expect(after.status).toBe("passing");
   });
 });
 

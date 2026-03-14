@@ -324,7 +324,40 @@ Verifying quality scenarios...
   1 scenario(s) verified: 1 passing, 0 failing
 ```
 
-## Step 9: Complete a Phase
+## Step 9: Phase Boundary Review — Consult the Review Roles
+
+Before completing a phase, consult the specialized review roles. This is where ArcBridge's multi-role workflow pays off — each role catches different issues:
+
+### Which roles, when?
+
+| Role | Every phase? | Focus |
+|------|-------------|-------|
+| **Code Reviewer** | Yes | Logic bugs, unhandled edge cases, pattern violations, over-engineering |
+| **Security Reviewer** | When phase touches auth, uploads, API routes, or user input | OWASP, auth flows, input validation, client/server boundaries |
+| **Quality Guardian** | Every 2nd phase, or when quality scenarios are linked to the phase | Test coverage gaps, quality scenario verification, accessibility |
+| **Architect** | When drift was detected during sync, or architecture evolved | Undeclared dependencies, building block changes, ADR updates |
+
+### How to run a review
+
+Ask your agent to activate each relevant role and run its checks:
+
+> "Activate the code reviewer role and review what we built in this phase"
+
+The agent calls `arcbridge_activate_role({ role: "code-reviewer" })`, which loads the role's system prompt, tool access, and quality focus. Then it uses `arcbridge_get_practice_review` to run a structured 5-dimension review (architecture, security, testing, documentation, complexity).
+
+For security-focused phases:
+
+> "Switch to security reviewer and check the auth and upload code"
+
+The agent activates `security-reviewer`, then uses `arcbridge_run_role_check` to audit the relevant building blocks.
+
+### Fix before completing
+
+Review findings may surface issues that should be fixed before the phase is marked complete. This is intentional — it's cheaper to fix structural problems while the phase's code is fresh than to discover them two phases later.
+
+Once reviews are clean (or findings are documented as accepted tech debt in `.arcbridge/arc42/11-risks-debt.md`), proceed to phase completion.
+
+## Step 10: Complete a Phase
 
 When all tasks are done and drift is resolved, complete the phase via your agent:
 
@@ -338,7 +371,7 @@ The agent calls `complete_phase`, which checks three gates:
 
 If gates pass, the phase completes and the next one starts automatically.
 
-## The Ongoing Loop
+## The Ongoing Loop (Step 11)
 
 The Plan → Build → Sync → Review cycle repeats for each phase:
 
