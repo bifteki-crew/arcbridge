@@ -162,6 +162,7 @@ The database is a **derived cache**, not the source of truth. The source of trut
 ├── arc42/05-building-blocks.md    ← defines what code belongs where
 ├── arc42/10-quality-scenarios.yaml ← defines quality requirements
 ├── plan/phases.yaml               ← defines the implementation plan
+├── plan/tasks/phase-1.yaml        ← task definitions and statuses per phase
 └── index.db                       ← derived from the above + code analysis
 ```
 
