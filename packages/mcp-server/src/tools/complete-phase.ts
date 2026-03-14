@@ -9,6 +9,8 @@ import {
   applyInferences,
   verifyScenarios,
   loadConfig,
+  syncPhaseToYaml,
+  syncTaskToYaml,
 } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson } from "../helpers.js";
@@ -99,7 +101,7 @@ export function registerCompletePhase(
       if (params.auto_infer) {
         const inferences = inferTaskStatuses(db, phase.id);
         if (inferences.length > 0) {
-          applyInferences(db, inferences);
+          applyInferences(db, inferences, ctx.projectRoot ?? params.target_dir);
           lines.push("## Task Status Inference", "");
           for (const inf of inferences) {
             lines.push(
@@ -243,8 +245,14 @@ export function registerCompletePhase(
         });
         transition();
 
-        // Store phase sync commit (non-critical, outside transaction)
+        // Write back to YAML
         const projectRoot = ctx.projectRoot ?? params.target_dir;
+        syncPhaseToYaml(projectRoot, phase.id, "complete", undefined, now);
+        if (nextPhase) {
+          syncPhaseToYaml(projectRoot, nextPhase.id, "in-progress", now);
+        }
+
+        // Store phase sync commit (non-critical, outside transaction)
         const headSha = getHeadSha(projectRoot);
         if (headSha) {
           setSyncCommit(db, "phase_sync_commit", headSha);

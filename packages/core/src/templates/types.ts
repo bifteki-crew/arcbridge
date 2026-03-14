@@ -4,6 +4,7 @@ export interface InitProjectInput {
   features: string[];
   quality_priorities: string[];
   platforms: string[];
+  projectRoot?: string;
 }
 
 export interface TemplateOutput {

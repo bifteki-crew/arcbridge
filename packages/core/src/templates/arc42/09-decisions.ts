@@ -1,7 +1,13 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { InitProjectInput, TemplateOutput } from "../types.js";
 
 export function firstAdrTemplate(input: InitProjectInput): TemplateOutput {
   const now = new Date().toISOString().split("T")[0]!;
+  const hasSrcDir = input.projectRoot
+    ? existsSync(join(input.projectRoot, "src", "app"))
+    : false;
+  const appPrefix = hasSrcDir ? "src/app" : "app";
 
   return {
     frontmatter: {
@@ -10,7 +16,7 @@ export function firstAdrTemplate(input: InitProjectInput): TemplateOutput {
       status: "accepted",
       date: now,
       affected_blocks: ["app-shell"],
-      affected_files: ["app/"],
+      affected_files: [`${appPrefix}/`],
       quality_scenarios: [],
     },
     body: `# ADR-001: Use Next.js App Router

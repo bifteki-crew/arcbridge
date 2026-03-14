@@ -26,8 +26,6 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@arcbridge/core": "workspace:*",
-    "gray-matter": "^4.0.3",
-    "yaml": "^2.7.0"
+    "@arcbridge/core": "workspace:*"
   }
 }

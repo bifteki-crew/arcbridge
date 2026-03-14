@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { syncTaskToYaml } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized } from "../helpers.js";
 
@@ -53,7 +54,7 @@ export function registerUpdateTask(
       const oldStatus = task.status;
       const now = new Date().toISOString();
 
-      // Update status
+      // Update status in DB
       if (params.status === "done") {
         db.prepare(
           "UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?",
@@ -64,6 +65,15 @@ export function registerUpdateTask(
           params.task_id,
         );
       }
+
+      // Write back to YAML
+      syncTaskToYaml(
+        params.target_dir,
+        task.phase_id,
+        params.task_id,
+        params.status,
+        params.status === "done" ? now : null,
+      );
 
       const lines: string[] = [
         `Task **${task.id}** updated: ${oldStatus} → ${params.status}`,

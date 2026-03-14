@@ -41,13 +41,14 @@ export function generateArc42(
     { file: "11-risks-debt.md", template: risksDebtTemplate },
   ];
 
+  const inputWithRoot = { ...input, projectRoot: targetDir };
   for (const { file, template } of sections) {
-    const { frontmatter, body } = template(input);
+    const { frontmatter, body } = template(inputWithRoot);
     writeMarkdownWithFrontmatter(join(arc42Dir, file), frontmatter, body);
   }
 
   // ADR (first decision)
-  const adr = firstAdrTemplate(input);
+  const adr = firstAdrTemplate(inputWithRoot);
   writeMarkdownWithFrontmatter(
     join(decisionsDir, "001-nextjs-app-router.md"),
     adr.frontmatter,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { indexProject } from "@arcbridge/core";
+import { indexProject, refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
 
@@ -29,6 +29,9 @@ export function registerReindex(
       if (!db) return notInitialized();
 
       try {
+        // Refresh architecture docs into DB first (picks up manual edits)
+        const docWarnings = refreshFromDocs(db, params.target_dir);
+
         const result = indexProject(db, {
           projectRoot: params.target_dir,
           tsconfigPath: params.tsconfig_path,
@@ -38,6 +41,7 @@ export function registerReindex(
         const lines = [
           "# Indexing Complete",
           "",
+          `- **Docs refreshed:** ${docWarnings.length === 0 ? "OK" : docWarnings.join(", ")}`,
           `- **Files processed:** ${result.filesProcessed}`,
           `- **Files skipped (unchanged):** ${result.filesSkipped}`,
           `- **Files removed:** ${result.filesRemoved}`,

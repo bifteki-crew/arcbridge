@@ -43,36 +43,59 @@ When you run `arcbridge_init_project`, it creates:
 
 Plus platform-specific configs (`CLAUDE.md`, `.claude/agents/`, `.github/copilot-instructions.md`, `.github/agents/`).
 
-## Setup
+## Quick Start
+
+```bash
+npm install -g arcbridge        # Install the CLI
+cd your-project
+arcbridge init                   # Initialize ArcBridge (auto-detects project type)
+```
+
+Then connect the MCP server to your AI agent. Create `.mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "arcbridge": {
+      "command": "npx",
+      "args": ["@arcbridge/mcp-server"]
+    }
+  }
+}
+```
+
+Restart Claude Code — approve the MCP server when prompted, and all 26 architecture tools become available.
+
+See the [walkthrough](docs/walkthrough.md) for a full step-by-step guide.
+
+## Development
 
 ### Prerequisites
 
 - Node.js 20+
 - pnpm 9+
 
-### Build
+### Build from source
 
 ```bash
 pnpm install
 pnpm build
 ```
 
-### Connect to Claude Code
-
-Add to your Claude Code MCP config (`~/.claude/settings.json`):
+For local development, point your MCP config at the built output:
 
 ```json
 {
   "mcpServers": {
     "arcbridge": {
       "command": "node",
-      "args": ["/path/to/project-archlens/packages/mcp-server/dist/index.js"]
+      "args": ["/path/to/packages/mcp-server/dist/index.js"]
     }
   }
 }
 ```
 
-## MCP Tools (25)
+## MCP Tools (26)
 
 ### Lifecycle
 
@@ -133,6 +156,7 @@ Add to your Claude Code MCP config (`~/.claude/settings.json`):
 | `arcbridge_complete_phase` | Validate phase gates (tasks, drift, quality) and transition |
 | `arcbridge_activate_role` | Load agent role with tools, quality focus, and pre-loaded context |
 | `arcbridge_verify_scenarios` | Run linked tests for quality scenarios and update pass/fail status |
+| `arcbridge_run_role_check` | Run a role's quality checks against a file or building block |
 
 ## Agent Roles
 
@@ -169,7 +193,7 @@ arcbridge status --dir /path/to/project
 
 The `sync` command runs the full sync loop: reindex TypeScript symbols, detect drift, infer task statuses, and store a git sync point. The generated GitHub Action workflow (`.github/workflows/arcbridge-sync.yml`) uses this command automatically.
 
-## Development
+### Commands
 
 ```bash
 pnpm check      # typecheck + lint + test
@@ -200,7 +224,7 @@ packages/
 - **Phase 5** (done): Polish & hardening — roles loaded from files, CLI binary with sync/status/drift commands, test runner integration (`verify_scenarios`), 3 project templates (nextjs-app-router, react-vite, api-service) — 25 MCP tools, 191 tests
 - **Phase 5.5** (done): Release prep — `arcbridge init` CLI command, walkthrough docs, CI workflows, npm publish setup — 26 MCP tools, 194 tests
 
-See [`docs/archlens-project-plan.md`](docs/archlens-project-plan.md) for the full specification.
+See [`docs/arcbridge-project-plan.md`](docs/arcbridge-project-plan.md) for the full specification.
 
 ## License
 

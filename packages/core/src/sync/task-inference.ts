@@ -1,4 +1,5 @@
 import type Database from "better-sqlite3";
+import { syncTaskToYaml } from "./yaml-writer.js";
 
 export interface TaskInferenceResult {
   taskId: string;
@@ -48,11 +49,12 @@ export function inferTaskStatuses(
 }
 
 /**
- * Apply inferred statuses to the database.
+ * Apply inferred statuses to the database and optionally write back to YAML.
  */
 export function applyInferences(
   db: Database.Database,
   inferences: TaskInferenceResult[],
+  projectRoot: string,
 ): void {
   const update = db.prepare(
     "UPDATE tasks SET status = ?, completed_at = CASE WHEN ? = 'done' THEN ? ELSE completed_at END WHERE id = ?",
@@ -67,6 +69,22 @@ export function applyInferences(
   });
 
   run();
+
+  // Write back to YAML
+  for (const inf of inferences) {
+    const task = db
+      .prepare("SELECT phase_id FROM tasks WHERE id = ?")
+      .get(inf.taskId) as { phase_id: string } | undefined;
+    if (task) {
+      syncTaskToYaml(
+        projectRoot,
+        task.phase_id,
+        inf.taskId,
+        inf.inferredStatus,
+        inf.inferredStatus === "done" ? now : null,
+      );
+    }
+  }
 }
 
 function inferSingleTask(

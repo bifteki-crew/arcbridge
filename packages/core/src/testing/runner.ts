@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import type Database from "better-sqlite3";
+import { syncScenarioToYaml } from "../sync/yaml-writer.js";
 
 export type TestOutcome = "passed" | "failed" | "missing" | "error";
 
@@ -156,6 +157,7 @@ export function verifyScenarios(
     // Only update if status changed
     if (scenario.status !== newStatus) {
       updateStmt.run(newStatus, scenario.id);
+      syncScenarioToYaml(projectRoot, scenario.id, newStatus);
       updated++;
     }
 

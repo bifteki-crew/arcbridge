@@ -4,7 +4,7 @@ This walkthrough takes you through the full **Plan → Build → Sync → Review
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - pnpm (or npm/yarn)
 - An AI coding agent (Claude Code, GitHub Copilot, etc.)
 - ArcBridge installed (`npm install -g arcbridge` or use `npx`)
@@ -83,7 +83,42 @@ CLAUDE.md                         # Instructions for Claude Code
 
 The building blocks, quality scenarios, and phases are **generic scaffolds** from the Next.js template. The next step is to make them specific to your project.
 
-## Step 3: Refine the Architecture with Your Agent
+## Step 3: Connect the MCP Server
+
+ArcBridge's tools are exposed to your AI agent via an MCP (Model Context Protocol) server. You need to tell your agent how to start it.
+
+### Claude Code
+
+Add ArcBridge to your MCP config. Create `.mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "arcbridge": {
+      "command": "npx",
+      "args": ["@arcbridge/mcp-server"]
+    }
+  }
+}
+```
+
+Or use the CLI to add it:
+
+```bash
+claude mcp add --transport stdio --scope project arcbridge -- npx @arcbridge/mcp-server
+```
+
+Restart Claude Code — it will prompt you to approve the MCP server on first use. You can verify by asking Claude: *"What ArcBridge tools do you have access to?"*
+
+### GitHub Copilot
+
+Copilot doesn't support MCP servers directly yet. ArcBridge generates Copilot-compatible agent configs (`.github/agents/`) and instruction files (`.github/copilot-instructions.md`) during init. These give Copilot context about your architecture, but without the interactive tool access that MCP provides.
+
+### Other MCP-compatible agents
+
+Any agent that supports MCP can connect using the same approach — point it at `npx @arcbridge/mcp-server` (or `node /path/to/packages/mcp-server/dist/index.js` for local development).
+
+## Step 4: Refine the Architecture with Your Agent
 
 Start your AI agent. In Claude Code:
 
@@ -132,7 +167,7 @@ blocks:
       - tags
 ```
 
-## Step 4: Plan Phase — Review Tasks
+## Step 5: Plan Phase — Review Tasks
 
 Check what ArcBridge has planned:
 
@@ -167,7 +202,7 @@ arcbridge update-task task-0.1-init-nextjs done
 task-0.1-init-nextjs: todo → done (Initialize Next.js project)
 ```
 
-## Step 5: Build Phase — Write Code
+## Step 6: Build Phase — Write Code
 
 Now build. Ask your agent to implement features. With ArcBridge, the agent has context about:
 
@@ -182,7 +217,7 @@ For example, when building the bookmark API:
 
 The agent can check `get_guidance` for the `src/app/api/bookmarks/` path and get context about the Bookmark Manager building block, its quality scenarios (SEC-01: auth on all API routes), and existing patterns.
 
-## Step 6: Sync — Keep Architecture in Sync with Code
+## Step 7: Sync — Keep Architecture in Sync with Code
 
 After writing some code, run sync:
 
@@ -238,7 +273,7 @@ The dependency violation means your `BookmarkCard` component imports directly fr
 
 Either way, ArcBridge ensures you make the decision consciously rather than accumulating hidden dependencies.
 
-## Step 7: Review — Check Quality and Progress
+## Step 8: Review — Check Quality and Progress
 
 Check overall status after a sync:
 
@@ -289,7 +324,7 @@ Verifying quality scenarios...
   1 scenario(s) verified: 1 passing, 0 failing
 ```
 
-## Step 8: Complete a Phase
+## Step 9: Complete a Phase
 
 When all tasks are done and drift is resolved, complete the phase via your agent:
 

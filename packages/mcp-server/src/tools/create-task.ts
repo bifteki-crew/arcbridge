@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { addTaskToYaml } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized } from "../helpers.js";
 
@@ -83,6 +84,16 @@ export function registerCreateTask(
         JSON.stringify(params.acceptance_criteria),
         now,
       );
+
+      // Write back to YAML
+      addTaskToYaml(params.target_dir, params.phase_id, {
+        id: taskId,
+        title: params.title,
+        status: "todo",
+        building_block: params.building_block,
+        quality_scenarios: params.quality_scenarios,
+        acceptance_criteria: params.acceptance_criteria,
+      });
 
       const lines = [
         `Task created: **${taskId}**`,

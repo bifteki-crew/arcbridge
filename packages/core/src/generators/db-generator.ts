@@ -260,6 +260,89 @@ function populateAdrs(
   return warnings;
 }
 
+/**
+ * Re-read arc42 files from disk and update the database.
+ * Uses INSERT OR REPLACE to pick up changes made since initial generation.
+ */
+export function refreshFromDocs(
+  db: Database.Database,
+  targetDir: string,
+): string[] {
+  const warnings: string[] = [];
+
+  // Save existing statuses before clearing
+  const existingTasks = db
+    .prepare("SELECT id, status, completed_at FROM tasks")
+    .all() as { id: string; status: string; completed_at: string | null }[];
+  const taskStatusMap = new Map(
+    existingTasks.map((t) => [t.id, { status: t.status, completed_at: t.completed_at }]),
+  );
+
+  const existingPhases = db
+    .prepare("SELECT id, status, started_at, completed_at, gate_status FROM phases")
+    .all() as { id: string; status: string; started_at: string | null; completed_at: string | null; gate_status: string }[];
+  const phaseStatusMap = new Map(
+    existingPhases.map((p) => [p.id, { status: p.status, started_at: p.started_at, completed_at: p.completed_at, gate_status: p.gate_status }]),
+  );
+
+  const existingScenarios = db
+    .prepare("SELECT id, status FROM quality_scenarios")
+    .all() as { id: string; status: string }[];
+  const scenarioStatusMap = new Map(
+    existingScenarios.map((s) => [s.id, s.status]),
+  );
+
+  // Wrap entire delete + repopulate + restore in a transaction for atomicity
+  const refresh = db.transaction(() => {
+    // Delete in FK-safe order: tasks → phases → building_blocks, then scenarios and ADRs
+    db.prepare("DELETE FROM tasks").run();
+    db.prepare("DELETE FROM phases").run();
+    db.prepare("DELETE FROM building_blocks").run();
+    db.prepare("DELETE FROM quality_scenarios").run();
+    db.prepare("DELETE FROM adrs").run();
+
+    // Re-populate from files
+    warnings.push(...populateBuildingBlocks(db, targetDir));
+    warnings.push(...populateQualityScenarios(db, targetDir));
+    warnings.push(...populatePhases(db, targetDir));
+    warnings.push(...populateAdrs(db, targetDir));
+
+    // Restore task statuses that were previously set
+    const restoreTask = db.prepare(
+      "UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?",
+    );
+    for (const [id, prev] of taskStatusMap) {
+      if (prev.status !== "todo") {
+        restoreTask.run(prev.status, prev.completed_at, id);
+      }
+    }
+
+    // Restore phase statuses
+    const restorePhase = db.prepare(
+      "UPDATE phases SET status = ?, started_at = ?, completed_at = ?, gate_status = ? WHERE id = ?",
+    );
+    for (const [id, prev] of phaseStatusMap) {
+      if (prev.status !== "planned") {
+        restorePhase.run(prev.status, prev.started_at, prev.completed_at, prev.gate_status, id);
+      }
+    }
+
+    // Restore quality scenario statuses
+    const restoreScenario = db.prepare(
+      "UPDATE quality_scenarios SET status = ? WHERE id = ?",
+    );
+    for (const [id, prev] of scenarioStatusMap) {
+      if (prev !== "untested") {
+        restoreScenario.run(prev, id);
+      }
+    }
+  });
+
+  refresh();
+
+  return warnings;
+}
+
 export function generateDatabase(
   targetDir: string,
   input: InitProjectInput,

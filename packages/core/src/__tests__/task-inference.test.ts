@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import { indexProject } from "../indexer/index.js";
@@ -7,6 +8,7 @@ import { inferTaskStatuses, applyInferences } from "../sync/task-inference.js";
 import type Database from "better-sqlite3";
 
 const TS_FIXTURE = join(__dirname, "fixtures", "ts-project");
+const DUMMY_ROOT = tmpdir();
 
 let db: Database.Database;
 
@@ -105,7 +107,7 @@ describe("applyInferences", () => {
         inferredStatus: "in-progress",
         reason: "Code exists",
       },
-    ]);
+    ], DUMMY_ROOT);
 
     const task = db
       .prepare("SELECT status FROM tasks WHERE id = 'task-1'")
@@ -129,7 +131,7 @@ describe("applyInferences", () => {
         inferredStatus: "done",
         reason: "All criteria met",
       },
-    ]);
+    ], DUMMY_ROOT);
 
     const task = db
       .prepare("SELECT status, completed_at FROM tasks WHERE id = 'task-1'")

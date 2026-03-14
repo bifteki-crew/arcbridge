@@ -1,9 +1,17 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { InitProjectInput, TemplateOutput } from "../types.js";
 
 export function buildingBlocksTemplate(
   input: InitProjectInput,
 ): TemplateOutput {
   const now = new Date().toISOString();
+
+  // Detect whether the project uses src/ directory
+  const hasSrcDir = input.projectRoot
+    ? existsSync(join(input.projectRoot, "src", "app"))
+    : false;
+  const appPrefix = hasSrcDir ? "src/app" : "app";
 
   const defaultBlocks: Array<{
     id: string;
@@ -20,7 +28,7 @@ export function buildingBlocksTemplate(
       id: "app-shell",
       name: "App Shell",
       level: 1,
-      code_paths: ["app/layout.tsx", "app/page.tsx"],
+      code_paths: [`${appPrefix}/layout.tsx`, `${appPrefix}/page.tsx`],
       interfaces: [],
       quality_scenarios: [],
       adrs: [],
@@ -72,7 +80,7 @@ export function buildingBlocksTemplate(
       id: "api-layer",
       name: "API Layer",
       level: 1,
-      code_paths: ["app/api/"],
+      code_paths: [`${appPrefix}/api/`],
       interfaces: [],
       quality_scenarios: ["SEC-03"],
       adrs: [],

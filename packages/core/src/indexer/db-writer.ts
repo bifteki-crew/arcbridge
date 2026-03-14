@@ -29,18 +29,22 @@ export function removeSymbolsForFiles(
     "DELETE FROM symbols WHERE file_path = ?",
   );
 
-  // Also clean up dangling dependencies
+  // Clean up dependent tables before deleting symbols (FK constraints)
   const deleteDepsSource = db.prepare(
     "DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE file_path = ?)",
   );
   const deleteDepsTarget = db.prepare(
     "DELETE FROM dependencies WHERE target_symbol IN (SELECT id FROM symbols WHERE file_path = ?)",
   );
+  const deleteComponents = db.prepare(
+    "DELETE FROM components WHERE symbol_id IN (SELECT id FROM symbols WHERE file_path = ?)",
+  );
 
   const run = db.transaction(() => {
     for (const fp of filePaths) {
       deleteDepsSource.run(fp);
       deleteDepsTarget.run(fp);
+      deleteComponents.run(fp);
       deleteSymbols.run(fp);
     }
   });

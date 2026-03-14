@@ -10,6 +10,7 @@ import {
   setSyncCommit,
   verifyScenarios,
   loadConfig,
+  refreshFromDocs,
   type DriftEntry,
   type IndexResult,
   type TaskInferenceResult,
@@ -33,6 +34,13 @@ export async function sync(dir: string, json: boolean): Promise<void> {
   const db = openProjectDb(dir);
 
   try {
+    // Step 0: Refresh DB from arc42 docs (picks up manual edits to building blocks, scenarios, etc.)
+    if (!json) console.log("Refreshing from docs...");
+    const docWarnings = refreshFromDocs(db, dir);
+    if (!json && docWarnings.length > 0) {
+      for (const w of docWarnings) console.log(`  ${w}`);
+    }
+
     // Step 1: Reindex
     if (!json) console.log("Reindexing...");
     const indexResult: IndexResult = indexProject(db, { projectRoot: dir });
@@ -73,7 +81,7 @@ export async function sync(dir: string, json: boolean): Promise<void> {
     if (currentPhase) {
       inferences = inferTaskStatuses(db, currentPhase.id);
       if (inferences.length > 0) {
-        applyInferences(db, inferences);
+        applyInferences(db, inferences, dir);
         if (!json) {
           console.log(`  Updated ${inferences.length} task(s):`);
           for (const inf of inferences) {

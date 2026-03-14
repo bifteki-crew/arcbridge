@@ -40,6 +40,7 @@ export interface DriftOptions {
 /** Built-in ignore patterns for known project types */
 const FRAMEWORK_IGNORES: Record<string, string[]> = {
   "nextjs-app-router": [
+    ".next/",
     "next.config",
     "src/app/layout.",
     "src/app/page.",

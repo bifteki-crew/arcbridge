@@ -50,6 +50,7 @@ export { generatePlan } from "./generators/plan-generator.js";
 export { generateAgentRoles } from "./generators/agent-generator.js";
 export {
   generateDatabase,
+  refreshFromDocs,
   type GenerateDatabaseResult,
 } from "./generators/db-generator.js";
 
@@ -78,6 +79,12 @@ export {
   applyInferences,
   type TaskInferenceResult,
 } from "./sync/task-inference.js";
+export {
+  syncTaskToYaml,
+  addTaskToYaml,
+  syncPhaseToYaml,
+  syncScenarioToYaml,
+} from "./sync/yaml-writer.js";
 export { generateSyncFiles } from "./generators/sync-generator.js";
 
 // Git helpers

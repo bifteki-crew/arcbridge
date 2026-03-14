@@ -1,3 +1,4 @@
+import { syncTaskToYaml } from "@arcbridge/core";
 import { openProjectDb } from "../project.js";
 
 type TaskStatus = "todo" | "in-progress" | "done" | "blocked";
@@ -40,7 +41,16 @@ export async function updateTask(
     }
 
     const previousStatus = task.status;
-    db.prepare("UPDATE tasks SET status = ? WHERE id = ?").run(newStatus, taskId);
+    const now = new Date().toISOString();
+
+    if (newStatus === "done") {
+      db.prepare("UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?").run(newStatus, now, taskId);
+    } else {
+      db.prepare("UPDATE tasks SET status = ? WHERE id = ?").run(newStatus, taskId);
+    }
+
+    // Write back to YAML
+    syncTaskToYaml(dir, task.phase_id, taskId, newStatus, newStatus === "done" ? now : null);
 
     if (json) {
       console.log(

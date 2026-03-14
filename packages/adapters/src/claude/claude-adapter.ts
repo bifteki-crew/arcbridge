@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
 import type { PlatformAdapter } from "../types.js";
@@ -14,44 +14,86 @@ function generateClaudeMd(config: ArcBridgeConfig): string {
     `- **Type:** ${config.project_type}`,
     `- **Quality Priorities:** ${config.quality_priorities.join(", ")}`,
     "",
-    "## Architecture",
+    "## How to Work in This Project",
     "",
-    "This project uses arc42 documentation stored in `.arcbridge/arc42/`.",
-    "Use the ArcBridge MCP tools to query architecture, building blocks, and quality scenarios.",
+    "This project follows the **Plan → Build → Sync → Review** convention using ArcBridge.",
+    "ArcBridge provides MCP tools that give you architectural awareness. **Use them throughout your work.**",
     "",
-    "## Key Commands",
+    "### Before Starting Any Work",
     "",
-    "- `arcbridge_get_project_status` — Get current project status",
-    "- `arcbridge_get_building_blocks` — View architecture building blocks",
-    "- `arcbridge_get_quality_scenarios` — View quality requirements",
-    "- `arcbridge_get_current_tasks` — View current phase tasks",
+    "1. Check project status: `arcbridge_get_project_status`",
+    "2. Review current tasks: `arcbridge_get_current_tasks`",
+    "3. Activate the appropriate role (see below): `arcbridge_activate_role`",
     "",
-    "## Code Intelligence",
+    "### When Planning or Refining Architecture",
     "",
-    "- `arcbridge_search_symbols` — Search for functions, classes, types in the codebase",
-    "- `arcbridge_get_symbol` — Get full details on a symbol (signature, source, dependencies)",
-    "- `arcbridge_get_dependency_graph` — Analyze module dependencies",
-    "- `arcbridge_reindex` — Re-index TypeScript symbols after code changes",
+    "Activate the **architect** role: `arcbridge_activate_role({ role: \"architect\" })`",
     "",
-    "## React & Next.js Analysis",
+    "Then use:",
+    "- `arcbridge_get_building_blocks` — view current architecture decomposition",
+    "- `arcbridge_get_quality_scenarios` — view quality requirements",
+    "- `arcbridge_get_open_questions` — find architectural gaps to resolve",
+    "- `arcbridge_propose_arc42_update` — propose doc updates from recent code changes",
     "",
-    "- `arcbridge_get_component_graph` — View component hierarchy, props, state, and context usage",
-    "- `arcbridge_get_route_map` — View Next.js route tree (pages, layouts, API routes)",
-    "- `arcbridge_get_boundary_analysis` — Analyze server/client boundaries and detect violations",
+    "### When Implementing Features",
     "",
-    "## Architecture Bridge",
+    "Activate the **implementer** role: `arcbridge_activate_role({ role: \"implementer\" })`",
     "",
-    "- `arcbridge_check_drift` — Detect undocumented modules, missing code, and cross-block violations",
-    "- `arcbridge_get_guidance` — Get context-aware guidance when making changes",
-    "- `arcbridge_get_open_questions` — Surface architectural gaps and untested scenarios",
-    "- `arcbridge_propose_arc42_update` — Generate specific arc42 update proposals from code changes",
-    "- `arcbridge_get_practice_review` — Review recent changes across 5 dimensions",
+    "Then use:",
+    "- `arcbridge_get_guidance` — get context-aware guidance for the file/block you're working on",
+    "- `arcbridge_get_current_tasks` — check what tasks are expected in the current phase",
+    "- `arcbridge_search_symbols` / `arcbridge_get_symbol` — understand existing code",
+    "- `arcbridge_get_dependency_graph` — check module dependencies before adding new ones",
+    "- `arcbridge_update_task` — mark tasks as in-progress or done as you complete them",
+    "- `arcbridge_reindex` — re-index after significant code changes",
     "",
-    "## Agent Roles",
+    "### After Implementing (Review)",
     "",
-    "Available agent roles are defined in `.arcbridge/agents/` and `.claude/agents/`.",
+    "Before completing a phase, run reviews:",
+    "",
+    "1. **Drift check:** `arcbridge_check_drift` — catch undeclared dependencies and missing modules",
+    "2. **Security review:** `arcbridge_activate_role({ role: \"security-reviewer\" })` then `arcbridge_run_role_check`",
+    "3. **Quality review:** `arcbridge_activate_role({ role: \"quality-guardian\" })` then `arcbridge_get_practice_review`",
+    "4. **Verify scenarios:** `arcbridge_verify_scenarios` — run linked tests for quality scenarios",
+    "",
+    "### Completing a Phase",
+    "",
+    "Activate the **phase-manager** role: `arcbridge_activate_role({ role: \"phase-manager\" })`",
+    "",
+    "Then: `arcbridge_complete_phase` — validates three gates: all tasks done, no critical drift, must-have quality scenarios not failing.",
     "",
   ];
+
+  // Add React/Next.js section only for relevant project types
+  if (config.project_type === "nextjs-app-router" || config.project_type === "react-vite") {
+    lines.push(
+      "## React & Next.js Analysis",
+      "",
+      "- `arcbridge_get_component_graph` — view component hierarchy, props, state, and context usage",
+      "- `arcbridge_get_route_map` — view Next.js route tree (pages, layouts, API routes)",
+      "- `arcbridge_get_boundary_analysis` — analyze server/client boundaries and detect violations",
+      "",
+    );
+  }
+
+  lines.push(
+    "## Agent Roles",
+    "",
+    "Activate roles with `arcbridge_activate_role` to get specialized context and tool guidance:",
+    "",
+    "| Role | When to Use |",
+    "|------|-------------|",
+    "| `architect` | Defining building blocks, reviewing dependencies, creating ADRs |",
+    "| `implementer` | Writing code within the established architecture |",
+    "| `security-reviewer` | Auditing auth, input validation, client/server boundaries |",
+    "| `quality-guardian` | Reviewing test coverage, quality scenarios, quality gates |",
+    "| `phase-manager` | Completing phases, managing task transitions |",
+    "| `code-reviewer` | Reviewing code for correctness, patterns, edge cases |",
+    "| `onboarding` | Understanding the project (for new developers) |",
+    "",
+    "Roles are defined in `.arcbridge/agents/` and `.claude/agents/`.",
+    "",
+  );
 
   return lines.join("\n");
 }
@@ -96,6 +138,37 @@ export class ClaudeAdapter implements PlatformAdapter {
   generateProjectConfig(targetDir: string, config: ArcBridgeConfig): void {
     const content = generateClaudeMd(config);
     writeFileSync(join(targetDir, "CLAUDE.md"), content, "utf-8");
+
+    // Generate .mcp.json if it doesn't already exist
+    const mcpJsonPath = join(targetDir, ".mcp.json");
+    if (!existsSync(mcpJsonPath)) {
+      const mcpConfig = {
+        mcpServers: {
+          arcbridge: {
+            command: "npx",
+            args: ["@arcbridge/mcp-server"],
+          },
+        },
+      };
+      writeFileSync(mcpJsonPath, JSON.stringify(mcpConfig, null, 2) + "\n", "utf-8");
+    } else {
+      // If .mcp.json exists, add arcbridge server if not already present
+      try {
+        const existing = JSON.parse(readFileSync(mcpJsonPath, "utf-8")) as {
+          mcpServers?: Record<string, unknown>;
+        };
+        if (!existing.mcpServers?.arcbridge) {
+          existing.mcpServers = existing.mcpServers ?? {};
+          existing.mcpServers.arcbridge = {
+            command: "npx",
+            args: ["@arcbridge/mcp-server"],
+          };
+          writeFileSync(mcpJsonPath, JSON.stringify(existing, null, 2) + "\n", "utf-8");
+        }
+      } catch {
+        // If we can't parse existing .mcp.json, leave it alone
+      }
+    }
   }
 
   generateAgentConfigs(targetDir: string, roles: AgentRole[]): void {
