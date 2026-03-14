@@ -9,7 +9,7 @@ import {
   getChangedFiles,
   type ChangedFile,
   type DriftEntry,
-} from "@archlens/core";
+} from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath } from "../helpers.js";
 
@@ -54,7 +54,7 @@ export function registerRunRoleCheck(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_run_role_check",
+    "arcbridge_run_role_check",
     "Run a role-specific architectural analysis: resolves the role and executes relevant checks (drift, quality scenarios, boundaries, changed files) based on the role's focus areas.",
     {
       target_dir: z

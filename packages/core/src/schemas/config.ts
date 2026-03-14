@@ -7,7 +7,7 @@ export const ServiceSchema = z.object({
   tsconfig: z.string().default("tsconfig.json"),
 });
 
-export const ArchLensConfigSchema = z.object({
+export const ArcBridgeConfigSchema = z.object({
   schema_version: z.literal(1).default(1),
   project_name: z.string().min(1),
   project_type: z
@@ -87,5 +87,5 @@ export const ArchLensConfigSchema = z.object({
     .default({}),
 });
 
-export type ArchLensConfig = z.infer<typeof ArchLensConfigSchema>;
+export type ArcBridgeConfig = z.infer<typeof ArcBridgeConfigSchema>;
 export type Service = z.infer<typeof ServiceSchema>;

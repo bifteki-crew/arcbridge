@@ -22,7 +22,7 @@ export function registerSearchSymbols(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_search_symbols",
+    "arcbridge_search_symbols",
     "Search TypeScript symbols by name, kind, file path, or building block. Returns matching symbols with type signatures.",
     {
       target_dir: z

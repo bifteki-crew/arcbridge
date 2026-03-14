@@ -18,7 +18,7 @@ export function registerGetDependencyGraph(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_dependency_graph",
+    "arcbridge_get_dependency_graph",
     "Get the dependency graph for a module or file. Shows imports, calls, type usage, and inheritance relationships between symbols.",
     {
       target_dir: z
@@ -129,7 +129,7 @@ export function registerGetDependencyGraph(
 
       if (edges.length === 0) {
         return textResult(
-          `No dependency edges found for module \`${params.module}\`.\n\nThis may mean dependencies haven't been indexed yet (Phase 1b). Run \`archlens_reindex\` to update.`,
+          `No dependency edges found for module \`${params.module}\`.\n\nThis may mean dependencies haven't been indexed yet (Phase 1b). Run \`arcbridge_reindex\` to update.`,
         );
       }
 
@@ -162,7 +162,7 @@ function getFileImportGraph(
 
   if (symbols.length === 0) {
     return textResult(
-      `No symbols found in module \`${modulePath}\`. Run \`archlens_reindex\` first.`,
+      `No symbols found in module \`${modulePath}\`. Run \`arcbridge_reindex\` first.`,
     );
   }
 
@@ -177,7 +177,7 @@ function getFileImportGraph(
     `# Module: ${modulePath}`,
     "",
     `> Dependency edges not yet indexed. Showing file-level symbol map.`,
-    `> Run \`archlens_reindex\` after Phase 1b to see full dependency graph.`,
+    `> Run \`arcbridge_reindex\` after Phase 1b to see full dependency graph.`,
     "",
   ];
 

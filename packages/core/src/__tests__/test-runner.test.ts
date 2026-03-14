@@ -13,7 +13,7 @@ let tempDir: string;
 beforeEach(() => {
   db = openMemoryDatabase();
   initializeSchema(db);
-  tempDir = mkdtempSync(join(tmpdir(), "archlens-test-runner-"));
+  tempDir = mkdtempSync(join(tmpdir(), "arcbridge-test-runner-"));
 });
 
 afterEach(() => {

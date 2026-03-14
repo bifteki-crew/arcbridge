@@ -8,8 +8,8 @@ import { loadRoles, loadRole } from "../roles/loader.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = join(tmpdir(), `archlens-role-test-${Date.now()}`);
-  mkdirSync(join(tmpDir, ".archlens", "agents"), { recursive: true });
+  tmpDir = join(tmpdir(), `arcbridge-role-test-${Date.now()}`);
+  mkdirSync(join(tmpDir, ".arcbridge", "agents"), { recursive: true });
 });
 
 afterEach(() => {
@@ -22,7 +22,7 @@ function writeRoleFile(roleId: string, overrides: Record<string, unknown> = {}, 
     name: roleId.charAt(0).toUpperCase() + roleId.slice(1),
     description: `The ${roleId} role`,
     version: 1,
-    required_tools: ["archlens_get_building_blocks"],
+    required_tools: ["arcbridge_get_building_blocks"],
     denied_tools: [],
     read_only: false,
     quality_focus: ["maintainability"],
@@ -35,11 +35,11 @@ function writeRoleFile(roleId: string, overrides: Record<string, unknown> = {}, 
     ...overrides,
   };
   const content = matter.stringify(body, frontmatter);
-  writeFileSync(join(tmpDir, ".archlens", "agents", `${roleId}.md`), content, "utf-8");
+  writeFileSync(join(tmpDir, ".arcbridge", "agents", `${roleId}.md`), content, "utf-8");
 }
 
 describe("loadRoles", () => {
-  it("loads all valid role files from .archlens/agents/", () => {
+  it("loads all valid role files from .arcbridge/agents/", () => {
     writeRoleFile("architect");
     writeRoleFile("implementer");
 
@@ -53,7 +53,7 @@ describe("loadRoles", () => {
     writeRoleFile("valid-role");
     // Write an invalid file — missing required fields
     writeFileSync(
-      join(tmpDir, ".archlens", "agents", "bad-role.md"),
+      join(tmpDir, ".arcbridge", "agents", "bad-role.md"),
       "---\nrole_id: bad-role\n---\nNo other fields",
       "utf-8",
     );
@@ -67,7 +67,7 @@ describe("loadRoles", () => {
   });
 
   it("returns empty results when agents directory is missing", () => {
-    rmSync(join(tmpDir, ".archlens"), { recursive: true, force: true });
+    rmSync(join(tmpDir, ".arcbridge"), { recursive: true, force: true });
 
     const result = loadRoles(tmpDir);
     expect(result.roles).toHaveLength(0);
@@ -78,7 +78,7 @@ describe("loadRoles", () => {
   it("ignores non-.md files", () => {
     writeRoleFile("architect");
     writeFileSync(
-      join(tmpDir, ".archlens", "agents", "notes.txt"),
+      join(tmpDir, ".arcbridge", "agents", "notes.txt"),
       "not a role file",
       "utf-8",
     );
@@ -117,7 +117,7 @@ describe("loadRoles", () => {
       description: "A minimal role",
     });
     writeFileSync(
-      join(tmpDir, ".archlens", "agents", "minimal.md"),
+      join(tmpDir, ".arcbridge", "agents", "minimal.md"),
       content,
       "utf-8",
     );
@@ -155,7 +155,7 @@ describe("loadRole", () => {
 
   it("returns validation error for invalid file", () => {
     writeFileSync(
-      join(tmpDir, ".archlens", "agents", "bad.md"),
+      join(tmpDir, ".arcbridge", "agents", "bad.md"),
       "---\nrole_id: bad\n---\n",
       "utf-8",
     );

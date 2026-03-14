@@ -30,7 +30,7 @@ describe("resolveRef", () => {
 
   it("resolves 'last-sync' to stored commit when available", () => {
     db.prepare(
-      "INSERT INTO archlens_meta (key, value) VALUES ('last_sync_commit', 'abc1234567890')",
+      "INSERT INTO arcbridge_meta (key, value) VALUES ('last_sync_commit', 'abc1234567890')",
     ).run();
 
     const ref = resolveRef("/tmp", "last-sync", db);
@@ -46,7 +46,7 @@ describe("resolveRef", () => {
 
   it("resolves 'last-phase' to stored commit when available", () => {
     db.prepare(
-      "INSERT INTO archlens_meta (key, value) VALUES ('phase_sync_commit', 'def7890123456')",
+      "INSERT INTO arcbridge_meta (key, value) VALUES ('phase_sync_commit', 'def7890123456')",
     ).run();
 
     const ref = resolveRef("/tmp", "last-phase", db);
@@ -66,11 +66,11 @@ describe("resolveRef", () => {
 });
 
 describe("setSyncCommit", () => {
-  it("stores sync commit in archlens_meta", () => {
+  it("stores sync commit in arcbridge_meta", () => {
     setSyncCommit(db, "last_sync_commit", "abc123");
 
     const row = db
-      .prepare("SELECT value FROM archlens_meta WHERE key = 'last_sync_commit'")
+      .prepare("SELECT value FROM arcbridge_meta WHERE key = 'last_sync_commit'")
       .get() as { value: string };
 
     expect(row.value).toBe("abc123");
@@ -81,7 +81,7 @@ describe("setSyncCommit", () => {
     setSyncCommit(db, "last_sync_commit", "def456");
 
     const row = db
-      .prepare("SELECT value FROM archlens_meta WHERE key = 'last_sync_commit'")
+      .prepare("SELECT value FROM arcbridge_meta WHERE key = 'last_sync_commit'")
       .get() as { value: string };
 
     expect(row.value).toBe("def456");

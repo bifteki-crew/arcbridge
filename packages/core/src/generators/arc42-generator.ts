@@ -25,7 +25,7 @@ export function generateArc42(
   targetDir: string,
   input: InitProjectInput,
 ): void {
-  const arc42Dir = join(targetDir, ".archlens", "arc42");
+  const arc42Dir = join(targetDir, ".arcbridge", "arc42");
   const decisionsDir = join(arc42Dir, "09-decisions");
 
   mkdirSync(arc42Dir, { recursive: true });

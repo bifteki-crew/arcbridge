@@ -1,4 +1,4 @@
-import type { ArchLensConfig } from "../../schemas/config.js";
+import type { ArcBridgeConfig } from "../../schemas/config.js";
 
 export interface GeneratedFile {
   relativePath: string;
@@ -6,9 +6,9 @@ export interface GeneratedFile {
 }
 
 /**
- * Generate the Claude Code skill file for the ArchLens sync loop.
+ * Generate the Claude Code skill file for the ArcBridge sync loop.
  */
-export function claudeSkillTemplate(config: ArchLensConfig): GeneratedFile {
+export function claudeSkillTemplate(config: ArcBridgeConfig): GeneratedFile {
   const triggerNote =
     config.sync.propose_updates_on === "session-end"
       ? "This skill auto-runs at session end. You can also invoke it manually."
@@ -17,20 +17,20 @@ export function claudeSkillTemplate(config: ArchLensConfig): GeneratedFile {
         : "This skill runs only when invoked manually.";
 
   const content = `---
-description: "Run the ArchLens architecture sync loop — detect drift, infer task status, and propose arc42 updates"
+description: "Run the ArcBridge architecture sync loop — detect drift, infer task status, and propose arc42 updates"
 ---
 
-# ArchLens Sync
+# ArcBridge Sync
 
 ${triggerNote}
 
 ## Steps
 
-1. First, call \`archlens_check_drift\` to detect any architecture drift
-2. Call \`archlens_get_current_tasks\` to see the current phase progress
-3. Call \`archlens_propose_arc42_update\` with \`changes_since: "last-sync"\` to generate update proposals
+1. First, call \`arcbridge_check_drift\` to detect any architecture drift
+2. Call \`arcbridge_get_current_tasks\` to see the current phase progress
+3. Call \`arcbridge_propose_arc42_update\` with \`changes_since: "last-sync"\` to generate update proposals
 4. Present the proposals to the developer for review
-5. If the developer approves, update the relevant arc42 files and run \`archlens_reindex\`
+5. If the developer approves, update the relevant arc42 files and run \`arcbridge_reindex\`
 
 ## When to Run
 
@@ -42,12 +42,12 @@ ${triggerNote}
 ## Quick Check
 
 If you just want a quick status without full proposals:
-1. Call \`archlens_get_project_status\` for an overview
-2. Call \`archlens_get_open_questions\` to see gaps
+1. Call \`arcbridge_get_project_status\` for an overview
+2. Call \`arcbridge_get_open_questions\` to see gaps
 `;
 
   return {
-    relativePath: ".claude/skills/archlens-sync.md",
+    relativePath: ".claude/skills/arcbridge-sync.md",
     content,
   };
 }

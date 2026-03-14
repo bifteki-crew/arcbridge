@@ -1,18 +1,18 @@
-# ArchLens — AI-Native Project Lifecycle Tool for TypeScript/React/Next.js/Dotnet
+# ArcBridge — AI-Native Project Lifecycle Tool for TypeScript/React/Next.js/Dotnet
 
 ## Working Title & Concept
 
-**ArchLens** (working name) is an MCP server and project starter that bridges architectural thinking (arc42), structured planning (inspired by spec-kit), and code-level intelligence (via the TypeScript compiler API) into a single system. It gives AI coding agents architectural awareness, quality-driven constraints, and phase-aware context — so they build code that fits the system, not just code that compiles.
+**ArcBridge** (working name) is an MCP server and project starter that bridges architectural thinking (arc42), structured planning (inspired by spec-kit), and code-level intelligence (via the TypeScript compiler API) into a single system. It gives AI coding agents architectural awareness, quality-driven constraints, and phase-aware context — so they build code that fits the system, not just code that compiles.
 
 **Target audience:** Solo developers and small teams (2–5 people) starting new TypeScript/React/Next.js projects who want production-grade structure without enterprise overhead.
 
-**Core thesis:** The biggest waste in AI-assisted development isn't token cost — it's the agent lacking *intent* and the developer lacking *visibility*. The agent doesn't know why the code is structured this way, what quality attributes matter, or what phase the project is in. The developer doesn't see the architectural implications of daily coding decisions until they've accumulated into technical debt. ArchLens fixes both by making planning, architecture, and code queryable through a single interface — and by surfacing the right questions at the right time, turning every project into a learning experience about what production-grade software actually requires.
+**Core thesis:** The biggest waste in AI-assisted development isn't token cost — it's the agent lacking *intent* and the developer lacking *visibility*. The agent doesn't know why the code is structured this way, what quality attributes matter, or what phase the project is in. The developer doesn't see the architectural implications of daily coding decisions until they've accumulated into technical debt. ArcBridge fixes both by making planning, architecture, and code queryable through a single interface — and by surfacing the right questions at the right time, turning every project into a learning experience about what production-grade software actually requires.
 
 ---
 
-## The ArchLens Convention: An Agentic Coding Pattern
+## The ArcBridge Convention: An Agentic Coding Pattern
 
-ArchLens is a tool, but more importantly it defines a **convention** — a repeatable pattern for how AI agents and human developers collaborate across the full lifecycle of a project. The tool is the reference implementation; the convention is what matters long-term.
+ArcBridge is a tool, but more importantly it defines a **convention** — a repeatable pattern for how AI agents and human developers collaborate across the full lifecycle of a project. The tool is the reference implementation; the convention is what matters long-term.
 
 ### The Problem With Current Agentic Coding
 
@@ -26,7 +26,7 @@ The root cause is that documentation maintenance has negative short-term ROI. It
 
 ### The Convention: Plan → Build → Sync → Repeat
 
-The ArchLens convention defines a loop, not a pipeline:
+The ArcBridge convention defines a loop, not a pipeline:
 
 ```
     ┌──────────────────────────────────────────┐
@@ -59,7 +59,7 @@ The ArchLens convention defines a loop, not a pipeline:
 
 Large teams have architects, tech leads, and documentation champions. Solo devs and small teams have none of these — which is exactly why their architecture docs rot fastest and their agents have the least context.
 
-The ArchLens convention inverts this: the *agent* is the documentation champion. The developer never opens an arc42 file to write prose from scratch. Instead:
+The ArcBridge convention inverts this: the *agent* is the documentation champion. The developer never opens an arc42 file to write prose from scratch. Instead:
 
 - The **starter** generates the initial arc42 from project setup decisions
 - The **Architect agent** updates it when structural decisions are made
@@ -70,18 +70,18 @@ The developer's only documentation task is reviewing proposed changes — which 
 
 ### The Convention Is Tool-Agnostic (The Implementation Is Not)
 
-While ArchLens provides a reference implementation as an MCP server, the convention itself could be implemented with different tooling:
+While ArcBridge provides a reference implementation as an MCP server, the convention itself could be implemented with different tooling:
 
 - The arc42 subset could be stored as markdown, YAML, or in a database
 - The agent roles could be system prompts for Claude Code, Cursor rules, or Copilot instructions
 - The sync loop could be a git hook, a CI step, or an MCP tool call
 - The code intelligence could come from the TS compiler, tree-sitter, or an LSP
 
-What matters is the *pattern*: that planning, architecture, and code stay linked; that agents have role-specific context and constraints; and that every coding session feeds back into the knowledge base. The convention should eventually be adoptable even by teams that don't use the ArchLens tool — they just implement the loop with their own tooling.
+What matters is the *pattern*: that planning, architecture, and code stay linked; that agents have role-specific context and constraints; and that every coding session feeds back into the knowledge base. The convention should eventually be adoptable even by teams that don't use the ArcBridge tool — they just implement the loop with their own tooling.
 
-### The Bigger Picture: ArchLens as a Development Practice Teacher
+### The Bigger Picture: ArcBridge as a Development Practice Teacher
 
-There's a dimension beyond productivity: **ArchLens helps developers understand what production-grade software actually requires.** Most learning resources teach you to write features. Very few teach you to think about the system around those features — the security posture, the performance budgets, the deployment boundaries, the testing strategy, the architectural constraints that prevent spaghetti at scale.
+There's a dimension beyond productivity: **ArcBridge helps developers understand what production-grade software actually requires.** Most learning resources teach you to write features. Very few teach you to think about the system around those features — the security posture, the performance budgets, the deployment boundaries, the testing strategy, the architectural constraints that prevent spaghetti at scale.
 
 Today, a solo dev starting a new Next.js project typically does this:
 1. `npx create-next-app`
@@ -93,7 +93,7 @@ Today, a solo dev starting a new Next.js project typically does this:
 
 Each of these discoveries is a painful, expensive lesson. The developer learns, eventually, but through failure rather than guidance.
 
-ArchLens inverts this by **surfacing the right questions at the right time**, before they become problems:
+ArcBridge inverts this by **surfacing the right questions at the right time**, before they become problems:
 
 **At project initialization:**
 - "What's your authentication strategy? Here are the common patterns for Next.js with their trade-offs." → Generates an ADR and building block before the first line of auth code
@@ -112,7 +112,7 @@ The goal is not to lecture or block the developer. It's to make the *informed ch
 
 ### Baked-In Practices: Testing, Code Review, and Beyond
 
-Rather than treating testing and code review as separate concerns that developers "should" adopt, ArchLens integrates them structurally:
+Rather than treating testing and code review as separate concerns that developers "should" adopt, ArcBridge integrates them structurally:
 
 **Testing as an architecture artifact:**
 Quality scenarios in arc42 section 10 aren't just documentation — they map directly to test files. When the starter generates a quality scenario like SEC-01 (auth on all API routes), it also generates the test scaffold in `tests/security/auth-middleware.test.ts`. The test is part of the architecture, not an afterthought. The Quality Guardian agent verifies that every quality scenario has a corresponding test, and flags gaps during sync.
@@ -134,7 +134,7 @@ tests/
 ```
 
 **Code review as agent behavior:**
-Instead of relying on pull request reviews that may or may not happen on a solo project, ArchLens builds review into the agent loop itself. After implementation, the relevant agent role (Security Reviewer, Quality Guardian) runs automated checks that function like a structured code review:
+Instead of relying on pull request reviews that may or may not happen on a solo project, ArcBridge builds review into the agent loop itself. After implementation, the relevant agent role (Security Reviewer, Quality Guardian) runs automated checks that function like a structured code review:
 - Does this change respect building block boundaries?
 - Are all new API routes covered by auth middleware?
 - Do new components follow accessibility patterns from the existing codebase?
@@ -162,7 +162,7 @@ Spec-kit introduced a clean specify → plan → tasks workflow where specs beco
 - The constitution concept (project principles that constrain agent behavior)
 - Task breakdown with acceptance criteria
 
-Where we diverge: spec-kit is framework-agnostic and treats architecture as implicit. ArchLens makes architecture *explicit* via arc42 and *queryable* via the code index. Spec-kit also doesn't maintain a feedback loop — once you've coded, the spec doesn't update itself. We add the sync loop.
+Where we diverge: spec-kit is framework-agnostic and treats architecture as implicit. ArcBridge makes architecture *explicit* via arc42 and *queryable* via the code index. Spec-kit also doesn't maintain a feedback loop — once you've coded, the spec doesn't update itself. We add the sync loop.
 
 ### From jCodeMunch
 jCodeMunch proved that symbol-level retrieval via MCP dramatically reduces token waste. We borrow:
@@ -196,7 +196,7 @@ Sections 2 (Constraints), 4 (Solution Strategy), 8 (Cross-cutting), and 12 (Glos
 
 ## Agent Role Templates
 
-A key differentiator: ArchLens ships with predefined agent role templates that specialize AI behavior for different tasks. Each role has access to different subsets of the architecture and applies different quality constraints.
+A key differentiator: ArcBridge ships with predefined agent role templates that specialize AI behavior for different tasks. Each role has access to different subsets of the architecture and applies different quality constraints.
 
 ### Role: Architect Agent
 **Purpose:** Initial design, building block decomposition, ADR creation.
@@ -312,7 +312,7 @@ accessibility). Focus on what a senior developer would catch in a pull request.
 
 ```
 ┌─────────────────────────────────────────────────┐
-│              MCP Server (ArchLens)               │
+│              MCP Server (ArcBridge)               │
 ├─────────────────────────────────────────────────┤
 │                                                 │
 │  Layer 3: Next.js Convention Analysis            │
@@ -411,7 +411,7 @@ This layer is primarily filesystem-based with some AST checks:
 
 ## Scaling to Multi-Service Architectures
 
-The core ArchLens convention — Plan → Build → Sync → Review with arc42 and agent roles — is architecture-agnostic. But the tooling needs deliberate extension to handle solutions with backend services, microservices, or any multi-project TypeScript setup. This section describes how.
+The core ArcBridge convention — Plan → Build → Sync → Review with arc42 and agent roles — is architecture-agnostic. But the tooling needs deliberate extension to handle solutions with backend services, microservices, or any multi-project TypeScript setup. This section describes how.
 
 ### Where Arc42 Becomes Even More Valuable
 
@@ -454,19 +454,19 @@ Within a single TypeScript project, the compiler resolves all imports. Across se
 
 ### Contracts as a Core Convention Principle
 
-In the ArchLens convention, contracts are not just a cross-language type-tracing mechanism. They are a **foundational engineering practice** — one of the things ArchLens promotes early because a single contract artifact solves multiple problems simultaneously that developers would otherwise encounter separately, painfully, and late:
+In the ArcBridge convention, contracts are not just a cross-language type-tracing mechanism. They are a **foundational engineering practice** — one of the things ArcBridge promotes early because a single contract artifact solves multiple problems simultaneously that developers would otherwise encounter separately, painfully, and late:
 
 **Problem 1: Cross-service type safety.**
-The contract is what lets the ArchLens indexer trace dependencies across service boundaries (and across languages, for TS + .NET solutions). Without it, the agent has no visibility into what happens when the frontend calls the backend.
+The contract is what lets the ArcBridge indexer trace dependencies across service boundaries (and across languages, for TS + .NET solutions). Without it, the agent has no visibility into what happens when the frontend calls the backend.
 
 **Problem 2: Contract testing.**
-The same schema that ArchLens uses for indexing becomes the source of truth for consumer-driven contract tests. If the order-service says it produces an `OrderResponse` matching the OpenAPI spec, and the web-app says it consumes an `OrderResponse` matching that spec, you can verify both sides independently — without spinning up the entire system for every change. This is one of the most impactful testing strategies for service-based architectures, and most solo devs don't discover it until they've already been bitten by a silent contract break in production.
+The same schema that ArcBridge uses for indexing becomes the source of truth for consumer-driven contract tests. If the order-service says it produces an `OrderResponse` matching the OpenAPI spec, and the web-app says it consumes an `OrderResponse` matching that spec, you can verify both sides independently — without spinning up the entire system for every change. This is one of the most impactful testing strategies for service-based architectures, and most solo devs don't discover it until they've already been bitten by a silent contract break in production.
 
 **Problem 3: Internal service compatibility.**
 When a developer changes a service, the Contract Guardian doesn't just check "does the code compile." It checks "does the output still match the contract, and do all consumers still expect this shape." This catches the silent failures that integration tests miss because they only test the happy path with today's data shapes. A renamed field, a changed enum value, a nullable that used to be required — these are the bugs that surface at 2am, not during development.
 
 **Problem 4: External integration documentation.**
-When a third party, another team, or even the developer's future self needs to integrate with a service, the contract *is* the documentation. Not a wiki page that's six months stale, not a Postman collection someone exported once — the actual, versioned, tested schema that the running service is verified against. If the order-service has an OpenAPI spec that ArchLens keeps in sync, that spec is always accurate because the contract tests fail otherwise. This eliminates the entire category of "the docs say X but the service actually does Y."
+When a third party, another team, or even the developer's future self needs to integrate with a service, the contract *is* the documentation. Not a wiki page that's six months stale, not a Postman collection someone exported once — the actual, versioned, tested schema that the running service is verified against. If the order-service has an OpenAPI spec that ArcBridge keeps in sync, that spec is always accurate because the contract tests fail otherwise. This eliminates the entire category of "the docs say X but the service actually does Y."
 
 **Problem 5: Future-proofing against your own evolution.**
 Six months from now, when the developer wants to add a new consumer (mobile app, partner integration, CLI tool), the contract already exists, is tested, and is documented. They're not reverse-engineering the API from the implementation or reading through controller code to figure out what shape the responses are.
@@ -474,11 +474,11 @@ Six months from now, when the developer wants to add a new consumer (mobile app,
 **Problem 6: Enabling parallel development.**
 In a small team, if the contract is defined first (even before implementation), the frontend developer can build against it using mocks while the backend developer implements the real service. The contract becomes the handshake that makes parallel work possible without constant coordination.
 
-This is a perfect example of the ArchLens teaching philosophy: the tool encourages contracts early — not as a lecture about best practices, but because the Contract Guardian agent, the cross-service indexing, and the contract tests all *need* them to function. The developer adopts the practice because the tooling makes it the path of least resistance, and then discovers that contracts also gave them tested documentation, integration safety, and a foundation for scaling.
+This is a perfect example of the ArcBridge teaching philosophy: the tool encourages contracts early — not as a lecture about best practices, but because the Contract Guardian agent, the cross-service indexing, and the contract tests all *need* them to function. The developer adopts the practice because the tooling makes it the path of least resistance, and then discovers that contracts also gave them tested documentation, integration safety, and a foundation for scaling.
 
 ### Contract Formats and Strength Levels
 
-ArchLens supports contracts at different strength levels. The convention recommends the strongest format that fits the project, and the starter templates scaffold the recommended approach automatically:
+ArcBridge supports contracts at different strength levels. The convention recommends the strongest format that fits the project, and the starter templates scaffold the recommended approach automatically:
 
 **Shared type packages (strongest — compile-time safety):**
 For pure TypeScript monorepos, a shared package (`packages/contracts/`) that defines API request/response types, event schemas, and shared entities. The TS compiler traces types across service boundaries through the package. Both producer and consumer reference the same type definition — a breaking change is a compile error.
@@ -500,10 +500,10 @@ packages/
 └── inventory-service/        # imports from @solution/contracts
 ```
 
-ArchLens indexes the contract package as a building block and traces which services import which contract types. The dependency graph spans services: "web-app depends on OrderResponse from contracts, order-service implements OrderResponse."
+ArcBridge indexes the contract package as a building block and traces which services import which contract types. The dependency graph spans services: "web-app depends on OrderResponse from contracts, order-service implements OrderResponse."
 
 **tRPC / Zodios / Hono RPC (strong — end-to-end type inference):**
-These frameworks provide end-to-end type safety between client and server through a shared router definition. The TS compiler follows the type relationship directly. ArchLens detects these patterns and maps them to cross-service dependencies automatically.
+These frameworks provide end-to-end type safety between client and server through a shared router definition. The TS compiler follows the type relationship directly. ArcBridge detects these patterns and maps them to cross-service dependencies automatically.
 
 **OpenAPI / GraphQL schemas (medium — schema-verified):**
 For REST services (especially cross-language like TS + .NET), the schema file is the contract artifact. It doesn't give compile-time type tracing, but it enables:
@@ -515,14 +515,14 @@ For REST services (especially cross-language like TS + .NET), the schema file is
 This is the recommended approach for TS + .NET solutions and the default for cross-language starter templates.
 
 **gRPC / Protocol Buffers (strong — language-neutral binary contract):**
-`.proto` files define the contract, code is generated for both languages. Strong typing, backward-compatible evolution rules built in, excellent for internal service-to-service communication. ArchLens parses `.proto` files as contract artifacts and traces generated code on both sides.
+`.proto` files define the contract, code is generated for both languages. Strong typing, backward-compatible evolution rules built in, excellent for internal service-to-service communication. ArcBridge parses `.proto` files as contract artifacts and traces generated code on both sides.
 
 **Event schemas — JSON Schema / Avro / CloudEvents (medium — async contract):**
-For message-based communication (Redis pub/sub, AWS SQS/SNS, Kafka, NATS), event type definitions serve as contracts. If defined as TypeScript types in the shared contract package, ArchLens traces producers and consumers directly. If defined as JSON Schema or Avro, ArchLens parses them as contract artifacts and verifies that producer output and consumer expectations match.
+For message-based communication (Redis pub/sub, AWS SQS/SNS, Kafka, NATS), event type definitions serve as contracts. If defined as TypeScript types in the shared contract package, ArcBridge traces producers and consumers directly. If defined as JSON Schema or Avro, ArcBridge parses them as contract artifacts and verifies that producer output and consumer expectations match.
 
 ### Contract Testing: From Convention to Enforcement
 
-ArchLens doesn't just recommend contracts — it scaffolds the test infrastructure to verify them. The starter templates include:
+ArcBridge doesn't just recommend contracts — it scaffolds the test infrastructure to verify them. The starter templates include:
 
 **Provider-side contract tests (does the service honor its contract?):**
 ```
@@ -563,7 +563,7 @@ tests/
 
 The Quality Guardian agent includes contract test results in phase gate checks: "Phase 2 cannot complete — provider contract test for order-service is failing, OrderResponse is missing the new `estimatedDelivery` field that was added to the shared types."
 
-### How Contracts Flow Through the ArchLens Convention
+### How Contracts Flow Through the ArcBridge Convention
 
 ```
     PLAN                          BUILD                         SYNC
@@ -586,7 +586,7 @@ The Quality Guardian agent includes contract test results in phase gate checks: 
 
 The key insight: the developer never thinks "I should write contract tests" or "I should keep my API docs updated" or "I should check if this change breaks other services." These things happen because the convention and the agents make them happen as a natural part of the workflow.
 
-**The convention recommendation:** ArchLens strongly encourages explicit contract definitions in every multi-service project because they give the strongest type tracing, enable contract testing, produce always-accurate documentation, and make cross-service dependencies visible to both the compiler and the architecture layer. The starter templates for multi-service projects scaffold the recommended contract approach (shared types for TS-only, OpenAPI for cross-language) by default, including test infrastructure.
+**The convention recommendation:** ArcBridge strongly encourages explicit contract definitions in every multi-service project because they give the strongest type tracing, enable contract testing, produce always-accurate documentation, and make cross-service dependencies visible to both the compiler and the architecture layer. The starter templates for multi-service projects scaffold the recommended contract approach (shared types for TS-only, OpenAPI for cross-language) by default, including test infrastructure.
 
 ### Monorepo Structure for Multi-Service Projects
 
@@ -594,7 +594,7 @@ The starter extends to multi-service solutions with a monorepo layout:
 
 ```
 my-solution/
-├── .archlens/
+├── .arcbridge/
 │   ├── config.yaml                  # Solution-level config
 │   ├── index.db                     # Unified SQLite index (all services)
 │   │
@@ -770,7 +770,7 @@ The key design decision: the SQLite index is **solution-level**, not per-service
 ### Project Lifecycle Tools
 
 ```
-# Initialize a new project with ArchLens scaffolding
+# Initialize a new project with ArcBridge scaffolding
 init_project: {
   "name": "my-app",
   "template": "nextjs-app-router",  // or "react-vite", "fullstack-monorepo",
@@ -975,7 +975,7 @@ get_practice_review: {
 
 ---
 
-## Project Phases (How We Build ArchLens Itself)
+## Project Phases (How We Build ArcBridge Itself)
 
 ### Phase 0: Foundation (Weeks 1–2)
 **Goal:** Project scaffolding, core data model, minimal viable MCP server.
@@ -985,8 +985,8 @@ get_practice_review: {
 - Arc42 template generator (markdown files with YAML frontmatter for machine readability)
 - Phase plan template generator
 - Basic MCP server skeleton with `init_project` and `get_project_status`
-- Canonical agent role definitions in `.archlens/agents/_shared/`
-- `archlens generate-agent-configs` command for Claude Code and Copilot
+- Canonical agent role definitions in `.arcbridge/agents/_shared/`
+- `arcbridge generate-agent-configs` command for Claude Code and Copilot
 - Generated project context files: `CLAUDE.md`, `.github/copilot-instructions.md`
 
 **Acceptance criteria:**
@@ -1063,7 +1063,7 @@ get_practice_review: {
 - MCP tools: `get_phase_plan`, `get_current_tasks`, `complete_phase`, `propose_arc42_update`
 - Agent role activation tool with pre-loaded context (adapted per platform via client detection)
 - GitHub Action workflow for async sync loop via Copilot coding agent
-- Claude Code skill (`archlens-sync.md`) for interactive sync triggers
+- Claude Code skill (`arcbridge-sync.md`) for interactive sync triggers
 - Copilot hook (`session-end.json`) for automatic sync on session close
 
 **Acceptance criteria:**
@@ -1078,7 +1078,7 @@ get_practice_review: {
 **Goal:** The end-to-end starter project experience.
 
 **Deliverables:**
-- `npx create-archlens` CLI that scaffolds a project with everything pre-configured
+- `npx create-arcbridge` CLI that scaffolds a project with everything pre-configured
 - Interactive setup wizard: project name, features, quality priorities, team size, **agent platforms** (Claude Code, Copilot, Gemini, Codex — defaults to Claude Code + Copilot)
 - Pre-built quality scenario library (common security, performance, accessibility scenarios)
 - Documentation and walkthrough
@@ -1086,7 +1086,7 @@ get_practice_review: {
 - GitHub Action workflow template for Copilot coding agent sync loop
 
 **Acceptance criteria:**
-- A developer can go from `npx create-archlens` to having an indexed, arc42-documented, phase-planned project in under 5 minutes
+- A developer can go from `npx create-arcbridge` to having an indexed, arc42-documented, phase-planned project in under 5 minutes
 - The example project demonstrates a complete phase cycle: plan → implement → sync
 - All seven agent roles work out of the box with Claude Code and Copilot
 - Generated configs are correct for all selected platforms
@@ -1096,13 +1096,13 @@ get_practice_review: {
 
 ### Future Phases: Expanding the Practice
 
-These phases extend ArchLens from a planning/architecture tool into a comprehensive development practice platform. They're listed here to show the trajectory and ensure earlier phases don't preclude them architecturally.
+These phases extend ArcBridge from a planning/architecture tool into a comprehensive development practice platform. They're listed here to show the trajectory and ensure earlier phases don't preclude them architecturally.
 
 ### Phase 6: Code Metrics & Health Dashboard
 **Goal:** Quantitative visibility into codebase health, tied to quality scenarios.
 
 **Concept:**
-Developers often don't know their codebase is degrading until it's painful. ArchLens can surface metrics early and tie them to architectural meaning — not just "your complexity score went up" but "the checkout-flow building block's complexity increased by 40% this phase, which threatens quality scenario MAINT-01."
+Developers often don't know their codebase is degrading until it's painful. ArcBridge can surface metrics early and tie them to architectural meaning — not just "your complexity score went up" but "the checkout-flow building block's complexity increased by 40% this phase, which threatens quality scenario MAINT-01."
 
 **Capabilities:**
 - **Complexity tracking per building block:** Cyclomatic complexity, cognitive complexity, file/function size — tracked over time and mapped to building blocks, not just files
@@ -1118,7 +1118,7 @@ The Phase Manager agent incorporates these metrics into phase gate checks: "Phas
 **Goal:** Shift-left security and quality checks, integrated into the agent workflow.
 
 **Concept:**
-Most solo devs don't run security scanners because setting them up is annoying and the output is noisy. ArchLens integrates scanning into the agent loop with architectural context — the Security Reviewer agent doesn't just report "possible XSS in file X line Y" but "possible XSS in the checkout-flow building block, which handles payment data and is subject to quality scenario SEC-03."
+Most solo devs don't run security scanners because setting them up is annoying and the output is noisy. ArcBridge integrates scanning into the agent loop with architectural context — the Security Reviewer agent doesn't just report "possible XSS in file X line Y" but "possible XSS in the checkout-flow building block, which handles payment data and is subject to quality scenario SEC-03."
 
 **Capabilities:**
 - **Dependency vulnerability scanning:** Check `package.json` against known CVE databases, prioritized by which building blocks are affected and which quality scenarios are at risk
@@ -1134,7 +1134,7 @@ The key differentiator from standalone scanners is *context*: findings are linke
 **Goal:** Make the architecture, dependencies, and project status visible and navigable.
 
 **Concept:**
-Architecture diagrams are one of the most useful artifacts for understanding a system, but drawing and maintaining them is tedious. ArchLens already has all the data — building blocks, dependencies, component trees, route maps, quality scenario coverage. Rendering that data as interactive visuals is a natural extension.
+Architecture diagrams are one of the most useful artifacts for understanding a system, but drawing and maintaining them is tedious. ArcBridge already has all the data — building blocks, dependencies, component trees, route maps, quality scenario coverage. Rendering that data as interactive visuals is a natural extension.
 
 **Capabilities:**
 - **Building block diagram:** Auto-generated from arc42 section 5 + code analysis. Shows modules, their dependencies, and health indicators (complexity, coverage, drift status). Clickable to drill into code.
@@ -1153,7 +1153,7 @@ Architecture diagrams are one of the most useful artifacts for understanding a s
 The auto-generation aspect is critical: these aren't diagrams someone draws and maintains. They're rendered from the live index data, so they're always current. The sync loop ensures the underlying data stays accurate, and the visuals reflect reality.
 
 ### Phase 9: Convention Documentation & Community
-**Goal:** Package the ArchLens convention as an independent, adoptable practice.
+**Goal:** Package the ArcBridge convention as an independent, adoptable practice.
 
 **Deliverables:**
 - Standalone convention guide (independent of the tool) describing the Plan → Build → Sync → Review loop, agent roles, arc42 subset, quality scenario patterns, and testing structure
@@ -1166,7 +1166,7 @@ The auto-generation aspect is critical: these aren't diagrams someone draws and 
 **Goal:** Extend code intelligence to .NET/C# services, enabling full-stack coverage for TypeScript frontend + .NET backend architectures.
 
 **Why this matters:**
-Next.js frontend + .NET backend is one of the most common enterprise patterns, and a very attractive setup for solo devs and small teams who want the .NET ecosystem's performance, type safety, and mature tooling on the backend. Today, no tool gives an agent cross-stack visibility across this combination. ArchLens with .NET support would be the first.
+Next.js frontend + .NET backend is one of the most common enterprise patterns, and a very attractive setup for solo devs and small teams who want the .NET ecosystem's performance, type safety, and mature tooling on the backend. Today, no tool gives an agent cross-stack visibility across this combination. ArcBridge with .NET support would be the first.
 
 **What's already done (zero extra effort):**
 Everything above Layer 1 is language-agnostic by design. Arc42, agent roles, quality scenarios, the planning system, the sync loop, the MCP tool API, and the SQLite schema all work for .NET services without modification. This is roughly 60–70% of the system.
@@ -1182,11 +1182,11 @@ Roslyn (`Microsoft.CodeAnalysis`) is the C#/.NET equivalent of the TypeScript co
 - Error tolerance → `Compilation` object works with incomplete/broken code, reports diagnostics separately
 - Workspace model → `MSBuildWorkspace.OpenSolutionAsync()` loads an entire `.sln` with all project references resolved
 
-**Implementation approach:** A separate .NET CLI tool (`archlens-dotnet-indexer`) that:
+**Implementation approach:** A separate .NET CLI tool (`arcbridge-dotnet-indexer`) that:
 1. Loads the `.sln` or `.csproj` via Roslyn's MSBuild workspace
 2. Walks the syntax trees and semantic model to extract symbols, types, dependencies
 3. Writes to the same SQLite database using the same schema (symbols tagged with `language: "csharp"` and `service: "order-service"`)
-4. Runs as a subprocess called by the main ArchLens MCP server
+4. Runs as a subprocess called by the main ArcBridge MCP server
 
 This keeps the MCP server in TypeScript/Node.js (where MCP tooling is strongest) while using Roslyn natively in .NET (where it actually works). The two processes communicate through the shared SQLite database — no complex IPC needed.
 
@@ -1210,7 +1210,7 @@ This keeps the MCP server in TypeScript/Node.js (where MCP tooling is strongest)
 
 For mixed TS + .NET solutions, the contract layer extends with:
 
-| Contract Approach | How It Works | ArchLens Support |
+| Contract Approach | How It Works | ArcBridge Support |
 |---|---|---|
 | OpenAPI (Swagger) | .NET generates spec, TS generates client types from it | Parse both sides, verify consistency at sync time |
 | Shared JSON Schema | Language-neutral schema generates both C# classes and TS types | Schema is the contract artifact in arc42 |
@@ -1280,7 +1280,7 @@ The agent roles stay the same, but their context and checks expand:
 | Testing and integration | 1–2 | Mixed TS + .NET solution indexing, cross-language queries, contract verification. |
 | **Total** | **~10–13** | Can start after Phase 1 (TS indexing) is stable. Runs in parallel with Phases 2–4. |
 
-**Feasibility verdict:** Very feasible. Roslyn is a more mature analysis platform than the TS compiler API, .NET patterns are more standardized than the JS ecosystem, and the ArchLens architecture already separates language-specific indexing from everything else. The DI container analysis is actually a *better* dependency graph than anything available in the TypeScript world. The main engineering cost is building the Roslyn indexer CLI — everything else is incremental extension of existing components.
+**Feasibility verdict:** Very feasible. Roslyn is a more mature analysis platform than the TS compiler API, .NET patterns are more standardized than the JS ecosystem, and the ArcBridge architecture already separates language-specific indexing from everything else. The DI container analysis is actually a *better* dependency graph than anything available in the TypeScript world. The main engineering cost is building the Roslyn indexer CLI — everything else is incremental extension of existing components.
 
 ---
 
@@ -1359,8 +1359,8 @@ Each scenario is machine-readable (stored as YAML), linked to specific code and 
 
 ```
 my-app/
-├── .archlens/
-│   ├── config.yaml                    # ArchLens configuration
+├── .arcbridge/
+│   ├── config.yaml                    # ArcBridge configuration
 │   ├── index.db                       # SQLite database (git-ignored)
 │   │
 │   ├── arc42/
@@ -1412,8 +1412,8 @@ my-app/
 │       ├── building-block-boundaries.test.ts
 │       └── ...
 │
-├── CLAUDE.md                          # For Claude Code (references .archlens/)
-├── .cursorrules                       # For Cursor (references .archlens/)
+├── CLAUDE.md                          # For Claude Code (references .arcbridge/)
+├── .cursorrules                       # For Cursor (references .arcbridge/)
 ├── tsconfig.json
 ├── next.config.ts
 └── package.json
@@ -1453,13 +1453,13 @@ last_synced: 2026-03-08T10:00:00Z
 [...more building blocks...]
 ```
 
-The YAML frontmatter lets ArchLens parse and query these documents programmatically, while the markdown body remains human-readable and editable.
+The YAML frontmatter lets ArcBridge parse and query these documents programmatically, while the markdown body remains human-readable and editable.
 
 ---
 
 ## Agent Platform Support Strategy
 
-The ArchLens MCP server — the core code intelligence and architecture tools — is agent-agnostic by design. The MCP tool API (`get_building_blocks`, `search_symbols`, `check_drift`, etc.) works with any MCP-compatible agent. However, the surrounding infrastructure — how agents discover context, how roles are configured, how the sync loop triggers — differs substantially across platforms. This section maps those differences and defines the adapter architecture.
+The ArcBridge MCP server — the core code intelligence and architecture tools — is agent-agnostic by design. The MCP tool API (`get_building_blocks`, `search_symbols`, `check_drift`, etc.) works with any MCP-compatible agent. However, the surrounding infrastructure — how agents discover context, how roles are configured, how the sync loop triggers — differs substantially across platforms. This section maps those differences and defines the adapter architecture.
 
 ### Platform Landscape (as of March 2026)
 
@@ -1487,9 +1487,9 @@ All major AI coding agents now support MCP, but they differ in how they handle p
 
 **GitHub Copilot** complements Claude Code with capabilities no other platform offers:
 
-1. **The coding agent gives us the sync loop as CI/CD.** The ArchLens sync check becomes a GitHub Action: assign an issue like "Run phase 3 sync" to Copilot, it executes in the cloud, checks drift, proposes arc42 updates, and opens a PR. The developer reviews and merges. That's the Plan → Build → Sync → Review loop running as automated infrastructure.
+1. **The coding agent gives us the sync loop as CI/CD.** The ArcBridge sync check becomes a GitHub Action: assign an issue like "Run phase 3 sync" to Copilot, it executes in the cloud, checks drift, proposes arc42 updates, and opens a PR. The developer reviews and merges. That's the Plan → Build → Sync → Review loop running as automated infrastructure.
 
-2. **Org-level agent sharing.** ArchLens roles defined as `.github/agents/*.agent.md` are available to every repo in the organization. The Security Reviewer, Quality Guardian, and Contract Guardian become organizational standards, not per-project configuration.
+2. **Org-level agent sharing.** ArcBridge roles defined as `.github/agents/*.agent.md` are available to every repo in the organization. The Security Reviewer, Quality Guardian, and Contract Guardian become organizational standards, not per-project configuration.
 
 3. **Multi-model selection per role.** The Architect role can use Opus (deep reasoning), the Implementer can use Sonnet (fast, good quality), quick quality checks can use Haiku. This model-per-role flexibility is built into the platform.
 
@@ -1501,18 +1501,18 @@ All major AI coding agents now support MCP, but they differ in how they handle p
 
 ### Gemini CLI / Antigravity and Codex CLI as Secondary Targets
 
-**Gemini CLI** supports MCP and has experimental subagent support. Antigravity (the IDE) has a richer model with Knowledge Items for persistent memory and Skills for progressive disclosure. The main gaps: subagents are less mature, the 500-tool-per-MCP-server limit (not an issue for ArchLens's ~25 tools but shows MCP integration is still early), and configuration paths are still being sorted out (Antigravity and Gemini CLI conflict on `~/.gemini/GEMINI.md`).
+**Gemini CLI** supports MCP and has experimental subagent support. Antigravity (the IDE) has a richer model with Knowledge Items for persistent memory and Skills for progressive disclosure. The main gaps: subagents are less mature, the 500-tool-per-MCP-server limit (not an issue for ArcBridge's ~25 tools but shows MCP integration is still early), and configuration paths are still being sorted out (Antigravity and Gemini CLI conflict on `~/.gemini/GEMINI.md`).
 
-**Codex CLI** has solid MCP support via `config.toml`, an expanding multi-agent TUI, and can run as an MCP server itself (useful for nested agent architectures). The sandbox model is more restrictive, which matters for ArchLens features that spawn subprocesses (like the .NET Roslyn indexer). Codex uses `AGENTS.md` for project instructions and has its own plugin/skill system that's converging with but not yet identical to Copilot's.
+**Codex CLI** has solid MCP support via `config.toml`, an expanding multi-agent TUI, and can run as an MCP server itself (useful for nested agent architectures). The sandbox model is more restrictive, which matters for ArcBridge features that spawn subprocesses (like the .NET Roslyn indexer). Codex uses `AGENTS.md` for project instructions and has its own plugin/skill system that's converging with but not yet identical to Copilot's.
 
 Both are supported through the MCP tools (which work everywhere) and generated configuration files. Full subagent/role support comes later as their agent infrastructure matures.
 
 ### The Adapter Architecture
 
-Rather than maintaining separate configurations per platform, ArchLens uses a canonical role format that generates platform-specific files:
+Rather than maintaining separate configurations per platform, ArcBridge uses a canonical role format that generates platform-specific files:
 
 ```
-.archlens/
+.arcbridge/
 ├── agents/
 │   └── _shared/                         # Canonical, agent-agnostic definitions
 │       ├── architect.md                 # Role: description, constraints, context,
@@ -1524,7 +1524,7 @@ Rather than maintaining separate configurations per platform, ArchLens uses a ca
 │       ├── onboarding.md
 │       └── code-reviewer.md            # Opt-in correctness review
 │
-│   # Generated by `archlens generate-agent-configs`:
+│   # Generated by `arcbridge generate-agent-configs`:
 │
 ├── .claude/                             # Claude Code adapter
 │   ├── agents/
@@ -1535,8 +1535,8 @@ Rather than maintaining separate configurations per platform, ArchLens uses a ca
 │   │   ├── contract-guardian.md
 │   │   └── phase-manager.md
 │   ├── skills/
-│   │   ├── archlens-sync.md             # Auto-triggers sync loop after sessions
-│   │   └── archlens-guidance.md         # Proactive architectural guidance
+│   │   ├── arcbridge-sync.md             # Auto-triggers sync loop after sessions
+│   │   └── arcbridge-guidance.md         # Proactive architectural guidance
 │   └── hooks/
 │       └── pre-commit-quality-check     # Runs quality gate before commits
 │
@@ -1549,7 +1549,7 @@ Rather than maintaining separate configurations per platform, ArchLens uses a ca
 │   │   ├── contract-guardian.agent.md
 │   │   └── phase-manager.agent.md
 │   ├── skills/
-│   │   └── archlens-sync/
+│   │   └── arcbridge-sync/
 │   │       └── SKILL.md                 # Open Agent Skills standard format
 │   ├── hooks/
 │   │   ├── pre-tool-use.json            # Quality enforcement hooks
@@ -1569,21 +1569,21 @@ Rather than maintaining separate configurations per platform, ArchLens uses a ca
 
 ```bash
 # Generate all platform configurations from canonical roles
-archlens generate-agent-configs
+arcbridge generate-agent-configs
 
 # Generate for specific platforms only
-archlens generate-agent-configs --platforms claude,copilot
+arcbridge generate-agent-configs --platforms claude,copilot
 
 # Regenerate after modifying a shared role definition
-archlens generate-agent-configs --role security-reviewer
+arcbridge generate-agent-configs --role security-reviewer
 ```
 
-This command reads from `.archlens/agents/_shared/`, applies platform-specific transformations (frontmatter format, file paths, tool naming conventions, model recommendations), and writes the output files. The generated files include a header comment:
+This command reads from `.arcbridge/agents/_shared/`, applies platform-specific transformations (frontmatter format, file paths, tool naming conventions, model recommendations), and writes the output files. The generated files include a header comment:
 
 ```markdown
-<!-- Generated by ArchLens from .archlens/agents/_shared/security-reviewer.md -->
+<!-- Generated by ArcBridge from .arcbridge/agents/_shared/security-reviewer.md -->
 <!-- Do not edit directly. Modify the shared definition and run: -->
-<!-- archlens generate-agent-configs -->
+<!-- arcbridge generate-agent-configs -->
 ```
 
 ### What the MCP Server Handles vs. What Stays Agent-Side
@@ -1607,18 +1607,18 @@ The key design principle: **put the brain in the MCP server, put the UX in the a
 - How to integrate with the developer's existing workflow (Issues, PRs, Slack)
 - Model selection per role (where supported)
 
-This means even platforms we haven't explicitly adapted for — Cursor, Windsurf, Augment, Cline — get full value from the MCP tools. They just won't have the automated role delegation and hooks until someone writes the adapter config. And since the MCP tools do the heavy lifting, a developer using Cursor with just the ArchLens MCP server (no agent configs) still gets architectural queries, drift detection, and quality scenario checks — they just invoke them manually instead of having them triggered automatically.
+This means even platforms we haven't explicitly adapted for — Cursor, Windsurf, Augment, Cline — get full value from the MCP tools. They just won't have the automated role delegation and hooks until someone writes the adapter config. And since the MCP tools do the heavy lifting, a developer using Cursor with just the ArcBridge MCP server (no agent configs) still gets architectural queries, drift detection, and quality scenario checks — they just invoke them manually instead of having them triggered automatically.
 
 ### Platform-Specific Optimizations
 
 **Claude Code optimizations:**
 - Leverage subagent context isolation aggressively — the Implementer working on checkout loads only that building block's context via `get_building_block("checkout-flow")`, keeping the window clean
 - Use subagent memory (`MEMORY.md`) so the Security Reviewer accumulates findings across sessions: "we decided to accept the risk of no rate limiting on the health endpoint"
-- Use skills for auto-invocation: the `archlens-guidance` skill triggers when the developer creates a new file or module, proactively surfacing relevant quality scenarios and architectural constraints
+- Use skills for auto-invocation: the `arcbridge-guidance` skill triggers when the developer creates a new file or module, proactively surfacing relevant quality scenarios and architectural constraints
 - Use hooks to trigger quality checks pre-commit and sync checks post-session
 
 **Copilot optimizations:**
-- Define roles as org-level custom agents so the ArchLens convention is organizational infrastructure, not per-project setup
+- Define roles as org-level custom agents so the ArcBridge convention is organizational infrastructure, not per-project setup
 - Use the coding agent for async sync loop execution — a scheduled GitHub Action runs the Phase Manager role weekly or on PR merge, proposing arc42 updates as PRs
 - Use fleet mode at phase boundaries to run Security Reviewer + Quality Guardian + Contract Guardian in parallel
 - Leverage multi-model selection: Opus/GPT-5.3 for Architect (deep reasoning), Sonnet for Implementer (speed), Haiku for Quality Guardian quick checks
@@ -1628,11 +1628,11 @@ This means even platforms we haven't explicitly adapted for — Cursor, Windsurf
 **Gemini optimizations (when subagent support matures):**
 - Use Antigravity's Knowledge Items as the persistent memory layer — architectural decisions and quality findings extracted automatically at session end
 - Use Antigravity's Skills with progressive disclosure (name + description loaded first, full instructions on relevance match) to keep context lean
-- Use GEMINI.md hierarchy (global → project → local) to layer general ArchLens conventions over project-specific arc42 references
+- Use GEMINI.md hierarchy (global → project → local) to layer general ArcBridge conventions over project-specific arc42 references
 
 **Codex optimizations:**
 - More explicit, structured role templates — Codex models tend to be more literal with instructions, so constraints need to be stated more directly than with Claude
-- Use `AGENTS.md` as the primary entry point, with clear references to the ArchLens MCP tools and when to invoke them
+- Use `AGENTS.md` as the primary entry point, with clear references to the ArcBridge MCP tools and when to invoke them
 - Leverage Codex's session resume (`codex resume`) for continuity across coding sessions — the MCP server provides the architectural context, Codex provides the session continuity
 - Account for sandbox restrictions when spawning subprocesses (relevant for the .NET Roslyn indexer)
 
@@ -1640,7 +1640,7 @@ This means even platforms we haven't explicitly adapted for — Cursor, Windsurf
 
 Platform support is not a separate phase — it's integrated into existing phases:
 
-**Phase 0 (Foundation):** Generate `CLAUDE.md` and `.github/copilot-instructions.md` from the arc42 skeleton. Create canonical role definitions in `.archlens/agents/_shared/`. Implement `archlens generate-agent-configs` for Claude Code and Copilot.
+**Phase 0 (Foundation):** Generate `CLAUDE.md` and `.github/copilot-instructions.md` from the arc42 skeleton. Create canonical role definitions in `.arcbridge/agents/_shared/`. Implement `arcbridge generate-agent-configs` for Claude Code and Copilot.
 
 **Phase 1 (TS Intelligence):** MCP tools work on all platforms. No platform-specific code needed.
 
@@ -1648,7 +1648,7 @@ Platform support is not a separate phase — it's integrated into existing phase
 
 **Phase 4 (Sync Loop):** Implement the sync loop both as an interactive MCP tool (for Claude Code terminal sessions) and as a GitHub Action (for Copilot coding agent async execution). The same logic, two triggers.
 
-**Phase 5 (Starter):** The `npx create-archlens` wizard asks which platforms the developer uses and generates configuration for those platforms. Default: Claude Code + Copilot.
+**Phase 5 (Starter):** The `npx create-arcbridge` wizard asks which platforms the developer uses and generates configuration for those platforms. Default: Claude Code + Copilot.
 
 **Later:** Add Gemini and Codex adapters as their agent infrastructure matures. Community can contribute adapters for Cursor, Windsurf, etc.
 
@@ -1661,7 +1661,7 @@ This section contains the concrete specs needed to start coding Phase 0 without 
 ### Technology Stack
 
 ```
-ArchLens MCP Server + CLI
+ArcBridge MCP Server + CLI
 ├── Runtime: Node.js 20+ (LTS)
 ├── Language: TypeScript 5.x (strict mode)
 ├── MCP SDK: @modelcontextprotocol/sdk (official Anthropic SDK)
@@ -1678,7 +1678,7 @@ ArchLens MCP Server + CLI
 │   ├── chokidar                 — File watching for incremental re-indexing (Phase 4+)
 │   └── zod                      — Schema validation for MCP tool inputs, config files, and YAML schemas
 │
-├── CLI (npx create-archlens):
+├── CLI (npx create-arcbridge):
 │   ├── citty                    — Lightweight CLI framework
 │   ├── consola                  — Pretty console output
 │   └── giget                    — Template downloading/scaffolding
@@ -1686,7 +1686,7 @@ ArchLens MCP Server + CLI
 └── Project structure (monorepo):
     ├── packages/
     │   ├── mcp-server/          — The MCP server (core product)
-    │   ├── cli/                 — create-archlens CLI
+    │   ├── cli/                 — create-arcbridge CLI
     │   ├── core/                — Shared types, schemas, utilities
     │   └── adapters/            — Platform-specific config generators
     ├── templates/               — Arc42 skeletons, agent roles, starter projects
@@ -1698,14 +1698,14 @@ ArchLens MCP Server + CLI
 ```
 
 **Why these choices:**
-- `better-sqlite3` over async alternatives because ArchLens is a local tool — the database is a local file, queries are fast, and sync API avoids unnecessary complexity. WAL mode for concurrent read access during MCP tool calls.
+- `better-sqlite3` over async alternatives because ArcBridge is a local tool — the database is a local file, queries are fast, and sync API avoids unnecessary complexity. WAL mode for concurrent read access during MCP tool calls.
 - `zod` as the single validation layer for everything: MCP tool inputs, `quality-scenarios.yaml` parsing, `config.yaml` validation, canonical role format validation. One schema library, enforced everywhere.
-- `tsup` over raw `tsc` because the MCP server ships as a single executable (`archlens-mcp`) and the CLI as another (`create-archlens`). `tsup` bundles both cleanly.
+- `tsup` over raw `tsc` because the MCP server ships as a single executable (`arcbridge-mcp`) and the CLI as another (`create-arcbridge`). `tsup` bundles both cleanly.
 - Monorepo because the MCP server, CLI, and adapters share types and schemas but ship as separate packages.
 
 ### SQLite Schema
 
-The database lives at `.archlens/index.db` and is git-ignored. It's rebuilt from source code and arc42 documents — it's a cache/index, not a source of truth.
+The database lives at `.arcbridge/index.db` and is git-ignored. It's rebuilt from source code and arc42 documents — it's a cache/index, not a source of truth.
 
 ```sql
 -- ============================================================
@@ -1877,27 +1877,27 @@ CREATE TABLE contracts (
 -- METADATA
 -- ============================================================
 
-CREATE TABLE archlens_meta (
+CREATE TABLE arcbridge_meta (
   key           TEXT PRIMARY KEY,
   value         TEXT NOT NULL
 );
 
 -- Bootstrap metadata
-INSERT INTO archlens_meta (key, value) VALUES ('schema_version', '1');
-INSERT INTO archlens_meta (key, value) VALUES ('created_at', datetime('now'));
-INSERT INTO archlens_meta (key, value) VALUES ('project_name', '');
-INSERT INTO archlens_meta (key, value) VALUES ('last_full_index', '');
-INSERT INTO archlens_meta (key, value) VALUES ('last_sync', '');
+INSERT INTO arcbridge_meta (key, value) VALUES ('schema_version', '1');
+INSERT INTO arcbridge_meta (key, value) VALUES ('created_at', datetime('now'));
+INSERT INTO arcbridge_meta (key, value) VALUES ('project_name', '');
+INSERT INTO arcbridge_meta (key, value) VALUES ('last_full_index', '');
+INSERT INTO arcbridge_meta (key, value) VALUES ('last_sync', '');
 ```
 
 ### Arc42 Template Schemas
 
-All arc42 sections use markdown with YAML frontmatter. The YAML is parsed by ArchLens; the markdown body is human-readable documentation. Zod schemas validate the frontmatter at parse time.
+All arc42 sections use markdown with YAML frontmatter. The YAML is parsed by ArcBridge; the markdown body is human-readable documentation. Zod schemas validate the frontmatter at parse time.
 
 **quality-scenarios.yaml** — the most critical machine-readable file:
 
 ```yaml
-# .archlens/arc42/10-quality-scenarios.yaml
+# .arcbridge/arc42/10-quality-scenarios.yaml
 # This is the single source of truth for quality requirements.
 # Every agent role reads this. Every quality gate checks against it.
 
@@ -2004,7 +2004,7 @@ export const QualityScenariosFileSchema = z.object({
 **Building block frontmatter schema:**
 
 ```yaml
-# .archlens/arc42/05-building-blocks.md
+# .arcbridge/arc42/05-building-blocks.md
 ---
 section: building-blocks
 schema_version: 1
@@ -2048,7 +2048,7 @@ blocks:
 The auth module handles all authentication and session management...
 
 [Human-readable documentation continues here. The YAML frontmatter above
-is the machine-readable source that ArchLens indexes into SQLite.
+is the machine-readable source that ArcBridge indexes into SQLite.
 The markdown body is for humans and the Onboarding agent.]
 ```
 
@@ -2079,7 +2079,7 @@ export const BuildingBlocksFrontmatterSchema = z.object({
 **Phase plan schema:**
 
 ```yaml
-# .archlens/plan/phases.yaml
+# .arcbridge/plan/phases.yaml
 schema_version: 1
 last_updated: "2026-03-08T10:00:00Z"
 
@@ -2099,7 +2099,7 @@ phases:
 ```
 
 ```yaml
-# .archlens/plan/tasks/phase-1-foundation.yaml
+# .arcbridge/plan/tasks/phase-1-foundation.yaml
 schema_version: 1
 phase_id: phase-1-foundation
 
@@ -2140,7 +2140,7 @@ tasks:
 **ADR format:**
 
 ```yaml
-# .archlens/arc42/09-decisions/002-auth-strategy.md
+# .arcbridge/arc42/09-decisions/002-auth-strategy.md
 ---
 id: "002-auth-strategy"
 title: "Use NextAuth.js for authentication"
@@ -2175,10 +2175,10 @@ Use NextAuth.js with the database adapter pattern.
 
 ### Canonical Agent Role Format
 
-Agent role definitions in `.archlens/agents/_shared/` use the following format. The YAML frontmatter specifies machine-readable metadata; the markdown body is the system prompt.
+Agent role definitions in `.arcbridge/agents/_shared/` use the following format. The YAML frontmatter specifies machine-readable metadata; the markdown body is the system prompt.
 
 ```yaml
-# .archlens/agents/_shared/security-reviewer.md
+# .arcbridge/agents/_shared/security-reviewer.md
 ---
 role_id: security-reviewer
 name: "Security Reviewer"
@@ -2340,10 +2340,10 @@ export const AgentRoleSchema = z.object({
 });
 ```
 
-### ArchLens Configuration File
+### ArcBridge Configuration File
 
 ```yaml
-# .archlens/config.yaml
+# .arcbridge/config.yaml
 schema_version: 1
 project_name: "my-app"
 project_type: "nextjs-app-router"     # nextjs-app-router | react-vite | fullstack-monorepo | api-service
@@ -2396,7 +2396,7 @@ sync:
 **Zod schema:**
 
 ```typescript
-export const ArchLensConfigSchema = z.object({
+export const ArcBridgeConfigSchema = z.object({
   schema_version: z.number().int(),
   project_name: z.string(),
   project_type: z.enum(['nextjs-app-router', 'react-vite', 'fullstack-monorepo', 'api-service']),
@@ -2424,12 +2424,12 @@ export const ArchLensConfigSchema = z.object({
 
 ### First 5 Minutes: Developer Experience Walkthrough
 
-This is what actually happens when a developer uses ArchLens for the first time.
+This is what actually happens when a developer uses ArcBridge for the first time.
 
 **Step 1: Create the project (~30 seconds)**
 
 ```bash
-$ npx create-archlens my-shop
+$ npx create-arcbridge my-shop
 
   ◆ Project name: my-shop
   ◆ Template: Next.js App Router
@@ -2444,11 +2444,11 @@ $ npx create-archlens my-shop
   ✓ Generated 7 agent role definitions
   ✓ Generated Claude Code configs (.claude/agents/, CLAUDE.md)
   ✓ Generated Copilot configs (.github/agents/, copilot-instructions.md)
-  ✓ Initialized ArchLens index database
+  ✓ Initialized ArcBridge index database
 
   Next steps:
     cd my-shop
-    claude                    # start Claude Code with ArchLens context
+    claude                    # start Claude Code with ArcBridge context
     # or open in VS Code with Copilot
 ```
 
@@ -2560,7 +2560,7 @@ Drift check results:
 1 minor drift item. Accept the suggestion? (y/n)
 ```
 
-This entire flow — from `npx create-archlens` to having an architecturally-aware, quality-checked, drift-monitored project — takes under 5 minutes. The developer never opened an arc42 file to write anything. They never configured a quality scenario manually. They just started coding, and the system provided the structure around them.
+This entire flow — from `npx create-arcbridge` to having an architecturally-aware, quality-checked, drift-monitored project — takes under 5 minutes. The developer never opened an arc42 file to write anything. They never configured a quality scenario manually. They just started coding, and the system provided the structure around them.
 
 ---
 
@@ -2580,7 +2580,7 @@ This entire flow — from `npx create-archlens` to having an architecturally-awa
 
 7. **Platform churn is real.** Claude Code, Copilot, Gemini, and Codex are all evolving rapidly. Features that are experimental today (Gemini subagents, Codex multi-agent TUI) may become stable or be replaced. The adapter architecture with generated configs from a canonical source protects against this — when a platform changes its format, we update one generator, not every role file.
 
-8. **Copilot coding agent has constraints.** It only supports MCP tools (not resources or prompts), doesn't support OAuth-based remote MCP servers, and runs in a sandboxed GitHub Actions environment. The ArchLens MCP server must work within these constraints for the CI/CD sync loop. This means all data must be exposed as tool responses, and the MCP server must be deployable as a local stdio process that the Actions runner can invoke.
+8. **Copilot coding agent has constraints.** It only supports MCP tools (not resources or prompts), doesn't support OAuth-based remote MCP servers, and runs in a sandboxed GitHub Actions environment. The ArcBridge MCP server must work within these constraints for the CI/CD sync loop. This means all data must be exposed as tool responses, and the MCP server must be deployable as a local stdio process that the Actions runner can invoke.
 
 9. **Monorepo support.** Many Next.js projects live in monorepos (Turborepo, Nx). The initial version scopes to single-project repos, but monorepo support will be needed eventually.
 
@@ -2591,7 +2591,7 @@ This entire flow — from `npx create-archlens` to having an architecturally-awa
 ## Success Criteria
 
 For the MVP (Phases 0–3):
-- A solo developer can start a new Next.js project with `npx create-archlens`, get a pre-populated arc42, and immediately query building blocks and code via Claude Code or Copilot agent mode
+- A solo developer can start a new Next.js project with `npx create-arcbridge`, get a pre-populated arc42, and immediately query building blocks and code via Claude Code or Copilot agent mode
 - The agent can answer "where does this feature belong?" and "what quality constraints apply here?" without reading unnecessary files
 - Architecture drift is detected and surfaced after code changes
 - Token usage for common tasks (find a function, understand a module, check security posture) is reduced by 60%+ compared to raw file reading
@@ -2606,6 +2606,6 @@ For the full system (all phases):
 - Agent roles work across Claude Code, Copilot, and at least one additional platform (Gemini or Codex)
 
 For the broader goal:
-- ArchLens demonstrates that **agentic coding conventions** — not just better prompts or bigger context windows — are the key to sustainable AI-assisted development
+- ArcBridge demonstrates that **agentic coding conventions** — not just better prompts or bigger context windows — are the key to sustainable AI-assisted development
 - The pattern is recognized and adopted (or adapted) by other projects and tools in the ecosystem
 - The adapter architecture enables community-contributed platform support beyond the core four

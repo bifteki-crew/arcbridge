@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { QualityCategorySchema, QualityPrioritySchema, QualityScenarioStatusSchema } from "@archlens/core";
+import { QualityCategorySchema, QualityPrioritySchema, QualityScenarioStatusSchema } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
 
@@ -23,7 +23,7 @@ export function registerGetQualityScenarios(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_quality_scenarios",
+    "arcbridge_get_quality_scenarios",
     "Get quality scenarios, optionally filtered by category. Shows scenario details, linked code/tests, and current status.",
     {
       target_dir: z

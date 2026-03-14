@@ -24,7 +24,7 @@ export function registerGetCurrentTasks(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_current_tasks",
+    "arcbridge_get_current_tasks",
     "Get tasks for the current in-progress phase, with their building blocks, quality scenarios, and acceptance criteria.",
     {
       target_dir: z
@@ -51,7 +51,7 @@ export function registerGetCurrentTasks(
           content: [
             {
               type: "text" as const,
-              text: "No phase is currently in-progress. Use `archlens_get_phase_plan` to see all phases.",
+              text: "No phase is currently in-progress. Use `arcbridge_get_phase_plan` to see all phases.",
             },
           ],
         };

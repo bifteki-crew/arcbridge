@@ -27,7 +27,7 @@ export function registerGetBuildingBlocks(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_building_blocks",
+    "arcbridge_get_building_blocks",
     "Get all architecture building blocks with their code mappings, responsibilities, and linked quality scenarios.",
     {
       target_dir: z

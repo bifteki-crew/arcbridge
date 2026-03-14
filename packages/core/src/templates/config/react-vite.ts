@@ -1,7 +1,7 @@
-import type { ArchLensConfig } from "../../schemas/config.js";
+import type { ArcBridgeConfig } from "../../schemas/config.js";
 import type { InitProjectInput } from "../types.js";
 
-export function configTemplate(input: InitProjectInput): ArchLensConfig {
+export function configTemplate(input: InitProjectInput): ArcBridgeConfig {
   return {
     schema_version: 1,
     project_name: input.name,
@@ -14,9 +14,9 @@ export function configTemplate(input: InitProjectInput): ArchLensConfig {
         tsconfig: "tsconfig.json",
       },
     ],
-    platforms: input.platforms as ArchLensConfig["platforms"],
+    platforms: input.platforms as ArcBridgeConfig["platforms"],
     quality_priorities:
-      input.quality_priorities as ArchLensConfig["quality_priorities"],
+      input.quality_priorities as ArcBridgeConfig["quality_priorities"],
     indexing: {
       include: ["src/**/*"],
       exclude: ["node_modules", "dist", "coverage"],

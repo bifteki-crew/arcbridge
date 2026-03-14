@@ -14,15 +14,15 @@ const pkg = JSON.parse(
   readFileSync(join(__dirname, "..", "package.json"), "utf-8"),
 ) as { version: string };
 
-const USAGE = `Usage: archlens <command> [options]
+const USAGE = `Usage: arcbridge <command> [options]
 
 Commands:
-  init              Initialize ArchLens in a project directory
+  init              Initialize ArcBridge in a project directory
   sync              Run the sync loop: reindex, detect drift, infer tasks, propose updates
   status            Show project status (phase, tasks, drift)
   drift             Check for architecture drift
-  update-task       Update a task's status (e.g. archlens update-task task-1.1 done)
-  generate-configs  Regenerate platform agent configs from .archlens/agents/
+  update-task       Update a task's status (e.g. arcbridge update-task task-1.1 done)
+  generate-configs  Regenerate platform agent configs from .arcbridge/agents/
 
 Options:
   --dir <path>       Project directory (default: current directory)
@@ -76,7 +76,7 @@ function parseArgs(args: string[]): ParsedArgs {
       console.log(USAGE);
       process.exit(0);
     } else if (arg === "--version" || arg === "-v") {
-      console.log(`archlens ${pkg.version}`);
+      console.log(`arcbridge ${pkg.version}`);
       process.exit(0);
     } else if (!arg.startsWith("-") && !command) {
       command = arg;
@@ -128,7 +128,7 @@ async function main(): Promise<void> {
       case "update-task": {
         const [taskId, taskStatus] = positional;
         if (!taskId || !taskStatus) {
-          console.error("Usage: archlens update-task <task-id> <status>");
+          console.error("Usage: arcbridge update-task <task-id> <status>");
           console.error("Status values: todo, in-progress, done, blocked");
           process.exit(1);
         }

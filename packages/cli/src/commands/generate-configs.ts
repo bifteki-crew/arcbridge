@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
-import { loadConfig, loadRoles, generateAgentRoles } from "@archlens/core";
-import { getAdapter } from "@archlens/adapters";
+import { loadConfig, loadRoles, generateAgentRoles } from "@arcbridge/core";
+import { getAdapter } from "@arcbridge/adapters";
 
 interface GenerateResult {
   platforms: string[];
@@ -19,7 +19,7 @@ export async function generateConfigs(
   // Load config
   const { config, error: configError } = loadConfig(projectRoot);
   if (configError || !config) {
-    const msg = configError ?? "No .archlens/config.yaml found";
+    const msg = configError ?? "No .arcbridge/config.yaml found";
     if (json) {
       console.log(JSON.stringify({ error: msg }));
     } else {

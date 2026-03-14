@@ -38,7 +38,7 @@ importers:
 
   packages/adapters:
     dependencies:
-      '@archlens/core':
+      '@arcbridge/core':
         specifier: workspace:*
         version: link:../core
       gray-matter:
@@ -50,10 +50,10 @@ importers:
 
   packages/cli:
     dependencies:
-      '@archlens/adapters':
+      '@arcbridge/adapters':
         specifier: workspace:*
         version: link:../adapters
-      '@archlens/core':
+      '@arcbridge/core':
         specifier: workspace:*
         version: link:../core
 
@@ -87,10 +87,10 @@ importers:
 
   packages/mcp-server:
     dependencies:
-      '@archlens/adapters':
+      '@arcbridge/adapters':
         specifier: workspace:*
         version: link:../adapters
-      '@archlens/core':
+      '@arcbridge/core':
         specifier: workspace:*
         version: link:../core
       '@modelcontextprotocol/sdk':

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { indexProject } from "@archlens/core";
+import { indexProject } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
 
@@ -9,7 +9,7 @@ export function registerReindex(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_reindex",
+    "arcbridge_reindex",
     "Re-index TypeScript symbols in the project. Incrementally processes only changed files.",
     {
       target_dir: z

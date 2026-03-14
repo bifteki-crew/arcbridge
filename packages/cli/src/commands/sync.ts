@@ -16,7 +16,7 @@ import {
   type ChangedFile,
   type ScenarioTestResult,
   type DriftOptions,
-} from "@archlens/core";
+} from "@arcbridge/core";
 import { openProjectDb } from "../project.js";
 
 interface SyncResult {

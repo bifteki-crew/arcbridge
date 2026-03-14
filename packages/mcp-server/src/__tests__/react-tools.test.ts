@@ -4,7 +4,7 @@ import {
   openMemoryDatabase,
   initializeSchema,
   indexProject,
-} from "@archlens/core";
+} from "@arcbridge/core";
 import type Database from "better-sqlite3";
 
 const REACT_FIXTURE_DIR = join(

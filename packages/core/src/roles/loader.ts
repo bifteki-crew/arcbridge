@@ -9,12 +9,12 @@ export interface LoadRolesResult {
 }
 
 /**
- * Load agent role definitions from `.archlens/agents/*.md` files.
+ * Load agent role definitions from `.arcbridge/agents/*.md` files.
  * Each file is parsed as YAML frontmatter + markdown body (system_prompt).
  * Returns validated roles and any parse/validation errors.
  */
 export function loadRoles(projectRoot: string): LoadRolesResult {
-  const agentsDir = join(projectRoot, ".archlens", "agents");
+  const agentsDir = join(projectRoot, ".arcbridge", "agents");
   const roles: AgentRole[] = [];
   const errors: string[] = [];
 
@@ -57,7 +57,7 @@ export function loadRoles(projectRoot: string): LoadRolesResult {
 }
 
 /**
- * Load a single role by ID from `.archlens/agents/{roleId}.md`.
+ * Load a single role by ID from `.arcbridge/agents/{roleId}.md`.
  * Returns null if the file doesn't exist or fails validation.
  * Rejects roleId values that don't match kebab-case to prevent path traversal.
  */
@@ -70,7 +70,7 @@ export function loadRole(
     return { role: null, error: `Invalid role ID: "${roleId}" (must be kebab-case)` };
   }
 
-  const filePath = join(projectRoot, ".archlens", "agents", `${roleId}.md`);
+  const filePath = join(projectRoot, ".arcbridge", "agents", `${roleId}.md`);
 
   try {
     const raw = readFileSync(filePath, "utf-8");

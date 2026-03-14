@@ -27,7 +27,7 @@ export function registerGetBoundaryAnalysis(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_boundary_analysis",
+    "arcbridge_get_boundary_analysis",
     "Analyze server/client boundaries in a Next.js project. Identifies client components, server components, server actions, and potential boundary violations.",
     {
       target_dir: z
@@ -50,7 +50,7 @@ export function registerGetBoundaryAnalysis(
         .all() as ComponentBoundaryRow[];
 
       if (components.length === 0) {
-        return textResult("No components found. Run `archlens_reindex` to analyze server/client boundaries.");
+        return textResult("No components found. Run `arcbridge_reindex` to analyze server/client boundaries.");
       }
 
       // Find cross-boundary render edges (server component rendering client, etc.)

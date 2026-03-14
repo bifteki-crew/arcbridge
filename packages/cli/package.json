@@ -1,19 +1,19 @@
 {
-  "name": "archlens",
+  "name": "arcbridge",
   "version": "0.1.0",
-  "description": "CLI for ArchLens — architectural awareness for AI coding agents",
+  "description": "CLI for ArcBridge — architectural awareness for AI coding agents",
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bifteki-crew/project-archlens.git",
+    "url": "https://github.com/bifteki-crew/arcbridge.git",
     "directory": "packages/cli"
   },
-  "keywords": ["archlens", "architecture", "arc42", "cli", "ai-agents"],
+  "keywords": ["arcbridge", "architecture", "arc42", "cli", "ai-agents"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "archlens": "./dist/index.js"
+    "arcbridge": "./dist/index.js"
   },
   "exports": {
     ".": {
@@ -26,7 +26,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@archlens/core": "workspace:*",
-    "@archlens/adapters": "workspace:*"
+    "@arcbridge/core": "workspace:*",
+    "@arcbridge/adapters": "workspace:*"
   }
 }

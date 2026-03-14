@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { detectDrift, writeDriftLog } from "@archlens/core";
+import { detectDrift, writeDriftLog } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
 
@@ -9,7 +9,7 @@ export function registerCheckDrift(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_check_drift",
+    "arcbridge_check_drift",
     "Detect architecture drift: undocumented modules, missing code paths, cross-block dependency violations, and stale ADR references.",
     {
       target_dir: z
@@ -84,7 +84,7 @@ export function registerCheckDrift(
       if (params.persist) {
         lines.push(
           "---",
-          "*Findings saved to drift_log. Use `archlens_update_task` or resolve drift by updating `.archlens/arc42/05-building-blocks.md`.*",
+          "*Findings saved to drift_log. Use `arcbridge_update_task` or resolve drift by updating `.arcbridge/arc42/05-building-blocks.md`.*",
           "",
         );
       }

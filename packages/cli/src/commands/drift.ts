@@ -1,4 +1,4 @@
-import { detectDrift, writeDriftLog, loadConfig, type DriftOptions } from "@archlens/core";
+import { detectDrift, writeDriftLog, loadConfig, type DriftOptions } from "@arcbridge/core";
 import { openProjectDb } from "../project.js";
 
 export async function drift(dir: string, json: boolean): Promise<void> {

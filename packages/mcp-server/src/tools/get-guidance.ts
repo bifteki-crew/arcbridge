@@ -43,7 +43,7 @@ export function registerGetGuidance(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_guidance",
+    "arcbridge_get_guidance",
     "Get context-aware architectural guidance for a code change. Surfaces relevant quality scenarios, patterns, constraints, and questions to consider.",
     {
       target_dir: z
@@ -110,7 +110,7 @@ export function registerGetGuidance(
           lines.push(
             "## Warning: Unmapped File",
             "",
-            `\`${params.file_path}\` is not mapped to any building block. Consider updating \`.archlens/arc42/05-building-blocks.md\` to include this path.`,
+            `\`${params.file_path}\` is not mapped to any building block. Consider updating \`.arcbridge/arc42/05-building-blocks.md\` to include this path.`,
             "",
           );
         }

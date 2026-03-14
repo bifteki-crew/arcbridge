@@ -11,7 +11,7 @@ const migrations: Migration[] = [];
 
 export function migrate(db: Database.Database): void {
   const row = db
-    .prepare("SELECT value FROM archlens_meta WHERE key = 'schema_version'")
+    .prepare("SELECT value FROM arcbridge_meta WHERE key = 'schema_version'")
     .get() as { value: string } | undefined;
 
   const currentVersion = row ? Number(row.value) : 0;
@@ -28,7 +28,7 @@ export function migrate(db: Database.Database): void {
     db.transaction(() => {
       migration.up(db);
       db.prepare(
-        "UPDATE archlens_meta SET value = ? WHERE key = 'schema_version'",
+        "UPDATE arcbridge_meta SET value = ? WHERE key = 'schema_version'",
       ).run(String(migration.version));
     })();
   }

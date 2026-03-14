@@ -11,8 +11,8 @@ import {
   generateSyncFiles,
   indexProject,
   type InitProjectInput,
-} from "@archlens/core";
-import { getAdapter } from "@archlens/adapters";
+} from "@arcbridge/core";
+import { getAdapter } from "@arcbridge/adapters";
 import type { ServerContext } from "../context.js";
 
 export function registerInitProject(
@@ -20,8 +20,8 @@ export function registerInitProject(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_init_project",
-    "Initialize ArchLens in a project directory. Creates .archlens/ with arc42 documentation, phase plan, agent roles, SQLite database, and platform-specific configs.",
+    "arcbridge_init_project",
+    "Initialize ArcBridge in a project directory. Creates .arcbridge/ with arc42 documentation, phase plan, agent roles, SQLite database, and platform-specific configs.",
     {
       name: z.string().min(1).describe("Project name"),
       template: z
@@ -48,12 +48,12 @@ export function registerInitProject(
       const targetDir = params.target_dir;
 
       // Check if already initialized
-      if (existsSync(join(targetDir, ".archlens", "config.yaml"))) {
+      if (existsSync(join(targetDir, ".arcbridge", "config.yaml"))) {
         return {
           content: [
             {
               type: "text" as const,
-              text: `ArchLens is already initialized in ${targetDir}. Use archlens_get_project_status to see the current state.`,
+              text: `ArcBridge is already initialized in ${targetDir}. Use arcbridge_get_project_status to see the current state.`,
             },
           ],
         };
@@ -136,7 +136,7 @@ export function registerInitProject(
       const allWarnings = [...warnings, ...platformWarnings];
 
       const summary = [
-        `# ArchLens Initialized: ${input.name}`,
+        `# ArcBridge Initialized: ${input.name}`,
         "",
         `**Template:** ${input.template}`,
         `**Features:** ${input.features.length > 0 ? input.features.join(", ") : "none"}`,
@@ -156,15 +156,15 @@ export function registerInitProject(
               `- **Components analyzed:** ${indexResult.componentsAnalyzed}`,
               `- **Routes analyzed:** ${indexResult.routesAnalyzed}`,
             ]
-          : [`- **Code indexing:** skipped (no tsconfig.json found — run \`archlens_reindex\` later)`]),
+          : [`- **Code indexing:** skipped (no tsconfig.json found — run \`arcbridge_reindex\` later)`]),
         "",
         "## Files",
         "",
-        "- `.archlens/config.yaml` — Project configuration",
-        "- `.archlens/arc42/` — Architecture documentation (arc42)",
-        "- `.archlens/plan/` — Phase plan and tasks",
-        "- `.archlens/agents/` — Canonical agent role definitions",
-        "- `.archlens/index.db` — SQLite database",
+        "- `.arcbridge/config.yaml` — Project configuration",
+        "- `.arcbridge/arc42/` — Architecture documentation (arc42)",
+        "- `.arcbridge/plan/` — Phase plan and tasks",
+        "- `.arcbridge/agents/` — Canonical agent role definitions",
+        "- `.arcbridge/index.db` — SQLite database",
         ...params.platforms.includes("claude")
           ? ["- `CLAUDE.md` — Claude Code project instructions", "- `.claude/agents/` — Claude agent configs"]
           : [],
@@ -181,7 +181,7 @@ export function registerInitProject(
             ]
           : []),
         "",
-        "Use `archlens_get_project_status` to see the full project status.",
+        "Use `arcbridge_get_project_status` to see the full project status.",
       ];
 
       return {

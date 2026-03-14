@@ -21,7 +21,7 @@ export function registerGetRelevantAdrs(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_relevant_adrs",
+    "arcbridge_get_relevant_adrs",
     "Get architectural decision records (ADRs) relevant to a specific file path or building block.",
     {
       target_dir: z

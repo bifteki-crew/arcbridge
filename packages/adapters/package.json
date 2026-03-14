@@ -1,7 +1,7 @@
 {
-  "name": "@archlens/adapters",
+  "name": "@arcbridge/adapters",
   "version": "0.1.0",
-  "description": "Platform adapters for ArchLens — Claude Code and GitHub Copilot config generators",
+  "description": "Platform adapters for ArcBridge — Claude Code and GitHub Copilot config generators",
   "license": "MIT",
   "type": "module",
   "publishConfig": {
@@ -9,10 +9,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bifteki-crew/project-archlens.git",
+    "url": "https://github.com/bifteki-crew/arcbridge.git",
     "directory": "packages/adapters"
   },
-  "keywords": ["archlens", "claude", "copilot", "ai-agents"],
+  "keywords": ["arcbridge", "claude", "copilot", "ai-agents"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -26,7 +26,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@archlens/core": "workspace:*",
+    "@arcbridge/core": "workspace:*",
     "gray-matter": "^4.0.3",
     "yaml": "^2.7.0"
   }

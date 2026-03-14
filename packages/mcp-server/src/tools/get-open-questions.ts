@@ -44,7 +44,7 @@ export function registerGetOpenQuestions(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_open_questions",
+    "arcbridge_get_open_questions",
     "Surface architectural gaps: untested quality scenarios, building blocks without boundaries, unresolved drift, and tasks missing acceptance criteria.",
     {
       target_dir: z

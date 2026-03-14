@@ -32,7 +32,7 @@ export async function status(dir: string, json: boolean): Promise<void> {
       (
         db
           .prepare(
-            "SELECT value FROM archlens_meta WHERE key = 'project_name'",
+            "SELECT value FROM arcbridge_meta WHERE key = 'project_name'",
           )
           .get() as { value: string } | undefined
       )?.value ?? "Unknown";

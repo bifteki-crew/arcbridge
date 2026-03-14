@@ -16,7 +16,7 @@ describe("SQLite database", () => {
 
     const tableNames = tables.map((t) => t.name);
 
-    expect(tableNames).toContain("archlens_meta");
+    expect(tableNames).toContain("arcbridge_meta");
     expect(tableNames).toContain("symbols");
     expect(tableNames).toContain("dependencies");
     expect(tableNames).toContain("components");
@@ -37,7 +37,7 @@ describe("SQLite database", () => {
     initializeSchema(db);
 
     const row = db
-      .prepare("SELECT value FROM archlens_meta WHERE key = 'schema_version'")
+      .prepare("SELECT value FROM arcbridge_meta WHERE key = 'schema_version'")
       .get() as { value: string };
 
     expect(Number(row.value)).toBe(CURRENT_SCHEMA_VERSION);
@@ -50,7 +50,7 @@ describe("SQLite database", () => {
     initializeSchema(db); // Should not throw
 
     const row = db
-      .prepare("SELECT value FROM archlens_meta WHERE key = 'schema_version'")
+      .prepare("SELECT value FROM arcbridge_meta WHERE key = 'schema_version'")
       .get() as { value: string };
     expect(Number(row.value)).toBe(CURRENT_SCHEMA_VERSION);
     db.close();
@@ -62,7 +62,7 @@ describe("SQLite database", () => {
     migrate(db); // Should not throw or change anything
 
     const row = db
-      .prepare("SELECT value FROM archlens_meta WHERE key = 'schema_version'")
+      .prepare("SELECT value FROM arcbridge_meta WHERE key = 'schema_version'")
       .get() as { value: string };
     expect(Number(row.value)).toBe(CURRENT_SCHEMA_VERSION);
     db.close();

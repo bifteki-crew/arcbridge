@@ -9,7 +9,7 @@ import {
   applyInferences,
   verifyScenarios,
   loadConfig,
-} from "@archlens/core";
+} from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson } from "../helpers.js";
 
@@ -39,7 +39,7 @@ export function registerCompletePhase(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_complete_phase",
+    "arcbridge_complete_phase",
     "Attempt to complete a phase by validating all gates: tasks done, no critical drift, quality scenarios passing. Transitions the phase to 'complete' if all gates pass.",
     {
       target_dir: z
@@ -82,7 +82,7 @@ export function registerCompletePhase(
 
       if (!phase) {
         return textResult(
-          "No in-progress phase found. Use `archlens_get_phase_plan` to see all phases.",
+          "No in-progress phase found. Use `arcbridge_get_phase_plan` to see all phases.",
         );
       }
 
@@ -268,7 +268,7 @@ export function registerCompletePhase(
         lines.push(
           "",
           "---",
-          "*Run `archlens_propose_arc42_update` to generate documentation updates for this phase.*",
+          "*Run `arcbridge_propose_arc42_update` to generate documentation updates for this phase.*",
         );
       } else {
         const failCount = gates.filter((g) => !g.pass).length;

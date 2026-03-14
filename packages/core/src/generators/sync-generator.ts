@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
-import type { ArchLensConfig } from "../schemas/config.js";
+import type { ArcBridgeConfig } from "../schemas/config.js";
 import { claudeSkillTemplate } from "../templates/sync/claude-skill.js";
 import { githubActionTemplate } from "../templates/sync/github-action.js";
 import { copilotHookTemplate } from "../templates/sync/copilot-hook.js";
@@ -10,7 +10,7 @@ import { copilotHookTemplate } from "../templates/sync/copilot-hook.js";
  */
 export function generateSyncFiles(
   targetDir: string,
-  config: ArchLensConfig,
+  config: ArcBridgeConfig,
 ): string[] {
   const generated: string[] = [];
 

@@ -18,7 +18,7 @@ export function registerGetRouteMap(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_route_map",
+    "arcbridge_get_route_map",
     "Get the Next.js route map: all pages, layouts, API routes, and their hierarchy.",
     {
       target_dir: z
@@ -58,7 +58,7 @@ export function registerGetRouteMap(
       const routes = db.prepare(query).all(...queryParams) as RouteRow[];
 
       if (routes.length === 0) {
-        return textResult("No routes found. Run `archlens_reindex` to analyze the Next.js app/ directory.");
+        return textResult("No routes found. Run `arcbridge_reindex` to analyze the Next.js app/ directory.");
       }
 
       const lines: string[] = [

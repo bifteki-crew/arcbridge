@@ -6,7 +6,7 @@ import {
   indexProject,
   detectDrift,
   writeDriftLog,
-} from "@archlens/core";
+} from "@arcbridge/core";
 import type Database from "better-sqlite3";
 
 const TS_FIXTURE = join(

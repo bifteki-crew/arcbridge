@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { verifyScenarios, loadConfig } from "@archlens/core";
+import { verifyScenarios, loadConfig } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
 
@@ -9,7 +9,7 @@ export function registerVerifyScenarios(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_verify_scenarios",
+    "arcbridge_verify_scenarios",
     "Run linked tests for quality scenarios and update their pass/fail status. Only runs scenarios with verification='automatic' or 'semi-automatic' and non-empty linked_tests.",
     {
       target_dir: z

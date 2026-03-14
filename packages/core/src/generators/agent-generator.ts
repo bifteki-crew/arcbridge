@@ -17,7 +17,7 @@ function writeAgentRole(dir: string, role: AgentRole): void {
 }
 
 export function generateAgentRoles(targetDir: string): AgentRole[] {
-  const agentsDir = join(targetDir, ".archlens", "agents");
+  const agentsDir = join(targetDir, ".arcbridge", "agents");
   mkdirSync(agentsDir, { recursive: true });
 
   const roles = [

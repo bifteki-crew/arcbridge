@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import type Database from "better-sqlite3";
-import { openDatabase } from "@archlens/core";
+import { openDatabase } from "@arcbridge/core";
 import type { ServerContext } from "./context.js";
 
 export function ensureDb(
@@ -10,7 +10,7 @@ export function ensureDb(
 ): Database.Database | null {
   if (ctx.db) return ctx.db;
 
-  const dbPath = join(targetDir, ".archlens", "index.db");
+  const dbPath = join(targetDir, ".arcbridge", "index.db");
   if (!existsSync(dbPath)) {
     return null;
   }
@@ -25,7 +25,7 @@ export function notInitialized() {
     content: [
       {
         type: "text" as const,
-        text: "ArchLens is not initialized in this directory. Run `archlens_init_project` first.",
+        text: "ArcBridge is not initialized in this directory. Run `arcbridge_init_project` first.",
       },
     ],
   };

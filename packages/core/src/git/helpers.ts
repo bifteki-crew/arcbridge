@@ -16,8 +16,8 @@ export interface GitRef {
  * Resolve a human-readable "since" value to a git ref.
  *
  * - "last-commit" → HEAD~1
- * - "last-session" / "last-sync" → commit stored in archlens_meta, or HEAD~1 fallback
- * - "last-phase" → commit stored in archlens_meta under "phase_sync_commit", or HEAD~5 fallback
+ * - "last-session" / "last-sync" → commit stored in arcbridge_meta, or HEAD~1 fallback
+ * - "last-phase" → commit stored in arcbridge_meta under "phase_sync_commit", or HEAD~5 fallback
  * - anything else → treated as a literal git ref (branch, tag, SHA)
  */
 export function resolveRef(
@@ -33,7 +33,7 @@ export function resolveRef(
     case "last-sync": {
       if (db) {
         const row = db
-          .prepare("SELECT value FROM archlens_meta WHERE key = 'last_sync_commit'")
+          .prepare("SELECT value FROM arcbridge_meta WHERE key = 'last_sync_commit'")
           .get() as { value: string } | undefined;
         if (row) return { sha: row.value, label: `last sync (${row.value.slice(0, 7)})` };
       }
@@ -43,7 +43,7 @@ export function resolveRef(
     case "last-phase": {
       if (db) {
         const row = db
-          .prepare("SELECT value FROM archlens_meta WHERE key = 'phase_sync_commit'")
+          .prepare("SELECT value FROM arcbridge_meta WHERE key = 'phase_sync_commit'")
           .get() as { value: string } | undefined;
         if (row) return { sha: row.value, label: `last phase (${row.value.slice(0, 7)})` };
       }
@@ -131,7 +131,7 @@ export function getHeadSha(projectRoot: string): string | null {
 }
 
 /**
- * Store the current sync point in archlens_meta.
+ * Store the current sync point in arcbridge_meta.
  */
 export function setSyncCommit(
   db: Database.Database,
@@ -139,7 +139,7 @@ export function setSyncCommit(
   sha: string,
 ): void {
   db.prepare(
-    "INSERT OR REPLACE INTO archlens_meta (key, value) VALUES (?, ?)",
+    "INSERT OR REPLACE INTO arcbridge_meta (key, value) VALUES (?, ?)",
   ).run(key, sha);
 }
 

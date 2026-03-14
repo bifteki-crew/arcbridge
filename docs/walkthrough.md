@@ -1,13 +1,13 @@
-# ArchLens Walkthrough: Building a Bookmark App
+# ArcBridge Walkthrough: Building a Bookmark App
 
-This walkthrough takes you through the full **Plan → Build → Sync → Review** lifecycle using ArchLens. We'll build a simple bookmark manager with Next.js to show how ArchLens keeps your AI agent architecturally aware throughout the process.
+This walkthrough takes you through the full **Plan → Build → Sync → Review** lifecycle using ArcBridge. We'll build a simple bookmark manager with Next.js to show how ArcBridge keeps your AI agent architecturally aware throughout the process.
 
 ## Prerequisites
 
 - Node.js 18+
 - pnpm (or npm/yarn)
 - An AI coding agent (Claude Code, GitHub Copilot, etc.)
-- ArchLens installed (`npm install -g archlens` or use `npx`)
+- ArcBridge installed (`npm install -g arcbridge` or use `npx`)
 
 ## Step 1: Create Your Project
 
@@ -18,22 +18,22 @@ npx create-next-app@latest bookmark-app --typescript --app --src-dir
 cd bookmark-app
 ```
 
-## Step 2: Initialize ArchLens
+## Step 2: Initialize ArcBridge
 
 ```bash
-archlens init
+arcbridge init
 ```
 
-ArchLens auto-detects your project from `package.json`:
+ArcBridge auto-detects your project from `package.json`:
 
 ```
-Initializing ArchLens in /home/user/bookmark-app
+Initializing ArcBridge in /home/user/bookmark-app
 
   Project:  bookmark-app (package.json)
   Template: nextjs-app-router (detected (next in dependencies))
   Platform: claude
 
-Creating .archlens/config.yaml...
+Creating .arcbridge/config.yaml...
 Creating arc42 documentation...
 Creating phase plan...
 Creating agent roles...
@@ -42,7 +42,7 @@ Creating sync triggers...
 Generating platform configs...
 Indexing codebase...
 
-ArchLens initialized successfully!
+ArcBridge initialized successfully!
 
   Building blocks:    3
   Quality scenarios:  7
@@ -52,19 +52,19 @@ ArchLens initialized successfully!
   Indexed:            8 files, 12 symbols
 
 Next steps:
-  1. Review .archlens/config.yaml and adjust as needed
+  1. Review .arcbridge/config.yaml and adjust as needed
   2. Start your AI agent (e.g. Claude Code) in this directory
   3. The agent will see the architecture context and can help
      refine building blocks, quality scenarios, and the plan
-  4. Run `archlens sync` periodically to keep docs in sync with code
+  4. Run `arcbridge sync` periodically to keep docs in sync with code
 ```
 
 ### What just happened?
 
-ArchLens created a complete architecture scaffold:
+ArcBridge created a complete architecture scaffold:
 
 ```
-.archlens/
+.arcbridge/
   config.yaml                     # Project config (type, platforms, indexing)
   index.db                        # SQLite database (symbols, deps, drift)
   arc42/
@@ -91,7 +91,7 @@ Start your AI agent. In Claude Code:
 claude
 ```
 
-Claude reads `CLAUDE.md` and sees the ArchLens tools. Now ask it to help define your architecture:
+Claude reads `CLAUDE.md` and sees the ArcBridge tools. Now ask it to help define your architecture:
 
 > "I'm building a bookmark manager. Users can save URLs with tags, organize them into collections, and search through them. Let's refine the architecture."
 
@@ -134,10 +134,10 @@ blocks:
 
 ## Step 4: Plan Phase — Review Tasks
 
-Check what ArchLens has planned:
+Check what ArcBridge has planned:
 
 ```bash
-archlens status
+arcbridge status
 ```
 
 ```
@@ -160,7 +160,7 @@ Drift:   0 issues
 Since the Next.js project already exists, you can mark the first task done:
 
 ```bash
-archlens update-task task-0.1-init-nextjs done
+arcbridge update-task task-0.1-init-nextjs done
 ```
 
 ```
@@ -169,7 +169,7 @@ task-0.1-init-nextjs: todo → done (Initialize Next.js project)
 
 ## Step 5: Build Phase — Write Code
 
-Now build. Ask your agent to implement features. With ArchLens, the agent has context about:
+Now build. Ask your agent to implement features. With ArcBridge, the agent has context about:
 
 - **What building block** the code belongs to (from `code_paths`)
 - **What quality scenarios** apply (security, performance targets)
@@ -187,7 +187,7 @@ The agent can check `get_guidance` for the `src/app/api/bookmarks/` path and get
 After writing some code, run sync:
 
 ```bash
-archlens sync
+arcbridge sync
 ```
 
 ```
@@ -215,7 +215,7 @@ WARNING: 1 drift error(s) would block phase completion.
 
 ### What sync tells you
 
-1. **Task inference** — ArchLens detected code in the bookmarks building block's paths, so it automatically moved related tasks to "in-progress". No manual status updates needed.
+1. **Task inference** — ArcBridge detected code in the bookmarks building block's paths, so it automatically moved related tasks to "in-progress". No manual status updates needed.
 
 2. **Drift detection** — Two issues found:
    - The Tag System block has no code yet (warning — expected if you haven't started it)
@@ -236,14 +236,14 @@ The dependency violation means your `BookmarkCard` component imports directly fr
 
 **Option B:** Refactor to pass data via props instead of direct imports (cleaner separation).
 
-Either way, ArchLens ensures you make the decision consciously rather than accumulating hidden dependencies.
+Either way, ArcBridge ensures you make the decision consciously rather than accumulating hidden dependencies.
 
 ## Step 7: Review — Check Quality and Progress
 
 Check overall status after a sync:
 
 ```bash
-archlens status
+arcbridge status
 ```
 
 ```
@@ -270,7 +270,7 @@ Drift:   1 issues (1 error)
 When you write a test for auth (e.g., `src/__tests__/auth.test.ts`), link it to the quality scenario:
 
 ```yaml
-# In .archlens/arc42/10-quality-scenarios.yaml
+# In .arcbridge/arc42/10-quality-scenarios.yaml
 - id: SEC-01
   name: Auth on all API routes
   linked_tests:
@@ -281,7 +281,7 @@ When you write a test for auth (e.g., `src/__tests__/auth.test.ts`), link it to 
 Next sync will run the test and update the scenario status automatically:
 
 ```bash
-archlens sync
+arcbridge sync
 ```
 
 ```
@@ -311,7 +311,7 @@ The Plan → Build → Sync → Review cycle repeats for each phase:
 ┌────────┐    ┌────────┐    ┌────────┐    ┌────────┐
 │  PLAN  │───>│ BUILD  │───>│  SYNC  │───>│ REVIEW │
 │        │    │        │    │        │    │        │
-│ Agent  │    │ Agent  │    │ archlens│   │ Human  │
+│ Agent  │    │ Agent  │    │arcbridge│   │ Human  │
 │ refines│    │ writes │    │ sync   │    │ checks │
 │ blocks,│    │ code   │    │        │    │ status,│
 │ tasks  │    │        │    │ Detects│    │ approves│
@@ -325,11 +325,11 @@ The Plan → Build → Sync → Review cycle repeats for each phase:
 
 ### Running sync in CI
 
-ArchLens generates a GitHub Action (`.github/workflows/archlens-sync.yml`) that runs sync on every push. This catches drift in PRs before they merge:
+ArcBridge generates a GitHub Action (`.github/workflows/arcbridge-sync.yml`) that runs sync on every push. This catches drift in PRs before they merge:
 
 ```yaml
-# Generated automatically by archlens init
-name: ArchLens Sync
+# Generated automatically by arcbridge init
+name: ArcBridge Sync
 on: [push]
 jobs:
   sync:
@@ -338,25 +338,25 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
       - run: npm ci
-      - run: npx archlens sync --json
+      - run: npx arcbridge sync --json
 ```
 
 ## CLI Reference
 
 | Command | Description |
 |---------|-------------|
-| `archlens init` | Initialize ArchLens (auto-detects project type) |
-| `archlens sync` | Reindex, detect drift, infer tasks, verify scenarios |
-| `archlens status` | Show project status, phase, tasks, quality |
-| `archlens drift` | Check for architecture drift only |
-| `archlens update-task <id> <status>` | Update a task (todo, in-progress, done, blocked) |
-| `archlens generate-configs` | Regenerate platform agent configs |
+| `arcbridge init` | Initialize ArcBridge (auto-detects project type) |
+| `arcbridge sync` | Reindex, detect drift, infer tasks, verify scenarios |
+| `arcbridge status` | Show project status, phase, tasks, quality |
+| `arcbridge drift` | Check for architecture drift only |
+| `arcbridge update-task <id> <status>` | Update a task (todo, in-progress, done, blocked) |
+| `arcbridge generate-configs` | Regenerate platform agent configs |
 
 All commands support `--dir <path>` and `--json` flags.
 
 ## Agent Roles
 
-ArchLens defines 7 agent roles, each with specific context and tool access:
+ArcBridge defines 7 agent roles, each with specific context and tool access:
 
 | Role | When to use |
 |------|-------------|

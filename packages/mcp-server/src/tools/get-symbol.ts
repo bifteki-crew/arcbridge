@@ -37,7 +37,7 @@ export function registerGetSymbol(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_symbol",
+    "arcbridge_get_symbol",
     "Get detailed information about a specific TypeScript symbol including its source code, type signature, and relationships.",
     {
       target_dir: z
@@ -63,7 +63,7 @@ export function registerGetSymbol(
 
       if (!symbol) {
         return textResult(
-          `Symbol not found: \`${params.symbol_id}\`\n\nUse \`archlens_search_symbols\` to find symbols by name.`,
+          `Symbol not found: \`${params.symbol_id}\`\n\nUse \`arcbridge_search_symbols\` to find symbols by name.`,
         );
       }
 

@@ -28,7 +28,7 @@ export function registerGetPhasePlan(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_phase_plan",
+    "arcbridge_get_phase_plan",
     "Get the complete phase plan with all phases, their tasks, status, and gate requirements.",
     {
       target_dir: z

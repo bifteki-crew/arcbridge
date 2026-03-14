@@ -1,8 +1,8 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { createArchLensServer } from "./server.js";
+import { createArcBridgeServer } from "./server.js";
 
 async function main() {
-  const server = createArchLensServer();
+  const server = createArcBridgeServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

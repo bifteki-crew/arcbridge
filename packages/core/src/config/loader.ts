@@ -1,20 +1,20 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import yaml from "yaml";
-import { ArchLensConfigSchema, type ArchLensConfig } from "../schemas/config.js";
+import { ArcBridgeConfigSchema, type ArcBridgeConfig } from "../schemas/config.js";
 
 /**
- * Load and validate the ArchLens config from `.archlens/config.yaml`.
+ * Load and validate the ArcBridge config from `.arcbridge/config.yaml`.
  * Returns null if the file doesn't exist or fails validation.
  */
 export function loadConfig(
   projectRoot: string,
-): { config: ArchLensConfig | null; error: string | null } {
-  const configPath = join(projectRoot, ".archlens", "config.yaml");
+): { config: ArcBridgeConfig | null; error: string | null } {
+  const configPath = join(projectRoot, ".arcbridge", "config.yaml");
 
   try {
     const raw = readFileSync(configPath, "utf-8");
-    const parsed = ArchLensConfigSchema.safeParse(yaml.parse(raw));
+    const parsed = ArcBridgeConfigSchema.safeParse(yaml.parse(raw));
     if (parsed.success) {
       return { config: parsed.data, error: null };
     }

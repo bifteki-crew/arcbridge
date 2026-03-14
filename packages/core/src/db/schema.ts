@@ -4,7 +4,7 @@ export const CURRENT_SCHEMA_VERSION = 1;
 
 const SCHEMA_SQL = `
 -- Metadata
-CREATE TABLE IF NOT EXISTS archlens_meta (
+CREATE TABLE IF NOT EXISTS arcbridge_meta (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
@@ -164,13 +164,13 @@ export function initializeSchema(db: Database.Database): void {
   db.exec(SCHEMA_SQL);
 
   const existing = db
-    .prepare("SELECT value FROM archlens_meta WHERE key = 'schema_version'")
+    .prepare("SELECT value FROM arcbridge_meta WHERE key = 'schema_version'")
     .get() as { value: string } | undefined;
 
   if (!existing) {
     const now = new Date().toISOString();
     const insert = db.prepare(
-      "INSERT INTO archlens_meta (key, value) VALUES (?, ?)",
+      "INSERT INTO arcbridge_meta (key, value) VALUES (?, ?)",
     );
     insert.run("schema_version", String(CURRENT_SCHEMA_VERSION));
     insert.run("created_at", now);

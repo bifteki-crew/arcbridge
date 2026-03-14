@@ -8,14 +8,14 @@ export function qualityGuardianTemplate(): AgentRole {
       "Enforces quality scenarios across all categories: performance, accessibility, reliability, and maintainability",
     version: 1,
     required_tools: [
-      "archlens_get_quality_scenarios",
-      "archlens_get_project_status",
-      "archlens_get_building_blocks",
-      "archlens_search_symbols",
-      "archlens_get_symbol",
-      "archlens_get_component_graph",
-      "archlens_get_boundary_analysis",
-      // Phase 3+: "archlens_run_role_check"
+      "arcbridge_get_quality_scenarios",
+      "arcbridge_get_project_status",
+      "arcbridge_get_building_blocks",
+      "arcbridge_search_symbols",
+      "arcbridge_get_symbol",
+      "arcbridge_get_component_graph",
+      "arcbridge_get_boundary_analysis",
+      // Phase 3+: "arcbridge_run_role_check"
     ],
     denied_tools: [],
     read_only: true,

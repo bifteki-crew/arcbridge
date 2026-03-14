@@ -6,7 +6,7 @@ import {
   getHeadSha,
   setSyncCommit,
   type ChangedFile,
-} from "@archlens/core";
+} from "@arcbridge/core";
 import type Database from "better-sqlite3";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath } from "../helpers.js";
@@ -31,7 +31,7 @@ export function registerProposeArc42Update(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_propose_arc42_update",
+    "arcbridge_propose_arc42_update",
     "Analyze code changes since a reference point and generate specific, actionable proposals for updating arc42 documentation.",
     {
       target_dir: z
@@ -208,7 +208,7 @@ function generateProposals(
           section: "05 Building Block View",
           title: `New cross-block interface: \`${sym.name}\``,
           description: `Exported ${sym.kind} \`${sym.name}\` in block \`${block.name}\` is consumed by blocks: ${consumerNames}. This should be documented as an interface.`,
-          suggestedChange: `Add \`${sym.name}\` to the interfaces section of building block \`${block.id}\` in \`.archlens/arc42/05-building-blocks.md\`.`,
+          suggestedChange: `Add \`${sym.name}\` to the interfaces section of building block \`${block.id}\` in \`.arcbridge/arc42/05-building-blocks.md\`.`,
         });
       }
     }

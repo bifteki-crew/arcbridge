@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { ArchLensConfigSchema } from "../schemas/config.js";
+import { ArcBridgeConfigSchema } from "../schemas/config.js";
 import { QualityScenarioSchema } from "../schemas/quality-scenarios.js";
 import { BuildingBlockSchema } from "../schemas/building-blocks.js";
 import { PhaseSchema, TaskSchema } from "../schemas/phases.js";
 import { AdrFrontmatterSchema } from "../schemas/adrs.js";
 import { AgentRoleSchema } from "../schemas/agent-roles.js";
 
-describe("ArchLensConfigSchema", () => {
+describe("ArcBridgeConfigSchema", () => {
   it("parses valid config", () => {
-    const result = ArchLensConfigSchema.parse({
+    const result = ArcBridgeConfigSchema.parse({
       project_name: "my-app",
       project_type: "nextjs-app-router",
     });
@@ -20,13 +20,13 @@ describe("ArchLensConfigSchema", () => {
 
   it("rejects missing project_name", () => {
     expect(() =>
-      ArchLensConfigSchema.parse({ project_type: "nextjs-app-router" }),
+      ArcBridgeConfigSchema.parse({ project_type: "nextjs-app-router" }),
     ).toThrow();
   });
 
   it("rejects invalid project_type", () => {
     expect(() =>
-      ArchLensConfigSchema.parse({
+      ArcBridgeConfigSchema.parse({
         project_name: "test",
         project_type: "invalid",
       }),

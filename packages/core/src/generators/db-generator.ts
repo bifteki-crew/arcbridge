@@ -23,7 +23,7 @@ function populateBuildingBlocks(
   const warnings: string[] = [];
   const filePath = join(
     targetDir,
-    ".archlens",
+    ".arcbridge",
     "arc42",
     "05-building-blocks.md",
   );
@@ -75,7 +75,7 @@ function populateQualityScenarios(
   const warnings: string[] = [];
   const filePath = join(
     targetDir,
-    ".archlens",
+    ".arcbridge",
     "arc42",
     "10-quality-scenarios.yaml",
   );
@@ -125,7 +125,7 @@ function populatePhases(
   targetDir: string,
 ): string[] {
   const warnings: string[] = [];
-  const phasesPath = join(targetDir, ".archlens", "plan", "phases.yaml");
+  const phasesPath = join(targetDir, ".arcbridge", "plan", "phases.yaml");
 
   if (!existsSync(phasesPath)) {
     warnings.push("Phases file not found, skipping");
@@ -170,7 +170,7 @@ function populatePhases(
     // Try to load task file for this phase
     const taskPath = join(
       targetDir,
-      ".archlens",
+      ".arcbridge",
       "plan",
       "tasks",
       `${phase.id}.yaml`,
@@ -214,7 +214,7 @@ function populateAdrs(
   const warnings: string[] = [];
   const decisionsDir = join(
     targetDir,
-    ".archlens",
+    ".arcbridge",
     "arc42",
     "09-decisions",
   );
@@ -264,7 +264,7 @@ export function generateDatabase(
   targetDir: string,
   input: InitProjectInput,
 ): GenerateDatabaseResult {
-  const dbPath = join(targetDir, ".archlens", "index.db");
+  const dbPath = join(targetDir, ".arcbridge", "index.db");
   const db = openDatabase(dbPath);
   initializeSchema(db);
 
@@ -272,7 +272,7 @@ export function generateDatabase(
 
   // Set project metadata
   const upsert = db.prepare(
-    "INSERT OR REPLACE INTO archlens_meta (key, value) VALUES (?, ?)",
+    "INSERT OR REPLACE INTO arcbridge_meta (key, value) VALUES (?, ?)",
   );
   upsert.run("project_name", input.name);
   upsert.run("project_type", input.template);

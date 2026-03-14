@@ -9,7 +9,7 @@ import {
   generateAgentRoles,
   generateDatabase,
   type InitProjectInput,
-} from "@archlens/core";
+} from "@arcbridge/core";
 import type Database from "better-sqlite3";
 import type { ServerContext } from "../context.js";
 
@@ -26,7 +26,7 @@ let db: Database.Database;
 let _ctx: ServerContext;
 
 beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), "archlens-tool-test-"));
+  tempDir = mkdtempSync(join(tmpdir(), "arcbridge-tool-test-"));
 
   // Generate full project
   generateConfig(tempDir, TEST_INPUT);

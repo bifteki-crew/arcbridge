@@ -27,9 +27,9 @@ import { registerActivateRole } from "./tools/activate-role.js";
 import { registerVerifyScenarios } from "./tools/verify-scenarios.js";
 import { registerRunRoleCheck } from "./tools/run-role-check.js";
 
-export function createArchLensServer(): McpServer {
+export function createArcBridgeServer(): McpServer {
   const server = new McpServer({
-    name: "archlens",
+    name: "arcbridge",
     version: "0.1.0",
   });
 

@@ -1,7 +1,7 @@
 // Schemas
 export {
-  ArchLensConfigSchema,
-  type ArchLensConfig,
+  ArcBridgeConfigSchema,
+  type ArcBridgeConfig,
   type Service,
 } from "./schemas/config.js";
 export {

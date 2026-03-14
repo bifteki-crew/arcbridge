@@ -51,7 +51,7 @@ export function registerGetBuildingBlock(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_building_block",
+    "arcbridge_get_building_block",
     "Get detailed information about a single building block: its arc42 description, code modules, interfaces, quality scenarios, ADRs, and tasks.",
     {
       target_dir: z
@@ -74,7 +74,7 @@ export function registerGetBuildingBlock(
           content: [
             {
               type: "text" as const,
-              text: `Building block '${params.block_id}' not found. Use \`archlens_get_building_blocks\` to see all blocks.`,
+              text: `Building block '${params.block_id}' not found. Use \`arcbridge_get_building_blocks\` to see all blocks.`,
             },
           ],
         };

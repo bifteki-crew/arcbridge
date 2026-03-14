@@ -8,8 +8,8 @@ import {
   indexProject,
   detectDrift,
   generateSyncFiles,
-  type ArchLensConfig,
-} from "@archlens/core";
+  type ArcBridgeConfig,
+} from "@arcbridge/core";
 import type Database from "better-sqlite3";
 
 const TS_FIXTURE = join(
@@ -228,9 +228,9 @@ describe("activate_role context loading", () => {
 
 describe("sync file generation", () => {
   it("generates sync files for claude + copilot platforms", () => {
-    const tmpDir = mkdtempSync(join(tmpdir(), "archlens-sync-"));
+    const tmpDir = mkdtempSync(join(tmpdir(), "arcbridge-sync-"));
 
-    const config: ArchLensConfig = {
+    const config: ArcBridgeConfig = {
       schema_version: 1,
       project_name: "Test",
       project_type: "nextjs-app-router",
@@ -260,9 +260,9 @@ describe("sync file generation", () => {
 
     // Should generate: GitHub Action + Claude skill + Copilot hook
     expect(files.length).toBe(3);
-    expect(files).toContain(".github/workflows/archlens-sync.yml");
-    expect(files).toContain(".claude/skills/archlens-sync.md");
-    expect(files).toContain(".github/archlens-sync-hook.md");
+    expect(files).toContain(".github/workflows/arcbridge-sync.yml");
+    expect(files).toContain(".claude/skills/arcbridge-sync.md");
+    expect(files).toContain(".github/arcbridge-sync-hook.md");
 
     // Verify files exist on disk
     for (const f of files) {
@@ -273,9 +273,9 @@ describe("sync file generation", () => {
   });
 
   it("skips Claude skill when claude not in platforms", () => {
-    const tmpDir = mkdtempSync(join(tmpdir(), "archlens-sync-"));
+    const tmpDir = mkdtempSync(join(tmpdir(), "arcbridge-sync-"));
 
-    const config: ArchLensConfig = {
+    const config: ArcBridgeConfig = {
       schema_version: 1,
       project_name: "Test",
       project_type: "nextjs-app-router",
@@ -303,9 +303,9 @@ describe("sync file generation", () => {
 
     const files = generateSyncFiles(tmpDir, config);
 
-    expect(files).toContain(".github/workflows/archlens-sync.yml");
-    expect(files).toContain(".github/archlens-sync-hook.md");
-    expect(files).not.toContain(".claude/skills/archlens-sync.md");
+    expect(files).toContain(".github/workflows/arcbridge-sync.yml");
+    expect(files).toContain(".github/arcbridge-sync-hook.md");
+    expect(files).not.toContain(".claude/skills/arcbridge-sync.md");
 
     rmSync(tmpDir, { recursive: true });
   });

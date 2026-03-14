@@ -5,7 +5,7 @@ import {
   getChangedFiles,
   detectDrift,
   type ChangedFile,
-} from "@archlens/core";
+} from "@arcbridge/core";
 import type Database from "better-sqlite3";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson, escapeLike, normalizeCodePath } from "../helpers.js";
@@ -41,7 +41,7 @@ export function registerGetPracticeReview(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_practice_review",
+    "arcbridge_get_practice_review",
     "Structured, practice-aware review of recent code changes across 5 dimensions: Architecture, Security, Testing, Documentation, and Complexity.",
     {
       target_dir: z
@@ -191,7 +191,7 @@ function reviewArchitecture(
       dimension: "Architecture",
       severity: "warning",
       description: `${unmapped.length} changed file(s) not mapped to any building block: ${unmapped.slice(0, 3).map((f) => `\`${f}\``).join(", ")}${unmapped.length > 3 ? ` and ${unmapped.length - 3} more` : ""}`,
-      action: "Map these files to building blocks in `.archlens/arc42/05-building-blocks.md`",
+      action: "Map these files to building blocks in `.arcbridge/arc42/05-building-blocks.md`",
     });
   }
 
@@ -424,7 +424,7 @@ function reviewDocumentation(
         dimension: "Documentation",
         severity: "error",
         description: `${errors.length} architecture drift error(s) detected (dependency violations, etc.).`,
-        action: "Run `archlens_check_drift` for details and resolve violations.",
+        action: "Run `arcbridge_check_drift` for details and resolve violations.",
       });
     }
 
@@ -433,21 +433,21 @@ function reviewDocumentation(
         dimension: "Documentation",
         severity: "warning",
         description: `${warnings.length} documentation gap(s) found (undocumented modules, missing code paths, etc.).`,
-        action: "Run `archlens_propose_arc42_update` to generate update proposals.",
+        action: "Run `arcbridge_propose_arc42_update` to generate update proposals.",
       });
     }
   }
 
   // Check if arc42 files were changed
   const arc42Changes = changedFiles.filter((f) =>
-    f.path.includes(".archlens/arc42/"),
+    f.path.includes(".arcbridge/arc42/"),
   );
   if (arc42Changes.length > 0) {
     findings.push({
       dimension: "Documentation",
       severity: "info",
       description: `${arc42Changes.length} arc42 documentation file(s) were updated.`,
-      action: "Run `archlens_reindex` to ensure the database reflects documentation changes.",
+      action: "Run `arcbridge_reindex` to ensure the database reflects documentation changes.",
     });
   }
 }

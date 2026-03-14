@@ -28,7 +28,7 @@ export function registerGetComponentGraph(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_component_graph",
+    "arcbridge_get_component_graph",
     "Get the React component graph: component hierarchy, props, state, context usage, and server/client boundaries.",
     {
       target_dir: z
@@ -82,7 +82,7 @@ export function registerGetComponentGraph(
       const components = db.prepare(query).all(...queryParams) as ComponentRow[];
 
       if (components.length === 0) {
-        return textResult("No components found. Run `archlens_reindex` to analyze React components.");
+        return textResult("No components found. Run `arcbridge_reindex` to analyze React components.");
       }
 
       // Get render edges between components

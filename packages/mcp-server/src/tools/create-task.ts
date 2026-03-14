@@ -8,7 +8,7 @@ export function registerCreateTask(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_create_task",
+    "arcbridge_create_task",
     "Create a new task in a phase. Links it to a building block and quality scenarios.",
     {
       target_dir: z
@@ -45,7 +45,7 @@ export function registerCreateTask(
           content: [
             {
               type: "text" as const,
-              text: `Phase '${params.phase_id}' not found. Use \`archlens_get_phase_plan\` to see phases.`,
+              text: `Phase '${params.phase_id}' not found. Use \`arcbridge_get_phase_plan\` to see phases.`,
             },
           ],
         };

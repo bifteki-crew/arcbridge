@@ -29,7 +29,7 @@ export function generatePlan(
   targetDir: string,
   input: InitProjectInput,
 ): void {
-  const planDir = join(targetDir, ".archlens", "plan");
+  const planDir = join(targetDir, ".arcbridge", "plan");
   const tasksDir = join(planDir, "tasks");
 
   mkdirSync(planDir, { recursive: true });

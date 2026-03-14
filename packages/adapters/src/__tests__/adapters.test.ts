@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import type { AgentRole, ArchLensConfig } from "@archlens/core";
+import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
 import { ClaudeAdapter } from "../claude/claude-adapter.js";
 import { CopilotAdapter } from "../copilot/copilot-adapter.js";
 
-const TEST_CONFIG: ArchLensConfig = {
+const TEST_CONFIG: ArcBridgeConfig = {
   schema_version: 1,
   project_name: "test-app",
   project_type: "nextjs-app-router",
@@ -25,7 +25,7 @@ const TEST_ROLES: AgentRole[] = [
     name: "Architect",
     description: "Designs system structure",
     version: 1,
-    required_tools: ["archlens_get_building_blocks"],
+    required_tools: ["arcbridge_get_building_blocks"],
     denied_tools: [],
     read_only: false,
     quality_focus: ["maintainability"],
@@ -42,7 +42,7 @@ const TEST_ROLES: AgentRole[] = [
     name: "Code Reviewer",
     description: "On-demand code review",
     version: 1,
-    required_tools: ["archlens_get_building_block"],
+    required_tools: ["arcbridge_get_building_block"],
     denied_tools: [],
     read_only: true,
     quality_focus: ["maintainability", "reliability"],
@@ -59,7 +59,7 @@ const TEST_ROLES: AgentRole[] = [
 let tempDir: string;
 
 beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), "archlens-adapter-test-"));
+  tempDir = mkdtempSync(join(tmpdir(), "arcbridge-adapter-test-"));
 });
 
 afterEach(() => {
@@ -79,7 +79,7 @@ describe("ClaudeAdapter", () => {
     expect(content).toContain("test-app");
     expect(content).toContain("nextjs-app-router");
     expect(content).toContain("security, performance");
-    expect(content).toContain("archlens_get_project_status");
+    expect(content).toContain("arcbridge_get_project_status");
   });
 
   it("generates agent files in .claude/agents/", () => {
@@ -92,7 +92,7 @@ describe("ClaudeAdapter", () => {
     const content = readFileSync(join(agentsDir, "architect.md"), "utf-8");
     expect(content).toContain("# Architect");
     expect(content).toContain("Designs system structure");
-    expect(content).toContain("archlens_get_building_blocks");
+    expect(content).toContain("arcbridge_get_building_blocks");
     expect(content).toContain("You are the Architect agent.");
   });
 

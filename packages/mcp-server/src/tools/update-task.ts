@@ -15,7 +15,7 @@ export function registerUpdateTask(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_update_task",
+    "arcbridge_update_task",
     "Update a task's status. Use this to mark tasks as in-progress, done, or blocked as you work.",
     {
       target_dir: z
@@ -44,7 +44,7 @@ export function registerUpdateTask(
           content: [
             {
               type: "text" as const,
-              text: `Task '${params.task_id}' not found. Use \`archlens_get_current_tasks\` to see available tasks.`,
+              text: `Task '${params.task_id}' not found. Use \`arcbridge_get_current_tasks\` to see available tasks.`,
             },
           ],
         };

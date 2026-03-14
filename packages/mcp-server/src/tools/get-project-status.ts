@@ -37,8 +37,8 @@ export function registerGetProjectStatus(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_get_project_status",
-    "Get the current status of the ArchLens project: current phase, task completion, building blocks, quality scenarios, and drift warnings.",
+    "arcbridge_get_project_status",
+    "Get the current status of the ArcBridge project: current phase, task completion, building blocks, quality scenarios, and drift warnings.",
     {
       target_dir: z
         .string()
@@ -55,7 +55,7 @@ export function registerGetProjectStatus(
       const projectName = (
         db
           .prepare(
-            "SELECT value FROM archlens_meta WHERE key = 'project_name'",
+            "SELECT value FROM arcbridge_meta WHERE key = 'project_name'",
           )
           .get() as MetaRow | undefined
       )?.value ?? "Unknown";
@@ -173,7 +173,7 @@ export function registerGetProjectStatus(
         );
       } else {
         lines.push(
-          "*Not indexed yet.* Run `archlens_reindex` to index TypeScript symbols.",
+          "*Not indexed yet.* Run `arcbridge_reindex` to index TypeScript symbols.",
           "",
         );
       }

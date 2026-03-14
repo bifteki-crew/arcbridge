@@ -10,7 +10,7 @@ import { generateArc42 } from "../generators/arc42-generator.js";
 import { generatePlan } from "../generators/plan-generator.js";
 import { generateAgentRoles } from "../generators/agent-generator.js";
 import { generateDatabase } from "../generators/db-generator.js";
-import { ArchLensConfigSchema } from "../schemas/config.js";
+import { ArcBridgeConfigSchema } from "../schemas/config.js";
 import { QualityScenariosFileSchema } from "../schemas/quality-scenarios.js";
 import { BuildingBlocksFrontmatterSchema } from "../schemas/building-blocks.js";
 import { PhasesFileSchema } from "../schemas/phases.js";
@@ -26,7 +26,7 @@ const TEST_INPUT: InitProjectInput = {
 let tempDir: string;
 
 beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), "archlens-test-"));
+  tempDir = mkdtempSync(join(tmpdir(), "arcbridge-test-"));
 });
 
 afterEach(() => {
@@ -36,13 +36,13 @@ afterEach(() => {
 describe("generateConfig", () => {
   it("creates config.yaml with valid content", () => {
     const config = generateConfig(tempDir, TEST_INPUT);
-    const filePath = join(tempDir, ".archlens", "config.yaml");
+    const filePath = join(tempDir, ".arcbridge", "config.yaml");
 
     expect(existsSync(filePath)).toBe(true);
 
     const raw = readFileSync(filePath, "utf-8");
     const parsed = parse(raw);
-    const validated = ArchLensConfigSchema.parse(parsed);
+    const validated = ArcBridgeConfigSchema.parse(parsed);
 
     expect(validated.project_name).toBe("test-app");
     expect(validated.project_type).toBe("nextjs-app-router");
@@ -53,7 +53,7 @@ describe("generateConfig", () => {
 describe("generateArc42", () => {
   it("creates all arc42 files", () => {
     generateArc42(tempDir, TEST_INPUT);
-    const arc42Dir = join(tempDir, ".archlens", "arc42");
+    const arc42Dir = join(tempDir, ".arcbridge", "arc42");
 
     expect(existsSync(join(arc42Dir, "01-introduction.md"))).toBe(true);
     expect(existsSync(join(arc42Dir, "03-context.md"))).toBe(true);
@@ -70,7 +70,7 @@ describe("generateArc42", () => {
   it("produces valid building blocks frontmatter", () => {
     generateArc42(tempDir, TEST_INPUT);
     const raw = readFileSync(
-      join(tempDir, ".archlens", "arc42", "05-building-blocks.md"),
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
       "utf-8",
     );
     const { data } = matter(raw);
@@ -86,7 +86,7 @@ describe("generateArc42", () => {
   it("produces valid quality scenarios", () => {
     generateArc42(tempDir, TEST_INPUT);
     const raw = readFileSync(
-      join(tempDir, ".archlens", "arc42", "10-quality-scenarios.yaml"),
+      join(tempDir, ".arcbridge", "arc42", "10-quality-scenarios.yaml"),
       "utf-8",
     );
     const parsed = parse(raw);
@@ -100,7 +100,7 @@ describe("generateArc42", () => {
 describe("generatePlan", () => {
   it("creates phases.yaml and task files", () => {
     generatePlan(tempDir, TEST_INPUT);
-    const planDir = join(tempDir, ".archlens", "plan");
+    const planDir = join(tempDir, ".arcbridge", "plan");
 
     expect(existsSync(join(planDir, "phases.yaml"))).toBe(true);
     expect(existsSync(join(planDir, "sync-log.md"))).toBe(true);
@@ -114,7 +114,7 @@ describe("generatePlan", () => {
 
   it("creates task files for phases with tasks", () => {
     generatePlan(tempDir, TEST_INPUT);
-    const tasksDir = join(tempDir, ".archlens", "plan", "tasks");
+    const tasksDir = join(tempDir, ".arcbridge", "plan", "tasks");
 
     expect(existsSync(join(tasksDir, "phase-0-setup.yaml"))).toBe(true);
     expect(existsSync(join(tasksDir, "phase-1-foundation.yaml"))).toBe(true);
@@ -124,7 +124,7 @@ describe("generatePlan", () => {
 describe("generateAgentRoles", () => {
   it("creates all 7 agent role files", () => {
     const roles = generateAgentRoles(tempDir);
-    const agentsDir = join(tempDir, ".archlens", "agents");
+    const agentsDir = join(tempDir, ".arcbridge", "agents");
 
     expect(roles).toHaveLength(7);
     expect(existsSync(join(agentsDir, "architect.md"))).toBe(true);
@@ -139,7 +139,7 @@ describe("generateAgentRoles", () => {
   it("produces parseable frontmatter", () => {
     generateAgentRoles(tempDir);
     const raw = readFileSync(
-      join(tempDir, ".archlens", "agents", "architect.md"),
+      join(tempDir, ".arcbridge", "agents", "architect.md"),
       "utf-8",
     );
     const { data, content } = matter(raw);
@@ -164,7 +164,7 @@ describe("generateDatabase", () => {
 
     // Check metadata
     const projectName = db
-      .prepare("SELECT value FROM archlens_meta WHERE key = 'project_name'")
+      .prepare("SELECT value FROM arcbridge_meta WHERE key = 'project_name'")
       .get() as { value: string };
     expect(projectName.value).toBe("test-app");
 

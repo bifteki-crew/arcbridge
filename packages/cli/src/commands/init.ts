@@ -9,8 +9,8 @@ import {
   generateSyncFiles,
   indexProject,
   type InitProjectInput,
-} from "@archlens/core";
-import { getAdapter } from "@archlens/adapters";
+} from "@arcbridge/core";
+import { getAdapter } from "@arcbridge/adapters";
 
 interface InitOptions {
   name?: string;
@@ -94,8 +94,8 @@ export async function init(
   const projectRoot = resolve(dir);
 
   // Check if already initialized
-  if (existsSync(join(projectRoot, ".archlens", "config.yaml"))) {
-    const msg = "ArchLens is already initialized in this directory. Use `archlens status` to see current state.";
+  if (existsSync(join(projectRoot, ".arcbridge", "config.yaml"))) {
+    const msg = "ArcBridge is already initialized in this directory. Use `arcbridge status` to see current state.";
     if (json) {
       console.log(JSON.stringify({ error: msg }));
     } else {
@@ -128,7 +128,7 @@ export async function init(
 
   // Show what we detected
   if (!json) {
-    console.log(`Initializing ArchLens in ${projectRoot}\n`);
+    console.log(`Initializing ArcBridge in ${projectRoot}\n`);
     console.log(`  Project:  ${projectName} (${detected.nameSource})`);
     console.log(`  Template: ${template} (${detected.templateSource})`);
     console.log(`  Platform: ${platforms.join(", ")}`);
@@ -147,7 +147,7 @@ export async function init(
   };
 
   // 1. Generate config
-  if (!json) console.log("Creating .archlens/config.yaml...");
+  if (!json) console.log("Creating .arcbridge/config.yaml...");
   const config = generateConfig(projectRoot, input);
 
   // 2. Generate arc42 documentation
@@ -184,14 +184,14 @@ export async function init(
     }
   }
 
-  // 8. Copy spec file into .archlens/ if provided
+  // 8. Copy spec file into .arcbridge/ if provided
   if (options.spec) {
     const specPath = resolve(options.spec);
     if (existsSync(specPath)) {
       const specContent = readFileSync(specPath, "utf-8");
       const { writeFileSync } = await import("node:fs");
-      writeFileSync(join(projectRoot, ".archlens", "spec.md"), specContent, "utf-8");
-      if (!json) console.log("Copied spec file to .archlens/spec.md");
+      writeFileSync(join(projectRoot, ".arcbridge", "spec.md"), specContent, "utf-8");
+      if (!json) console.log("Copied spec file to .arcbridge/spec.md");
     } else {
       platformWarnings.push(`Spec file not found: ${specPath}`);
     }
@@ -258,7 +258,7 @@ export async function init(
       ),
     );
   } else {
-    console.log("\nArchLens initialized successfully!\n");
+    console.log("\nArcBridge initialized successfully!\n");
     console.log(`  Building blocks:    ${blockCount.count}`);
     console.log(`  Quality scenarios:  ${scenarioCount.count}`);
     console.log(`  Phases:             ${phaseCount.count}`);
@@ -280,10 +280,10 @@ export async function init(
     }
 
     console.log("\nNext steps:");
-    console.log("  1. Review .archlens/config.yaml and adjust as needed");
+    console.log("  1. Review .arcbridge/config.yaml and adjust as needed");
     console.log("  2. Start your AI agent (e.g. Claude Code) in this directory");
     console.log("  3. The agent will see the architecture context and can help");
     console.log("     refine building blocks, quality scenarios, and the plan");
-    console.log("  4. Run `archlens sync` periodically to keep docs in sync with code");
+    console.log("  4. Run `arcbridge sync` periodically to keep docs in sync with code");
   }
 }

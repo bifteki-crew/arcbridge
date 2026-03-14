@@ -1,7 +1,7 @@
 {
-  "name": "@archlens/core",
+  "name": "@arcbridge/core",
   "version": "0.1.0",
-  "description": "Core library for ArchLens — schemas, database, indexer, drift detection, and generators",
+  "description": "Core library for ArcBridge — schemas, database, indexer, drift detection, and generators",
   "license": "MIT",
   "type": "module",
   "publishConfig": {
@@ -9,10 +9,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bifteki-crew/project-archlens.git",
+    "url": "https://github.com/bifteki-crew/arcbridge.git",
     "directory": "packages/core"
   },
-  "keywords": ["archlens", "architecture", "arc42", "mcp", "typescript", "indexer"],
+  "keywords": ["arcbridge", "architecture", "arc42", "mcp", "typescript", "indexer"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

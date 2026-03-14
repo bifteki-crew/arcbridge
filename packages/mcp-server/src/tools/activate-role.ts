@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
-import { loadRole, loadRoles } from "@archlens/core";
+import { loadRole, loadRoles } from "@arcbridge/core";
 
 interface BlockRow {
   id: string;
@@ -35,7 +35,7 @@ export function registerActivateRole(
   ctx: ServerContext,
 ): void {
   server.tool(
-    "archlens_activate_role",
+    "arcbridge_activate_role",
     "Activate an agent role: loads the role's system prompt, required tools, quality focus, and pre-loaded architectural context.",
     {
       target_dir: z
@@ -57,7 +57,7 @@ export function registerActivateRole(
 
       const lines: string[] = [];
 
-      // Try loading role from .archlens/agents/ files first, fall back to built-in definitions
+      // Try loading role from .arcbridge/agents/ files first, fall back to built-in definitions
       const fileResult = loadRole(params.target_dir, params.role);
       const role = fileResult.role ?? null;
       const roleDef = role
@@ -93,7 +93,7 @@ export function registerActivateRole(
       );
 
       if (source === "file") {
-        lines.push(`*Loaded from .archlens/agents/${params.role}.md*`, "");
+        lines.push(`*Loaded from .arcbridge/agents/${params.role}.md*`, "");
       }
 
       // Tools section
@@ -216,7 +216,7 @@ export function registerActivateRole(
           lines.push(
             `### Warning: Unknown Building Block`,
             "",
-            `Building block \`${params.building_block}\` not found. Use \`archlens_get_building_blocks\` to see available blocks.`,
+            `Building block \`${params.building_block}\` not found. Use \`arcbridge_get_building_blocks\` to see available blocks.`,
             "",
           );
         } else {
@@ -301,7 +301,7 @@ interface RoleDef {
 }
 
 /**
- * Built-in fallback role definitions, used when .archlens/agents/{roleId}.md
+ * Built-in fallback role definitions, used when .arcbridge/agents/{roleId}.md
  * doesn't exist (e.g., project not initialized or role file deleted).
  */
 function getRoleDefinition(roleId: string): RoleDef | null {
@@ -311,18 +311,18 @@ function getRoleDefinition(roleId: string): RoleDef | null {
       description:
         "Designs system structure, makes architectural decisions, and maintains the arc42 documentation",
       requiredTools: [
-        "archlens_get_building_blocks",
-        "archlens_get_quality_scenarios",
-        "archlens_get_relevant_adrs",
-        "archlens_search_symbols",
-        "archlens_get_symbol",
-        "archlens_get_dependency_graph",
-        "archlens_get_component_graph",
-        "archlens_get_route_map",
-        "archlens_get_boundary_analysis",
-        "archlens_propose_arc42_update",
-        "archlens_check_drift",
-        "archlens_get_open_questions",
+        "arcbridge_get_building_blocks",
+        "arcbridge_get_quality_scenarios",
+        "arcbridge_get_relevant_adrs",
+        "arcbridge_search_symbols",
+        "arcbridge_get_symbol",
+        "arcbridge_get_dependency_graph",
+        "arcbridge_get_component_graph",
+        "arcbridge_get_route_map",
+        "arcbridge_get_boundary_analysis",
+        "arcbridge_propose_arc42_update",
+        "arcbridge_check_drift",
+        "arcbridge_get_open_questions",
       ],
       deniedTools: [],
       readOnly: false,
@@ -335,15 +335,15 @@ function getRoleDefinition(roleId: string): RoleDef | null {
       description:
         "Writes code within defined building block boundaries, follows existing patterns, and completes phase tasks",
       requiredTools: [
-        "archlens_get_building_block",
-        "archlens_get_current_tasks",
-        "archlens_update_task",
-        "archlens_search_symbols",
-        "archlens_get_symbol",
-        "archlens_get_guidance",
-        "archlens_get_component_graph",
+        "arcbridge_get_building_block",
+        "arcbridge_get_current_tasks",
+        "arcbridge_update_task",
+        "arcbridge_search_symbols",
+        "arcbridge_get_symbol",
+        "arcbridge_get_guidance",
+        "arcbridge_get_component_graph",
       ],
-      deniedTools: ["archlens_propose_arc42_update"],
+      deniedTools: ["arcbridge_propose_arc42_update"],
       readOnly: false,
       qualityFocus: ["maintainability", "performance"],
       systemPrompt:
@@ -354,16 +354,16 @@ function getRoleDefinition(roleId: string): RoleDef | null {
       description:
         "Reviews code for security vulnerabilities, verifies security quality scenarios, and checks auth coverage",
       requiredTools: [
-        "archlens_get_quality_scenarios",
-        "archlens_get_building_blocks",
-        "archlens_get_relevant_adrs",
-        "archlens_search_symbols",
-        "archlens_get_symbol",
-        "archlens_get_route_map",
-        "archlens_get_boundary_analysis",
-        "archlens_get_practice_review",
+        "arcbridge_get_quality_scenarios",
+        "arcbridge_get_building_blocks",
+        "arcbridge_get_relevant_adrs",
+        "arcbridge_search_symbols",
+        "arcbridge_get_symbol",
+        "arcbridge_get_route_map",
+        "arcbridge_get_boundary_analysis",
+        "arcbridge_get_practice_review",
       ],
-      deniedTools: ["archlens_propose_arc42_update"],
+      deniedTools: ["arcbridge_propose_arc42_update"],
       readOnly: true,
       qualityFocus: ["security"],
       systemPrompt:
@@ -374,11 +374,11 @@ function getRoleDefinition(roleId: string): RoleDef | null {
       description:
         "Verifies quality scenarios are met, checks test coverage, and monitors performance budgets",
       requiredTools: [
-        "archlens_get_quality_scenarios",
-        "archlens_get_building_blocks",
-        "archlens_search_symbols",
-        "archlens_get_component_graph",
-        "archlens_get_boundary_analysis",
+        "arcbridge_get_quality_scenarios",
+        "arcbridge_get_building_blocks",
+        "arcbridge_search_symbols",
+        "arcbridge_get_component_graph",
+        "arcbridge_get_boundary_analysis",
       ],
       deniedTools: [],
       readOnly: true,
@@ -397,13 +397,13 @@ function getRoleDefinition(roleId: string): RoleDef | null {
       description:
         "Manages phase transitions, enforces gates, triggers sync, and tracks task completion",
       requiredTools: [
-        "archlens_get_phase_plan",
-        "archlens_get_current_tasks",
-        "archlens_update_task",
-        "archlens_check_drift",
-        "archlens_get_open_questions",
-        "archlens_propose_arc42_update",
-        "archlens_complete_phase",
+        "arcbridge_get_phase_plan",
+        "arcbridge_get_current_tasks",
+        "arcbridge_update_task",
+        "arcbridge_check_drift",
+        "arcbridge_get_open_questions",
+        "arcbridge_propose_arc42_update",
+        "arcbridge_complete_phase",
       ],
       deniedTools: [],
       readOnly: false,
@@ -416,13 +416,13 @@ function getRoleDefinition(roleId: string): RoleDef | null {
       description:
         "Helps new team members understand the project architecture, conventions, and current state",
       requiredTools: [
-        "archlens_get_project_status",
-        "archlens_get_building_blocks",
-        "archlens_get_quality_scenarios",
-        "archlens_get_phase_plan",
-        "archlens_get_relevant_adrs",
-        "archlens_get_component_graph",
-        "archlens_get_route_map",
+        "arcbridge_get_project_status",
+        "arcbridge_get_building_blocks",
+        "arcbridge_get_quality_scenarios",
+        "arcbridge_get_phase_plan",
+        "arcbridge_get_relevant_adrs",
+        "arcbridge_get_component_graph",
+        "arcbridge_get_route_map",
       ],
       deniedTools: [],
       readOnly: true,
@@ -435,17 +435,17 @@ function getRoleDefinition(roleId: string): RoleDef | null {
       description:
         "On-demand code review: checks correctness, patterns, edge cases, and simplicity",
       requiredTools: [
-        "archlens_get_building_block",
-        "archlens_get_quality_scenarios",
-        "archlens_get_relevant_adrs",
-        "archlens_get_current_tasks",
-        "archlens_search_symbols",
-        "archlens_get_symbol",
-        "archlens_get_dependency_graph",
-        "archlens_get_component_graph",
-        "archlens_get_route_map",
-        "archlens_get_practice_review",
-        "archlens_get_boundary_analysis",
+        "arcbridge_get_building_block",
+        "arcbridge_get_quality_scenarios",
+        "arcbridge_get_relevant_adrs",
+        "arcbridge_get_current_tasks",
+        "arcbridge_search_symbols",
+        "arcbridge_get_symbol",
+        "arcbridge_get_dependency_graph",
+        "arcbridge_get_component_graph",
+        "arcbridge_get_route_map",
+        "arcbridge_get_practice_review",
+        "arcbridge_get_boundary_analysis",
       ],
       deniedTools: [],
       readOnly: true,
