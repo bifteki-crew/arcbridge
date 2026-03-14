@@ -10,7 +10,7 @@ export function introductionTemplate(input: InitProjectInput): TemplateOutput {
 
 ## Requirements Overview
 
-${input.name} is a ${input.template === "nextjs-app-router" ? "Next.js application using the App Router" : "web application"}.
+${input.name} is a ${input.template === "nextjs-app-router" ? "Next.js application using the App Router" : input.template === "dotnet-webapi" ? "ASP.NET Core Web API" : "web application"}.
 
 ### Key Features
 

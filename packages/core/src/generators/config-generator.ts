@@ -4,6 +4,7 @@ import { stringify } from "yaml";
 import { configTemplate as nextjsConfig } from "../templates/config/nextjs-app-router.js";
 import { configTemplate as reactViteConfig } from "../templates/config/react-vite.js";
 import { configTemplate as apiServiceConfig } from "../templates/config/api-service.js";
+import { configTemplate as dotnetWebapiConfig } from "../templates/config/dotnet-webapi.js";
 import type { InitProjectInput } from "../templates/types.js";
 import type { ArcBridgeConfig } from "../schemas/config.js";
 
@@ -11,6 +12,7 @@ const configTemplates: Record<string, (input: InitProjectInput) => ArcBridgeConf
   "nextjs-app-router": nextjsConfig,
   "react-vite": reactViteConfig,
   "api-service": apiServiceConfig,
+  "dotnet-webapi": dotnetWebapiConfig,
 };
 
 export function generateConfig(

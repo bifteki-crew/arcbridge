@@ -25,7 +25,7 @@ export function registerInitProject(
     {
       name: z.string().min(1).describe("Project name"),
       template: z
-        .enum(["nextjs-app-router", "react-vite", "api-service"])
+        .enum(["nextjs-app-router", "react-vite", "api-service", "dotnet-webapi"])
         .default("nextjs-app-router")
         .describe("Project template"),
       features: z
@@ -156,7 +156,9 @@ export function registerInitProject(
               `- **Components analyzed:** ${indexResult.componentsAnalyzed}`,
               `- **Routes analyzed:** ${indexResult.routesAnalyzed}`,
             ]
-          : [`- **Code indexing:** skipped (no tsconfig.json found — run \`arcbridge_reindex\` later)`]),
+          : [input.template === "dotnet-webapi"
+              ? `- **Code indexing:** not available yet for .NET projects (C# indexer planned)`
+              : `- **Code indexing:** skipped (no tsconfig.json found — run \`arcbridge_reindex\` later)`]),
         "",
         "## Files",
         "",

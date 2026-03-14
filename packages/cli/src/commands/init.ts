@@ -1,5 +1,5 @@
 import { resolve, basename, join } from "node:path";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import {
   generateConfig,
   generateArc42,
@@ -19,7 +19,7 @@ interface InitOptions {
   spec?: string;
 }
 
-type ProjectTemplate = "nextjs-app-router" | "react-vite" | "api-service";
+type ProjectTemplate = "nextjs-app-router" | "react-vite" | "api-service" | "dotnet-webapi";
 
 interface DetectedInfo {
   name: string;
@@ -32,10 +32,23 @@ const VALID_TEMPLATES: ProjectTemplate[] = [
   "nextjs-app-router",
   "react-vite",
   "api-service",
+  "dotnet-webapi",
 ];
 
 /**
- * Auto-detect project info from package.json and dependencies.
+ * Find .csproj files in the project root (non-recursive, just top level).
+ */
+function findCsproj(projectRoot: string): string | null {
+  try {
+    const entries = readdirSync(projectRoot);
+    return entries.find((e) => e.endsWith(".csproj")) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Auto-detect project info from package.json, .csproj, or directory structure.
  */
 function detectProjectInfo(projectRoot: string): DetectedInfo {
   const fallbackName = basename(projectRoot);
@@ -43,6 +56,16 @@ function detectProjectInfo(projectRoot: string): DetectedInfo {
   let nameSource = "directory name";
   let template: ProjectTemplate = "nextjs-app-router";
   let templateSource = "default";
+
+  // Check for .NET project first
+  const csproj = findCsproj(projectRoot);
+  if (csproj) {
+    name = csproj.replace(".csproj", "");
+    nameSource = ".csproj file";
+    template = "dotnet-webapi";
+    templateSource = `detected (${csproj} found)`;
+    return { name, template, nameSource, templateSource };
+  }
 
   const pkgPath = join(projectRoot, "package.json");
   if (existsSync(pkgPath)) {
@@ -269,7 +292,11 @@ export async function init(
         `  Indexed:            ${indexResult.filesProcessed} files, ${indexResult.symbolsIndexed} symbols`,
       );
     } else {
-      console.log("  Indexed:            skipped (no tsconfig.json)");
+      console.log(
+        input.template === "dotnet-webapi"
+          ? "  Indexed:            not available yet for .NET projects (C# indexer planned)"
+          : "  Indexed:            skipped (no tsconfig.json)",
+      );
     }
 
     if (allWarnings.length > 0) {

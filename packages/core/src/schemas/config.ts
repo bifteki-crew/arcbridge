@@ -4,7 +4,8 @@ export const ServiceSchema = z.object({
   name: z.string().min(1),
   path: z.string().default("."),
   type: z.enum(["nextjs", "react", "fastify", "express", "hono", "dotnet"]),
-  tsconfig: z.string().default("tsconfig.json"),
+  tsconfig: z.string().optional(),
+  csproj: z.string().optional(),
 });
 
 export const ArcBridgeConfigSchema = z.object({
@@ -15,6 +16,7 @@ export const ArcBridgeConfigSchema = z.object({
       "nextjs-app-router",
       "react-vite",
       "api-service",
+      "dotnet-webapi",
     ])
     .default("nextjs-app-router"),
 

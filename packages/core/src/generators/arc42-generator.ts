@@ -50,7 +50,7 @@ export function generateArc42(
   // ADR (first decision)
   const adr = firstAdrTemplate(inputWithRoot);
   writeMarkdownWithFrontmatter(
-    join(decisionsDir, "001-nextjs-app-router.md"),
+    join(decisionsDir, adr.filename),
     adr.frontmatter,
     adr.body,
   );

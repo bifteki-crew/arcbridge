@@ -1,5 +1,26 @@
 import type { InitProjectInput, TemplateOutput } from "../types.js";
 
+function techStack(template: string): string {
+  switch (template) {
+    case "dotnet-webapi":
+      return `- **Framework:** ASP.NET Core
+- **Language:** C#
+- **Runtime:** .NET`;
+    case "react-vite":
+      return `- **Framework:** React (Vite)
+- **Language:** TypeScript
+- **Runtime:** Node.js`;
+    case "api-service":
+      return `- **Framework:** Express / Fastify
+- **Language:** TypeScript
+- **Runtime:** Node.js`;
+    default:
+      return `- **Framework:** Next.js (App Router)
+- **Language:** TypeScript
+- **Runtime:** Node.js`;
+  }
+}
+
 export function contextTemplate(input: InitProjectInput): TemplateOutput {
   return {
     frontmatter: {
@@ -25,9 +46,7 @@ ${input.name} interacts with the following external systems and actors:
 
 ### Technology Stack
 
-- **Framework:** Next.js (App Router)
-- **Language:** TypeScript
-- **Runtime:** Node.js
+${techStack(input.template)}
 `,
   };
 }

@@ -236,3 +236,104 @@ describe("generateDatabase", () => {
     db.close();
   });
 });
+
+describe("dotnet-webapi template", () => {
+  const DOTNET_INPUT: InitProjectInput = {
+    name: "my-api",
+    template: "dotnet-webapi",
+    features: ["auth", "database"],
+    quality_priorities: ["security", "performance", "reliability"],
+    platforms: ["claude"],
+  };
+
+  it("generates valid config with dotnet service type", () => {
+    const config = generateConfig(tempDir, DOTNET_INPUT);
+
+    expect(config.project_type).toBe("dotnet-webapi");
+    expect(config.services[0]!.type).toBe("dotnet");
+    expect(config.testing.test_command).toBe("dotnet test");
+    expect(config.indexing.include).toContain("**/*.cs");
+    expect(config.indexing.exclude).toContain("bin");
+  });
+
+  it("generates dotnet-specific building blocks", () => {
+    generateArc42(tempDir, DOTNET_INPUT);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      "utf-8",
+    );
+    const { data } = matter(raw);
+    const validated = BuildingBlocksFrontmatterSchema.parse(data);
+
+    const ids = validated.blocks.map((b) => b.id);
+    expect(ids).toContain("api-host");
+    expect(ids).toContain("controllers");
+    expect(ids).toContain("domain");
+    expect(ids).toContain("services");
+    expect(ids).toContain("middleware");
+    expect(ids).toContain("auth-module");
+    expect(ids).toContain("data-access");
+    // Should NOT contain JS-specific blocks
+    expect(ids).not.toContain("app-shell");
+    expect(ids).not.toContain("ui-components");
+  });
+
+  it("generates ASP.NET Core ADR", () => {
+    generateArc42(tempDir, DOTNET_INPUT);
+    expect(
+      existsSync(join(tempDir, ".arcbridge", "arc42", "09-decisions", "001-aspnet-core-webapi.md")),
+    ).toBe(true);
+    expect(
+      existsSync(join(tempDir, ".arcbridge", "arc42", "09-decisions", "001-nextjs-app-router.md")),
+    ).toBe(false);
+  });
+
+  it("generates dotnet phase plan with correct tasks", () => {
+    generatePlan(tempDir, DOTNET_INPUT);
+    const planDir = join(tempDir, ".arcbridge", "plan");
+
+    const raw = readFileSync(join(planDir, "phases.yaml"), "utf-8");
+    const parsed = parse(raw);
+    const validated = PhasesFileSchema.parse(parsed);
+
+    expect(validated.phases).toHaveLength(4);
+    expect(validated.phases[0]!.description).toContain("ASP.NET Core");
+
+    // Task files exist
+    expect(existsSync(join(planDir, "tasks", "phase-0-setup.yaml"))).toBe(true);
+    expect(existsSync(join(planDir, "tasks", "phase-1-foundation.yaml"))).toBe(true);
+  });
+
+  it("full dotnet project generation with database", () => {
+    generateConfig(tempDir, DOTNET_INPUT);
+    generateArc42(tempDir, DOTNET_INPUT);
+    generatePlan(tempDir, DOTNET_INPUT);
+    generateAgentRoles(tempDir);
+
+    const { db, warnings } = generateDatabase(tempDir, DOTNET_INPUT);
+
+    expect(warnings).toHaveLength(0);
+
+    const blocks = db
+      .prepare("SELECT COUNT(*) as count FROM building_blocks")
+      .get() as { count: number };
+    expect(blocks.count).toBeGreaterThan(0);
+
+    const phases = db
+      .prepare("SELECT COUNT(*) as count FROM phases")
+      .get() as { count: number };
+    expect(phases.count).toBe(4);
+
+    const tasks = db
+      .prepare("SELECT COUNT(*) as count FROM tasks")
+      .get() as { count: number };
+    expect(tasks.count).toBeGreaterThan(0);
+
+    const adrs = db
+      .prepare("SELECT id FROM adrs")
+      .all() as { id: string }[];
+    expect(adrs[0]!.id).toBe("001-aspnet-core-webapi");
+
+    db.close();
+  });
+});

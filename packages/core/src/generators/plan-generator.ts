@@ -15,6 +15,10 @@ import {
   phasePlanTemplate as apiServicePlan,
   phaseTasksTemplate as apiServiceTasks,
 } from "../templates/phases/api-service.js";
+import {
+  phasePlanTemplate as dotnetWebapiPlan,
+  phaseTasksTemplate as dotnetWebapiTasks,
+} from "../templates/phases/dotnet-webapi.js";
 
 type PlanFn = (input: InitProjectInput) => PhasesFile;
 type TasksFn = (input: InitProjectInput, phaseId: string) => TaskFile | null;
@@ -23,6 +27,7 @@ const planTemplates: Record<string, { plan: PlanFn; tasks: TasksFn }> = {
   "nextjs-app-router": { plan: nextjsPlan, tasks: nextjsTasks },
   "react-vite": { plan: reactVitePlan, tasks: reactViteTasks },
   "api-service": { plan: apiServicePlan, tasks: apiServiceTasks },
+  "dotnet-webapi": { plan: dotnetWebapiPlan, tasks: dotnetWebapiTasks },
 };
 
 export function generatePlan(
