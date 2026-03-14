@@ -10,6 +10,7 @@
     "directory": "packages/cli"
   },
   "keywords": ["arcbridge", "architecture", "arc42", "cli", "ai-agents"],
+  "files": ["dist", "README.md", "LICENSE"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {

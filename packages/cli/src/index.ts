@@ -8,6 +8,7 @@ import { drift } from "./commands/drift.js";
 import { init } from "./commands/init.js";
 import { generateConfigs } from "./commands/generate-configs.js";
 import { updateTask } from "./commands/update-task.js";
+import { refresh } from "./commands/refresh.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
@@ -21,6 +22,7 @@ Commands:
   sync              Run the sync loop: reindex, detect drift, infer tasks, propose updates
   status            Show project status (phase, tasks, drift)
   drift             Check for architecture drift
+  refresh           Rebuild the database from YAML/markdown sources
   update-task       Update a task's status (e.g. arcbridge update-task task-1.1 done)
   generate-configs  Regenerate platform agent configs from .arcbridge/agents/
 
@@ -124,6 +126,9 @@ async function main(): Promise<void> {
         break;
       case "drift":
         await drift(dir, json);
+        break;
+      case "refresh":
+        await refresh(dir, json);
         break;
       case "update-task": {
         const [taskId, taskStatus] = positional;

@@ -13,6 +13,7 @@
     "directory": "packages/adapters"
   },
   "keywords": ["arcbridge", "claude", "copilot", "ai-agents"],
+  "files": ["dist", "README.md", "LICENSE"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
