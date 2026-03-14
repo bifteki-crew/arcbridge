@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, appendFileSync } from "node:fs";
 import { parse } from "yaml";
 import matter from "gray-matter";
 import type Database from "better-sqlite3";
@@ -369,5 +369,30 @@ export function generateDatabase(
     allWarnings.push(...populateAdrs(db, targetDir));
   })();
 
+  // Ensure index.db and WAL files are in .gitignore
+  ensureGitignore(targetDir);
+
   return { db, warnings: allWarnings };
+}
+
+/**
+ * Add .arcbridge/index.db and WAL files to .gitignore if not already present.
+ */
+function ensureGitignore(targetDir: string): void {
+  const gitignorePath = join(targetDir, ".gitignore");
+  const marker = ".arcbridge/index.db";
+
+  if (existsSync(gitignorePath)) {
+    const content = readFileSync(gitignorePath, "utf-8");
+    if (content.includes(marker)) return;
+  }
+
+  const entry = `
+# ArcBridge database (derived from .arcbridge/ YAML/markdown files)
+.arcbridge/index.db
+.arcbridge/index.db-wal
+.arcbridge/index.db-shm
+`;
+
+  appendFileSync(gitignorePath, entry, "utf-8");
 }
