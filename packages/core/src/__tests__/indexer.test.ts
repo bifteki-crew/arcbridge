@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { join } from "node:path";
 import { indexProject } from "../indexer/index.js";
+import { detectDrift } from "../drift/detector.js";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import type Database from "better-sqlite3";
@@ -309,5 +310,121 @@ describe("dependency extraction", () => {
     ).count;
 
     expect(secondCount).toBe(firstCount);
+  });
+});
+
+describe("agent workflow simulation (TypeScript)", () => {
+  it("agent can trace from auth service to user model", () => {
+    indexProject(db, { projectRoot: FIXTURE_DIR });
+
+    // Step 1: Agent searches for auth-related symbols
+    const authSymbols = db
+      .prepare("SELECT name, kind, file_path FROM symbols WHERE name LIKE '%auth%' ORDER BY name")
+      .all() as Array<{ name: string; kind: string; file_path: string }>;
+
+    expect(authSymbols.some((s) => s.name === "authenticate")).toBe(true);
+    expect(authSymbols.some((s) => s.name === "AuthResult")).toBe(true);
+
+    // Step 2: Agent traces what authenticate depends on
+    const authFn = db
+      .prepare("SELECT id FROM symbols WHERE name = 'authenticate'")
+      .get() as { id: string };
+
+    const deps = db
+      .prepare(
+        `SELECT s2.name, s2.kind, s2.file_path, d.kind as dep_kind
+         FROM dependencies d
+         JOIN symbols s2 ON s2.id = d.target_symbol
+         WHERE d.source_symbol = ?`,
+      )
+      .all(authFn.id) as Array<{ name: string; kind: string; file_path: string; dep_kind: string }>;
+
+    // Step 3: Verify the trace reaches the User model (not just AuthResult)
+    // authenticate imports User type, so it should appear in deps
+    const usesUser = deps.some((d) => d.name === "User" && d.file_path.includes("models/"));
+    // If authenticate doesn't directly depend on User, trace through AuthResult
+    if (!usesUser) {
+      const authResult = db
+        .prepare("SELECT id FROM symbols WHERE name = 'AuthResult'")
+        .get() as { id: string } | undefined;
+      expect(authResult).toBeDefined();
+      const authResultDeps = db
+        .prepare(
+          `SELECT s2.name, s2.file_path FROM dependencies d
+           JOIN symbols s2 ON s2.id = d.target_symbol
+           WHERE d.source_symbol = ?`,
+        )
+        .all(authResult!.id) as Array<{ name: string; file_path: string }>;
+      expect(authResultDeps.some((d) => d.name === "User")).toBe(true);
+    } else {
+      expect(usesUser).toBe(true);
+    }
+  });
+
+  it("agent can find which building block a file belongs to", () => {
+    indexProject(db, { projectRoot: FIXTURE_DIR });
+
+    // Add building blocks
+    db.prepare(`
+      INSERT INTO building_blocks (id, name, responsibility, code_paths, interfaces)
+      VALUES ('auth', 'Authentication', 'Auth logic', '["src/services/"]', '["models"]')
+    `).run();
+    db.prepare(`
+      INSERT INTO building_blocks (id, name, responsibility, code_paths)
+      VALUES ('models', 'Models', 'Data models', '["src/models/"]')
+    `).run();
+
+    const blocks = db
+      .prepare("SELECT id, name, code_paths FROM building_blocks")
+      .all() as Array<{ id: string; name: string; code_paths: string }>;
+
+    // Lookup block for auth-service.ts
+    const file = "src/services/auth-service.ts";
+    let matched: string | null = null;
+
+    for (const block of blocks) {
+      const paths = JSON.parse(block.code_paths) as string[];
+      if (paths.some((cp) => file.startsWith(cp.replace(/\*+\/?$/, "")))) {
+        matched = block.name;
+        break;
+      }
+    }
+
+    expect(matched).toBe("Authentication");
+  });
+
+  it("agent can discover dependency violations", () => {
+    indexProject(db, { projectRoot: FIXTURE_DIR });
+
+    // services block depends on models but doesn't declare it
+    db.prepare(`
+      INSERT OR REPLACE INTO building_blocks (id, name, responsibility, code_paths, interfaces)
+      VALUES ('services-block', 'Services', 'Business logic', '["src/services/"]', '[]')
+    `).run();
+    db.prepare(`
+      INSERT OR REPLACE INTO building_blocks (id, name, responsibility, code_paths)
+      VALUES ('models-block', 'Models', 'Data models', '["src/models/"]')
+    `).run();
+
+    const entries = detectDrift(db);
+    const violations = entries.filter((e) => e.kind === "dependency_violation");
+
+    // services → models should be flagged (interfaces is empty)
+    expect(violations.some((e) => e.affectedBlock === "services-block")).toBe(true);
+  });
+
+  it("agent can search by file path prefix for a layer", () => {
+    indexProject(db, { projectRoot: FIXTURE_DIR });
+
+    // Search only in models layer
+    const modelSymbols = db
+      .prepare("SELECT name, kind FROM symbols WHERE file_path LIKE ? ORDER BY name")
+      .all("src/models/%") as Array<{ name: string; kind: string }>;
+
+    expect(modelSymbols.length).toBeGreaterThan(0);
+    expect(modelSymbols.some((s) => s.name === "User" && s.kind === "interface")).toBe(true);
+    expect(modelSymbols.some((s) => s.name === "UserEntity" && s.kind === "class")).toBe(true);
+    // Should not contain service symbols
+    expect(modelSymbols.some((s) => s.name === "authenticate")).toBe(false);
   });
 });
