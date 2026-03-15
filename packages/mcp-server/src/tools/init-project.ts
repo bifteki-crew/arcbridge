@@ -77,7 +77,7 @@ export function registerInitProject(
       generatePlan(targetDir, input);
 
       // 4. Generate agent roles
-      const roles = generateAgentRoles(targetDir);
+      const roles = generateAgentRoles(targetDir, params.template);
 
       // 5. Initialize database from generated files
       const { db, warnings } = generateDatabase(targetDir, input);

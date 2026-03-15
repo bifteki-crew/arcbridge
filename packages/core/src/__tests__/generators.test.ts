@@ -122,11 +122,12 @@ describe("generatePlan", () => {
 });
 
 describe("generateAgentRoles", () => {
-  it("creates all 7 agent role files", () => {
+  it("creates agent role files (8 for frontend, 7 for backend)", () => {
+    // Default (no template) includes ux-reviewer
     const roles = generateAgentRoles(tempDir);
     const agentsDir = join(tempDir, ".arcbridge", "agents");
 
-    expect(roles).toHaveLength(7);
+    expect(roles).toHaveLength(8);
     expect(existsSync(join(agentsDir, "architect.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "implementer.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "security-reviewer.md"))).toBe(true);
@@ -134,6 +135,19 @@ describe("generateAgentRoles", () => {
     expect(existsSync(join(agentsDir, "phase-manager.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "onboarding.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "code-reviewer.md"))).toBe(true);
+    expect(existsSync(join(agentsDir, "ux-reviewer.md"))).toBe(true);
+  });
+
+  it("excludes ux-reviewer for backend-only templates", () => {
+    const roles = generateAgentRoles(tempDir, "dotnet-webapi");
+    expect(roles).toHaveLength(7);
+    expect(roles.some((r) => r.role_id === "ux-reviewer")).toBe(false);
+  });
+
+  it("includes ux-reviewer for frontend templates", () => {
+    const roles = generateAgentRoles(tempDir, "nextjs-app-router");
+    expect(roles).toHaveLength(8);
+    expect(roles.some((r) => r.role_id === "ux-reviewer")).toBe(true);
   });
 
   it("produces parseable frontmatter", () => {

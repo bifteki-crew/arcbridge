@@ -213,7 +213,7 @@ export async function init(
 
   // 4. Generate agent roles
   if (!json) console.log("Creating agent roles...");
-  const roles = generateAgentRoles(projectRoot);
+  const roles = generateAgentRoles(projectRoot, template);
 
   // 5. Initialize database from generated files
   if (!json) console.log("Initializing database...");

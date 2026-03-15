@@ -424,7 +424,7 @@ All commands support `--dir <path>` and `--json` flags.
 
 ## Agent Roles
 
-ArcBridge defines 7 agent roles, each with specific context and tool access:
+ArcBridge defines agent roles, each with specific context and tool access. All projects get 7 core roles, and frontend projects (Next.js, React) get an additional UX Reviewer:
 
 | Role | When to use |
 |------|-------------|
@@ -435,6 +435,7 @@ ArcBridge defines 7 agent roles, each with specific context and tool access:
 | **phase-manager** | Track phase progress, manage task status, handle completion |
 | **code-reviewer** | Review changes against architecture, check for drift |
 | **onboarding** | Explore and understand an existing project |
+| **ux-reviewer** | Review UI components, interaction patterns, accessibility (frontend projects only) |
 
 Activate a role via MCP: `activate_role(role: "architect")`
 

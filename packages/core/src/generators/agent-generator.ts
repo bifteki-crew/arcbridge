@@ -9,6 +9,10 @@ import { qualityGuardianTemplate } from "../templates/agents/quality-guardian.js
 import { phaseManagerTemplate } from "../templates/agents/phase-manager.js";
 import { onboardingTemplate } from "../templates/agents/onboarding.js";
 import { codeReviewerTemplate } from "../templates/agents/code-reviewer.js";
+import { uxReviewerTemplate } from "../templates/agents/ux-reviewer.js";
+
+/** Templates that have UI components and benefit from UX review */
+const UI_TEMPLATES = new Set(["nextjs-app-router", "react-vite"]);
 
 function writeAgentRole(dir: string, role: AgentRole): void {
   const { system_prompt, ...frontmatter } = role;
@@ -16,11 +20,14 @@ function writeAgentRole(dir: string, role: AgentRole): void {
   writeFileSync(join(dir, `${role.role_id}.md`), content, "utf-8");
 }
 
-export function generateAgentRoles(targetDir: string): AgentRole[] {
+export function generateAgentRoles(
+  targetDir: string,
+  template?: string,
+): AgentRole[] {
   const agentsDir = join(targetDir, ".arcbridge", "agents");
   mkdirSync(agentsDir, { recursive: true });
 
-  const roles = [
+  const roles: AgentRole[] = [
     architectTemplate(),
     implementerTemplate(),
     securityReviewerTemplate(),
@@ -29,6 +36,11 @@ export function generateAgentRoles(targetDir: string): AgentRole[] {
     onboardingTemplate(),
     codeReviewerTemplate(),
   ];
+
+  // Add UX reviewer for projects with UI components
+  if (!template || UI_TEMPLATES.has(template)) {
+    roles.push(uxReviewerTemplate());
+  }
 
   for (const role of roles) {
     writeAgentRole(agentsDir, role);
