@@ -23,7 +23,7 @@ export function registerSearchSymbols(
 ): void {
   server.tool(
     "arcbridge_search_symbols",
-    "Search TypeScript symbols by name, kind, file path, or building block. Returns matching symbols with type signatures.",
+    "Search code symbols by name, kind, file path, or building block. Supports TypeScript and C#. Returns matching symbols with type signatures.",
     {
       target_dir: z
         .string()
@@ -32,6 +32,10 @@ export function registerSearchSymbols(
         .string()
         .optional()
         .describe("Search term to match against symbol names"),
+      service: z
+        .string()
+        .optional()
+        .describe("Filter by service name (for multi-project solutions). Omit to search all services."),
       kind: z
         .enum([
           "function",
@@ -73,6 +77,11 @@ export function registerSearchSymbols(
 
       const conditions: string[] = [];
       const queryParams: (string | number)[] = [];
+
+      if (params.service) {
+        conditions.push("s.service = ?");
+        queryParams.push(params.service);
+      }
 
       if (params.query) {
         conditions.push("s.name LIKE ? ESCAPE '\\'");

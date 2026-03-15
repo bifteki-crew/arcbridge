@@ -122,6 +122,15 @@ CREATE TABLE IF NOT EXISTS contracts (
   last_verified TEXT
 );
 
+-- Package Dependencies (npm, NuGet)
+CREATE TABLE IF NOT EXISTS package_dependencies (
+  name TEXT NOT NULL,
+  version TEXT,
+  source TEXT NOT NULL CHECK(source IN ('npm','npm-dev','nuget')),
+  service TEXT NOT NULL DEFAULT 'main',
+  PRIMARY KEY (name, source, service)
+);
+
 -- Planning
 CREATE TABLE IF NOT EXISTS phases (
   id TEXT PRIMARY KEY,
@@ -150,7 +159,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 CREATE TABLE IF NOT EXISTS drift_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   detected_at TEXT NOT NULL,
-  kind TEXT NOT NULL CHECK(kind IN ('undocumented_module','missing_module','dependency_violation','unlinked_test','stale_adr')),
+  kind TEXT NOT NULL CHECK(kind IN ('undocumented_module','missing_module','dependency_violation','unlinked_test','stale_adr','new_dependency')),
   severity TEXT NOT NULL DEFAULT 'info' CHECK(severity IN ('info','warning','error')),
   description TEXT NOT NULL,
   affected_block TEXT,

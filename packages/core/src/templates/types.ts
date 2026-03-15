@@ -5,6 +5,8 @@ export interface InitProjectInput {
   quality_priorities: string[];
   platforms: string[];
   projectRoot?: string;
+  /** For multi-project .NET solutions: services discovered from .sln */
+  dotnetServices?: Array<{ name: string; path: string }>;
 }
 
 export interface TemplateOutput {

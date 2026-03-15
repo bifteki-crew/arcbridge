@@ -56,6 +56,7 @@ export function writeSymbols(
   db: Database.Database,
   symbols: ExtractedSymbol[],
   service: string,
+  language: string = "typescript",
 ): void {
   if (symbols.length === 0) return;
 
@@ -70,7 +71,7 @@ export function writeSymbols(
       ?, ?, ?, ?, ?,
       ?, ?, ?, ?,
       ?, ?, ?,
-      ?, ?, ?, 'typescript',
+      ?, ?, ?, ?,
       ?, ?
     )
   `);
@@ -95,6 +96,7 @@ export function writeSymbols(
         s.isExported ? 1 : 0,
         s.isAsync ? 1 : 0,
         service,
+        language,
         s.contentHash,
         now,
       );

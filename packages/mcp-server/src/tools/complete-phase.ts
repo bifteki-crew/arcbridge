@@ -218,6 +218,36 @@ export function registerCompletePhase(
         lines.push("");
       }
 
+      // Check for ADR coverage — advisory, not a gate blocker
+      const adrCount = (db
+        .prepare("SELECT COUNT(*) as count FROM adrs")
+        .get() as { count: number }).count;
+
+      // Check if any tasks in this phase involved architectural decisions
+      // (auth, database, middleware, DI — things that typically warrant ADRs)
+      const architecturalKeywords = ["auth", "database", "middleware", "validation", "caching", "dependency injection", "error handling"];
+      const phaseTasks = tasks.map((t) => t.title.toLowerCase());
+      const hasArchitecturalWork = phaseTasks.some((title) =>
+        architecturalKeywords.some((kw) => title.includes(kw)),
+      );
+
+      if (hasArchitecturalWork && adrCount <= 1) {
+        lines.push(
+          "## ADR Reminder",
+          "",
+          "This phase involved architectural decisions that should be documented as ADRs.",
+          "Use `arcbridge_get_relevant_adrs` to review existing ADRs and create new ones in `.arcbridge/arc42/09-decisions/` for:",
+          "",
+        );
+        for (const t of tasks) {
+          const lower = t.title.toLowerCase();
+          if (architecturalKeywords.some((kw) => lower.includes(kw))) {
+            lines.push(`- **${t.title}** — document the chosen approach and alternatives considered`);
+          }
+        }
+        lines.push("");
+      }
+
       if (allPass) {
         const now = new Date().toISOString();
         const gateStatus = JSON.stringify({

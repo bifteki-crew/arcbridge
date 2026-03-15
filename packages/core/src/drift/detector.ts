@@ -5,7 +5,8 @@ export type DriftKind =
   | "missing_module"
   | "dependency_violation"
   | "unlinked_test"
-  | "stale_adr";
+  | "stale_adr"
+  | "new_dependency";
 
 export type DriftSeverity = "info" | "warning" | "error";
 
@@ -90,6 +91,7 @@ export function detectDrift(
   detectDependencyViolations(db, entries);
   detectUnlinkedTests(db, entries);
   detectStaleAdrs(db, entries);
+  detectNewDependencies(db, entries);
 
   return entries;
 }
@@ -384,6 +386,63 @@ function detectStaleAdrs(
         });
       }
     }
+  }
+}
+
+/**
+ * Find package dependencies (npm/NuGet) that have no corresponding ADR.
+ * Flags packages that were likely added without documenting the rationale.
+ * Only flags non-trivial packages (skips common tooling/framework deps).
+ */
+function detectNewDependencies(
+  db: Database.Database,
+  entries: DriftEntry[],
+): void {
+  const packages = db
+    .prepare("SELECT name, source FROM package_dependencies WHERE source IN ('npm', 'nuget')")
+    .all() as { name: string; source: string }[];
+
+  if (packages.length === 0) return;
+
+  // Get all ADR text to check if any mention the package
+  const adrs = db
+    .prepare("SELECT id, title, context, decision FROM adrs WHERE status != 'superseded'")
+    .all() as { id: string; title: string; context: string | null; decision: string | null }[];
+
+  // Build searchable text from ADRs
+  const adrText = adrs
+    .map((a) => `${a.title} ${a.context ?? ""} ${a.decision ?? ""}`.toLowerCase())
+    .join(" ");
+
+  // Common packages that don't need ADRs
+  const trivialPackages = new Set([
+    // npm
+    "typescript", "eslint", "prettier", "vitest", "jest",
+    "@types/node", "@types/react", "tsup", "tsx",
+    // nuget
+    "Microsoft.NET.Test.Sdk", "xunit", "xunit.runner.visualstudio",
+    "NUnit", "NUnit3TestAdapter", "coverlet.collector",
+    "Microsoft.AspNetCore.OpenApi", "Swashbuckle.AspNetCore",
+  ]);
+
+  for (const pkg of packages) {
+    if (trivialPackages.has(pkg.name)) continue;
+
+    // Check if any ADR mentions this package
+    const pkgLower = pkg.name.toLowerCase();
+    if (adrText.includes(pkgLower)) continue;
+
+    // Also check for partial matches (e.g., ADR mentions "Serilog" matches "Serilog.Sinks.Console")
+    const baseName = pkgLower.split(/[./]/)[0];
+    if (baseName && baseName.length > 3 && adrText.includes(baseName)) continue;
+
+    entries.push({
+      kind: "new_dependency",
+      severity: "info",
+      description: `Package \`${pkg.name}\` (${pkg.source}) is used but not mentioned in any ADR. Consider documenting why this dependency was chosen.`,
+      affectedBlock: null,
+      affectedFile: null,
+    });
   }
 }
 

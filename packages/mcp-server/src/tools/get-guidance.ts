@@ -181,7 +181,32 @@ export function registerGetGuidance(
         }
       }
 
-      // 5. Unresolved drift in this area
+      // 5. Relevant ADRs
+      const adrRows = db
+        .prepare("SELECT id, title, status, decision, affected_blocks, affected_files FROM adrs")
+        .all() as Array<{ id: string; title: string; status: string; decision: string; affected_blocks: string; affected_files: string }>;
+
+      const relevantAdrs = adrRows.filter((adr) => {
+        if (params.file_path) {
+          const affectedFiles = safeParseJson<string[]>(adr.affected_files, []);
+          if (affectedFiles.some((f) => params.file_path!.includes(f) || f.includes(params.file_path!))) return true;
+        }
+        if (matchedBlock) {
+          const affectedBlocks = safeParseJson<string[]>(adr.affected_blocks, []);
+          if (affectedBlocks.includes(matchedBlock.id)) return true;
+        }
+        return false;
+      });
+
+      if (relevantAdrs.length > 0) {
+        lines.push("## Relevant ADRs", "");
+        for (const adr of relevantAdrs) {
+          lines.push(`### ${adr.id}: ${adr.title} [${adr.status}]`, "");
+          lines.push(`**Decision:** ${adr.decision}`, "");
+        }
+      }
+
+      // 6. Unresolved drift in this area
       const driftEntries = params.file_path
         ? (db
             .prepare(
@@ -243,15 +268,17 @@ function getActionGuidance(action: string): string | null {
     "adding-component":
       "- Follow existing component patterns in this directory\n- Add props interface alongside the component\n- Consider server vs. client: does this need interactivity (`'use client'`)?\n- Check accessibility: keyboard navigation, ARIA labels, screen reader support",
     "adding-api-route":
-      "- Ensure authentication middleware covers this route\n- Validate all input with zod or equivalent\n- Follow existing error response patterns\n- Consider rate limiting for public endpoints",
+      "- Ensure authentication middleware covers this route\n- Validate all input with zod or equivalent\n- Follow existing error response patterns\n- Consider rate limiting for public endpoints\n- If this introduces a new API pattern or convention, document it in an ADR",
     "adding-hook":
       "- Follow the `use` prefix convention\n- Keep hooks focused — one responsibility per hook\n- Consider memoization for expensive computations\n- Document the hook's return type",
     "modifying-auth":
-      "- Check all API routes still have auth coverage after changes\n- Verify no secrets leak to client components\n- Test edge cases: expired tokens, revoked sessions, role changes\n- Update security quality scenarios if behavior changes",
+      "- Check all API routes still have auth coverage after changes\n- Verify no secrets leak to client components\n- Test edge cases: expired tokens, revoked sessions, role changes\n- Update security quality scenarios if behavior changes\n- Document the auth strategy and any changes in an ADR — auth decisions are critical to trace",
     "new-dependency":
       "- Document the dependency rationale in an ADR\n- Check bundle size impact (client-side deps)\n- Verify the dependency doesn't introduce known CVEs\n- Ensure the dependency's license is compatible",
     "refactoring":
-      "- Ensure no cross-block boundary violations are introduced\n- Maintain existing public API contracts\n- Run tests before and after to verify behavior preservation\n- Check that no quality scenarios regress",
+      "- Ensure no cross-block boundary violations are introduced\n- Maintain existing public API contracts\n- Run tests before and after to verify behavior preservation\n- Check that no quality scenarios regress\n- If the refactoring changes architectural patterns, update or create an ADR to explain why",
+    "general":
+      "- Check `arcbridge_get_relevant_adrs` for existing decisions that may constrain this change\n- If you're choosing between approaches, document the decision in an ADR",
   };
 
   return guidance[action] ?? null;

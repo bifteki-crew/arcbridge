@@ -1,4 +1,5 @@
-import { relative } from "node:path";
+import { relative, join } from "node:path";
+import { existsSync } from "node:fs";
 import type Database from "better-sqlite3";
 import type { IndexerOptions, IndexResult } from "./types.js";
 import { createTsProgram } from "./program.js";
@@ -13,8 +14,55 @@ import {
   writeSymbols,
   writeDependencies,
 } from "./db-writer.js";
+import { indexDotnetProject, findDotnetProject } from "./dotnet-indexer.js";
+import { indexPackageDependencies } from "./package-deps.js";
 
+export type ProjectLanguage = "typescript" | "csharp" | "auto";
+
+/**
+ * Detect the project language from files in the project root.
+ * Checks for tsconfig.json first (TypeScript priority), then .csproj/.sln.
+ * This prevents a stray .csproj from hijacking a TypeScript project.
+ */
+export function detectProjectLanguage(projectRoot: string): "typescript" | "csharp" {
+  // TypeScript signals take priority (package.json + tsconfig.json is the stronger signal)
+  if (existsSync(join(projectRoot, "tsconfig.json"))) return "typescript";
+  if (existsSync(join(projectRoot, "package.json"))) return "typescript";
+
+  // .NET signals
+  if (findDotnetProject(projectRoot)) return "csharp";
+
+  // Default to TypeScript (existing behavior)
+  return "typescript";
+}
+
+/**
+ * Index a project, auto-detecting the language unless explicitly specified.
+ * Dispatches to the TypeScript or .NET indexer accordingly.
+ */
 export function indexProject(
+  db: Database.Database,
+  options: IndexerOptions,
+): IndexResult {
+  const language = options.language ?? "auto";
+  const resolvedLanguage = language === "auto"
+    ? detectProjectLanguage(options.projectRoot)
+    : language;
+
+  // Index package dependencies (npm/NuGet) regardless of language
+  indexPackageDependencies(db, options.projectRoot, options.service ?? "main");
+
+  if (resolvedLanguage === "csharp") {
+    return indexDotnetProject(db, {
+      projectRoot: options.projectRoot,
+      service: options.service,
+    });
+  }
+
+  return indexTypeScriptProject(db, options);
+}
+
+function indexTypeScriptProject(
   db: Database.Database,
   options: IndexerOptions,
 ): IndexResult {
@@ -70,7 +118,7 @@ export function indexProject(
   );
 
   // 6. Write symbols to DB
-  writeSymbols(db, allSymbols, service);
+  writeSymbols(db, allSymbols, service, "typescript");
 
   // 7. Extract dependencies across ALL source files
   //    (dependencies can cross file boundaries, so we need all symbols for lookup)
@@ -110,3 +158,5 @@ export function indexProject(
 }
 
 export type { IndexerOptions, IndexResult, ExtractedSymbol, SymbolKind } from "./types.js";
+export { discoverDotnetServices, type DotnetProjectInfo } from "./dotnet-indexer.js";
+export { indexPackageDependencies } from "./package-deps.js";

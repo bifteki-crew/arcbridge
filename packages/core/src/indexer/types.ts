@@ -2,6 +2,7 @@ export interface IndexerOptions {
   projectRoot: string;
   tsconfigPath?: string;
   service?: string;
+  language?: "typescript" | "csharp" | "auto";
 }
 
 export type SymbolKind =
