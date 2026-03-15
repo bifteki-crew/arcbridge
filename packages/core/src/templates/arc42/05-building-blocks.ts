@@ -177,35 +177,33 @@ export function buildingBlocksTemplate(
       },
     ];
 
-    if (inp.features.includes("auth")) {
-      blocks.push({
-        id: "auth-module",
-        name: "Authentication & Authorization",
-        level: 1,
-        code_paths: ["Auth/"],
-        interfaces: [],
-        quality_scenarios: ["SEC-01", "SEC-02"],
-        adrs: [],
-        responsibility:
-          "JWT/cookie auth, authorization policies, claims transformation",
-        service: "main",
-      });
-    }
+    // Auth and data access are core to virtually every .NET API,
+    // so always include them (phase tasks reference these block IDs).
+    blocks.push({
+      id: "auth-module",
+      name: "Authentication & Authorization",
+      level: 1,
+      code_paths: ["Auth/"],
+      interfaces: [],
+      quality_scenarios: ["SEC-01", "SEC-02"],
+      adrs: [],
+      responsibility:
+        "JWT/cookie auth, authorization policies, claims transformation",
+      service: "main",
+    });
 
-    if (inp.features.includes("database")) {
-      blocks.push({
-        id: "data-access",
-        name: "Data Access",
-        level: 1,
-        code_paths: ["Data/", "Repositories/", "Migrations/"],
-        interfaces: ["domain"],
-        quality_scenarios: [],
-        adrs: [],
-        responsibility:
-          "EF Core DbContext, repositories, migrations, and query logic",
-        service: "main",
-      });
-    }
+    blocks.push({
+      id: "data-access",
+      name: "Data Access",
+      level: 1,
+      code_paths: ["Data/", "Repositories/", "Migrations/"],
+      interfaces: ["domain"],
+      quality_scenarios: [],
+      adrs: [],
+      responsibility:
+        "EF Core DbContext, repositories, migrations, and query logic",
+      service: "main",
+    });
 
     return blocks;
   }
