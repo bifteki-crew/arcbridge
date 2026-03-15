@@ -123,7 +123,9 @@ public sealed class DependencyExtractor : CSharpSyntaxWalker
     }
 
     /// <summary>
-    /// Returns true if the type is defined in the current project (not a framework/NuGet type).
+    /// Returns true if the type is defined in the current project or solution (not a framework/NuGet type).
+    /// Checks both the current assembly and the symbol lookup dictionary to support cross-project
+    /// references within a solution.
     /// </summary>
     private bool IsProjectType(INamedTypeSymbol? symbol)
     {
@@ -136,9 +138,11 @@ public sealed class DependencyExtractor : CSharpSyntaxWalker
         // If it's from our project assembly, it's a project type
         if (assemblyName == _projectAssemblyName) return true;
 
-        // Also accept types from assemblies that are part of the solution
-        // (the symbol lookup will filter out types we haven't indexed)
-        return false;
+        // Also accept types from other assemblies in the solution by checking
+        // if the type's qualified name exists in our indexed symbols
+        var qualifiedName = GetQualifiedName(symbol);
+        var kind = symbol.TypeKind == TypeKind.Interface ? "interface" : "class";
+        return _symbolLookup.ContainsKey((qualifiedName, kind));
     }
 
     private void ExtractBaseTypeDeps(TypeDeclarationSyntax node)

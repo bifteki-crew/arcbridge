@@ -159,7 +159,20 @@ export function phaseTasksTemplate(
           ],
         },
         {
-          id: "task-1.4-document-decisions",
+          id: "task-1.4-api-documentation",
+          title: "Set up API documentation",
+          status: "todo",
+          building_block: "api-core",
+          quality_scenarios: [],
+          acceptance_criteria: [
+            "OpenAPI/Swagger spec generated from route definitions",
+            "All endpoints have descriptions and response types",
+            "Request/response schemas documented",
+            "Use arcbridge_get_route_map to verify all routes are captured",
+          ],
+        },
+        {
+          id: "task-1.5-document-decisions",
           title: "Document architectural decisions as ADRs",
           status: "todo",
           quality_scenarios: [],

@@ -264,7 +264,7 @@ export async function init(
     // Index the whole project/solution as a single unit.
     // For .NET solutions with multiple projects, all symbols are indexed together
     // under the default service ("main") to preserve cross-project dependency resolution.
-    // Service-level filtering can be done later via the `service` parameter on query tools.
+    // Agents can filter by file_path prefix to scope queries to a specific project or layer.
     const result = indexProject(db, { projectRoot });
     indexResult = {
       filesProcessed: result.filesProcessed,

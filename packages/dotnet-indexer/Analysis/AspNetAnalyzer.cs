@@ -425,10 +425,10 @@ public static class AspNetAnalyzer
     {
         prefix = prefix.TrimStart('/').TrimEnd('/');
         if (string.IsNullOrEmpty(suffix))
-            return $"/{prefix}";
+            return string.IsNullOrEmpty(prefix) ? "/" : $"/{prefix}";
 
         suffix = suffix.TrimStart('/').TrimEnd('/');
-        return $"/{prefix}/{suffix}";
+        return string.IsNullOrEmpty(prefix) ? $"/{suffix}" : $"/{prefix}/{suffix}";
     }
 
     private static bool HasAuthorizeAttribute(MemberDeclarationSyntax node)

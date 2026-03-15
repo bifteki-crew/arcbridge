@@ -243,6 +243,7 @@ public sealed class SymbolExtractor : CSharpSyntaxWalker
                 IsExported = IsAccessible(symbol),
                 IsAsync = false,
                 ContentHash = _contentHash,
+                ProjectName = _projectName,
             });
         }
     }

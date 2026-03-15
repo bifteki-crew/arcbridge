@@ -414,19 +414,19 @@ function detectNewDependencies(
     .map((a) => `${a.title} ${a.context ?? ""} ${a.decision ?? ""}`.toLowerCase())
     .join(" ");
 
-  // Common packages that don't need ADRs
+  // Common packages that don't need ADRs (all lowercase for case-insensitive matching)
   const trivialPackages = new Set([
     // npm
     "typescript", "eslint", "prettier", "vitest", "jest",
     "@types/node", "@types/react", "tsup", "tsx",
     // nuget
-    "Microsoft.NET.Test.Sdk", "xunit", "xunit.runner.visualstudio",
-    "NUnit", "NUnit3TestAdapter", "coverlet.collector",
-    "Microsoft.AspNetCore.OpenApi", "Swashbuckle.AspNetCore",
+    "microsoft.net.test.sdk", "xunit", "xunit.runner.visualstudio",
+    "nunit", "nunit3testadapter", "coverlet.collector",
+    "microsoft.aspnetcore.openapi", "swashbuckle.aspnetcore",
   ]);
 
   for (const pkg of packages) {
-    if (trivialPackages.has(pkg.name)) continue;
+    if (trivialPackages.has(pkg.name.toLowerCase())) continue;
 
     // Check if any ADR mentions this package
     const pkgLower = pkg.name.toLowerCase();

@@ -31,7 +31,15 @@ static async Task<int> RunAsync(string[] args)
     {
         if (args[i] == "--existing-hashes" && i + 1 < args.Length)
         {
-            existingHashes = JsonSerializer.Deserialize<Dictionary<string, string>>(args[i + 1]);
+            try
+            {
+                existingHashes = JsonSerializer.Deserialize<Dictionary<string, string>>(args[i + 1]);
+            }
+            catch (JsonException ex)
+            {
+                await Console.Error.WriteLineAsync($"Failed to parse --existing-hashes JSON: {ex.Message}");
+                return 1;
+            }
             i++;
         }
     }

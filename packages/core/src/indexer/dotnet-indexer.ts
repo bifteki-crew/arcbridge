@@ -301,6 +301,9 @@ export function indexDotnetProject(
   ).run(service);
   writeDependencies(db, deps);
 
+  // Clean up stale routes before inserting
+  db.prepare("DELETE FROM routes WHERE service = ?").run(service);
+
   // Write routes
   if (output.routes.length > 0) {
     const insertRoute = db.prepare(`

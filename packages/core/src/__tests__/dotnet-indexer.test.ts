@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execFileSync } from "node:child_process";
 import { resolve, join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import type Database from "better-sqlite3";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
@@ -320,10 +320,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
   it("produces content hashes identical to TypeScript hasher", () => {
     // The C# indexer computes content hashes for each file.
     // Verify they match what the TypeScript hasher would produce for the same content.
-    const { readFileSync } = require("node:fs");
-    const path = require("node:path");
-
-    const orderFile = path.join(FIXTURE_DIR, "Models/Order.cs");
+    const orderFile = join(FIXTURE_DIR, "Models/Order.cs");
     const content = readFileSync(orderFile, "utf-8");
     const tsHash = hashContent(content);
 
