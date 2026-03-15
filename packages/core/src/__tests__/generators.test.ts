@@ -122,7 +122,7 @@ describe("generatePlan", () => {
 });
 
 describe("generateAgentRoles", () => {
-  it("creates all 7 agent role files", () => {
+  it("creates 7 core agent role files when no template specified", () => {
     const roles = generateAgentRoles(tempDir);
     const agentsDir = join(tempDir, ".arcbridge", "agents");
 
@@ -134,6 +134,19 @@ describe("generateAgentRoles", () => {
     expect(existsSync(join(agentsDir, "phase-manager.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "onboarding.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "code-reviewer.md"))).toBe(true);
+    expect(roles.some((r) => r.role_id === "ux-reviewer")).toBe(false);
+  });
+
+  it("excludes ux-reviewer for backend-only templates", () => {
+    const roles = generateAgentRoles(tempDir, "dotnet-webapi");
+    expect(roles).toHaveLength(7);
+    expect(roles.some((r) => r.role_id === "ux-reviewer")).toBe(false);
+  });
+
+  it("includes ux-reviewer for frontend templates", () => {
+    const roles = generateAgentRoles(tempDir, "nextjs-app-router");
+    expect(roles).toHaveLength(8);
+    expect(roles.some((r) => r.role_id === "ux-reviewer")).toBe(true);
   });
 
   it("produces parseable frontmatter", () => {

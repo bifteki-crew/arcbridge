@@ -94,7 +94,7 @@ ArcBridge exposes 26 MCP tools organized by concern:
 - **Code Intelligence** — search symbols, trace dependencies, analyze components and routes
 - **Planning** — track phases, tasks, and progress through the implementation plan
 - **Architecture Bridge** — detect drift, get guidance, propose documentation updates
-- **Roles** — activate specialized agent roles (architect, security reviewer, quality guardian, etc.)
+- **Roles** — activate specialized agent roles (architect, security reviewer, quality guardian, ux reviewer, etc.)
 
 Each tool returns structured, concise information — not raw file contents. The agent gets exactly the context it needs without reading files it doesn't need.
 
