@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { resolve, join, dirname, relative, basename } from "node:path";
 import { readdirSync, readFileSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import type Database from "better-sqlite3";
 import type { IndexResult, ExtractedSymbol } from "./types.js";
 import type { ExtractedDependency } from "./dependency-extractor.js";
@@ -153,12 +154,16 @@ export function discoverDotnetServices(projectRoot: string): DotnetProjectInfo[]
  * Looks relative to this package (core) up to the monorepo root.
  */
 function resolveIndexerProject(): string {
-  // From packages/core/src/indexer/ → packages/dotnet-indexer/
+  // Resolve __dirname equivalent for ESM
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+
+  // From packages/core/dist/ or packages/core/src/indexer/ → packages/dotnet-indexer/
   const candidates = [
-    resolve(__dirname, "../../../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
-    resolve(__dirname, "../../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
-    // When installed as a package, it may be adjacent
-    resolve(__dirname, "../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
+    resolve(currentDir, "../../../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
+    resolve(currentDir, "../../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
+    resolve(currentDir, "../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
+    // When running from dist/ (bundled)
+    resolve(currentDir, "../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
   ];
 
   for (const candidate of candidates) {
