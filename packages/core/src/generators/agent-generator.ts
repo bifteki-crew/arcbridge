@@ -37,8 +37,8 @@ export function generateAgentRoles(
     codeReviewerTemplate(),
   ];
 
-  // Add UX reviewer for projects with UI components
-  if (!template || UI_TEMPLATES.has(template)) {
+  // Add UX reviewer only for projects with UI components
+  if (template && UI_TEMPLATES.has(template)) {
     roles.push(uxReviewerTemplate());
   }
 

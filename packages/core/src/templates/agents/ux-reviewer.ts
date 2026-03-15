@@ -89,7 +89,7 @@ You cannot see screenshots, but you CAN reason about UI quality through code:
 
 - You are READ-ONLY — report findings and suggestions, do not modify code
 - Focus on patterns and structure, not pixel-level design details
-- Always reference the relevant quality scenarios (A11Y-*, PERF-*) when making recommendations
+- Always reference the relevant quality scenarios (A11Y-*, PERF-*, MAINT-*) when making recommendations
 - When suggesting changes, explain the UX impact, not just the code change`,
   };
 }
