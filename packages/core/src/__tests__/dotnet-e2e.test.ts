@@ -101,7 +101,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
 
     it("filters by kind", () => {
       const interfaces = db
-        .prepare("SELECT name FROM symbols WHERE kind = ? ORDER BY name", )
+        .prepare("SELECT name FROM symbols WHERE kind = ? ORDER BY name")
         .all("interface") as Array<{ name: string }>;
 
       expect(interfaces.map((i) => i.name)).toContain("IOrderService");
@@ -338,13 +338,15 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       }
     });
 
-    it("detects new package dependencies", () => {
+    it("detects new package dependencies without ADRs", () => {
       const entries = detectDrift(db);
       const newDeps = entries.filter((e) => e.kind === "new_dependency");
 
-      // The fixture has NuGet packages but no ADRs, so they should be flagged
-      // (excluding trivial ones like Microsoft.AspNetCore.OpenApi)
-      expect(newDeps.length).toBeGreaterThanOrEqual(0); // May be 0 if all are trivial
+      // Each flagged dep should have correct structure
+      for (const dep of newDeps) {
+        expect(dep.severity).toBe("info");
+        expect(dep.description).toContain("not mentioned in any ADR");
+      }
     });
 
     it("ignores dotnet framework files in undocumented check", () => {

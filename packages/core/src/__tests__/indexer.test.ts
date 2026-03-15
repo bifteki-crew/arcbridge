@@ -339,8 +339,26 @@ describe("agent workflow simulation (TypeScript)", () => {
       )
       .all(authFn.id) as Array<{ name: string; kind: string; file_path: string; dep_kind: string }>;
 
-    // authenticate uses the User type from models
-    expect(deps.some((d) => d.name === "User" || d.name === "AuthResult")).toBe(true);
+    // Step 3: Verify the trace reaches the User model (not just AuthResult)
+    // authenticate imports User type, so it should appear in deps
+    const usesUser = deps.some((d) => d.name === "User" && d.file_path.includes("models/"));
+    // If authenticate doesn't directly depend on User, trace through AuthResult
+    if (!usesUser) {
+      const authResult = db
+        .prepare("SELECT id FROM symbols WHERE name = 'AuthResult'")
+        .get() as { id: string } | undefined;
+      expect(authResult).toBeDefined();
+      const authResultDeps = db
+        .prepare(
+          `SELECT s2.name, s2.file_path FROM dependencies d
+           JOIN symbols s2 ON s2.id = d.target_symbol
+           WHERE d.source_symbol = ?`,
+        )
+        .all(authResult!.id) as Array<{ name: string; file_path: string }>;
+      expect(authResultDeps.some((d) => d.name === "User")).toBe(true);
+    } else {
+      expect(usesUser).toBe(true);
+    }
   });
 
   it("agent can find which building block a file belongs to", () => {
