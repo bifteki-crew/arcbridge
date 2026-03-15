@@ -10,7 +10,7 @@ export function registerReindex(
 ): void {
   server.tool(
     "arcbridge_reindex",
-    "Re-index TypeScript symbols in the project. Incrementally processes only changed files.",
+    "Re-index code symbols in the project. Supports TypeScript and C# (.NET). Incrementally processes only changed files.",
     {
       target_dir: z
         .string()
@@ -18,11 +18,15 @@ export function registerReindex(
       tsconfig_path: z
         .string()
         .optional()
-        .describe("Override tsconfig.json path (default: auto-detect)"),
+        .describe("Override tsconfig.json path (default: auto-detect). Only used for TypeScript projects."),
       service: z
         .string()
         .optional()
         .describe("Service name for monorepo projects (default: 'main')"),
+      language: z
+        .enum(["typescript", "csharp", "auto"])
+        .optional()
+        .describe("Project language. 'auto' detects from project files (default: 'auto')"),
     },
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
@@ -36,6 +40,7 @@ export function registerReindex(
           projectRoot: params.target_dir,
           tsconfigPath: params.tsconfig_path,
           service: params.service,
+          language: params.language,
         });
 
         const lines = [

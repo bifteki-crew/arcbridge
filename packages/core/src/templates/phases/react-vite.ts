@@ -143,6 +143,17 @@ export function phaseTasksTemplate(
             "Component tests written",
           ],
         },
+        {
+          id: "task-1.3-document-decisions",
+          title: "Document architectural decisions as ADRs",
+          status: "todo",
+          quality_scenarios: [],
+          acceptance_criteria: [
+            "ADR for each significant technology or pattern choice made in this phase",
+            "ADRs include context, decision, and consequences",
+            "ADRs linked to affected building blocks and code paths",
+          ],
+        },
       ],
     },
   };

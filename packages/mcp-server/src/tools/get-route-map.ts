@@ -19,7 +19,7 @@ export function registerGetRouteMap(
 ): void {
   server.tool(
     "arcbridge_get_route_map",
-    "Get the Next.js route map: all pages, layouts, API routes, and their hierarchy.",
+    "Get the route map: pages, layouts, API routes, and their hierarchy. Works with Next.js, ASP.NET controllers, and minimal APIs.",
     {
       target_dir: z
         .string()
@@ -31,7 +31,11 @@ export function registerGetRouteMap(
       route_prefix: z
         .string()
         .optional()
-        .describe("Filter by route path prefix (e.g. '/dashboard')"),
+        .describe("Filter by route path prefix (e.g. '/dashboard' or '/api/orders')"),
+      service: z
+        .string()
+        .optional()
+        .describe("Filter by service name (for multi-project solutions). Omit to show all services."),
     },
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
@@ -41,6 +45,10 @@ export function registerGetRouteMap(
       const conditions: string[] = [];
       const queryParams: (string | number)[] = [];
 
+      if (params.service) {
+        conditions.push("service = ?");
+        queryParams.push(params.service);
+      }
       if (params.kind) {
         conditions.push("kind = ?");
         queryParams.push(params.kind);

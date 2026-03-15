@@ -42,6 +42,10 @@ export function registerGetDependencyGraph(
         .max(5)
         .default(1)
         .describe("How many levels to traverse (default: 1, max: 5)"),
+      service: z
+        .string()
+        .optional()
+        .describe("Filter by service name (for multi-project solutions). Omit to search all services."),
     },
     async (params) => {
       const maybeDb = ensureDb(ctx, params.target_dir);
@@ -63,6 +67,8 @@ export function registerGetDependencyGraph(
       // Full dependency graph from dependencies table
       const edges: DepEdge[] = [];
       const visited = new Set<string>();
+      const serviceFilter = params.service ? " AND s1.service = ?" : "";
+      const serviceFilter2 = params.service ? " AND s2.service = ?" : "";
 
       function collectEdges(modulePath: string, currentDepth: number): void {
         if (currentDepth > params.depth || visited.has(modulePath)) return;
@@ -71,6 +77,9 @@ export function registerGetDependencyGraph(
         const prefix = `${escapeLike(modulePath)}%`;
 
         if (params.direction === "dependencies" || params.direction === "both") {
+          const queryArgs: (string | number)[] = [prefix];
+          if (params.service) queryArgs.push(params.service);
+
           const deps = db
             .prepare(
               `SELECT d.source_symbol as source_id, s1.name as source_name, s1.file_path as source_file,
@@ -79,10 +88,10 @@ export function registerGetDependencyGraph(
                FROM dependencies d
                JOIN symbols s1 ON s1.id = d.source_symbol
                JOIN symbols s2 ON s2.id = d.target_symbol
-               WHERE s1.file_path LIKE ? ESCAPE '\\'
+               WHERE s1.file_path LIKE ? ESCAPE '\\'${serviceFilter}
                ORDER BY d.kind, s2.name`,
             )
-            .all(prefix) as DepEdge[];
+            .all(...queryArgs) as DepEdge[];
 
           for (const dep of deps) {
             const key = `${dep.source_id}->${dep.target_id}:${dep.kind}`;
@@ -98,6 +107,9 @@ export function registerGetDependencyGraph(
         }
 
         if (params.direction === "dependents" || params.direction === "both") {
+          const queryArgs2: (string | number)[] = [prefix];
+          if (params.service) queryArgs2.push(params.service);
+
           const deps = db
             .prepare(
               `SELECT d.source_symbol as source_id, s1.name as source_name, s1.file_path as source_file,
@@ -106,10 +118,10 @@ export function registerGetDependencyGraph(
                FROM dependencies d
                JOIN symbols s1 ON s1.id = d.source_symbol
                JOIN symbols s2 ON s2.id = d.target_symbol
-               WHERE s2.file_path LIKE ? ESCAPE '\\'
+               WHERE s2.file_path LIKE ? ESCAPE '\\'${serviceFilter2}
                ORDER BY d.kind, s1.name`,
             )
-            .all(prefix) as DepEdge[];
+            .all(...queryArgs2) as DepEdge[];
 
           for (const dep of deps) {
             const key = `${dep.source_id}->${dep.target_id}:${dep.kind}`;

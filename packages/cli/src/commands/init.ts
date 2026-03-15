@@ -8,6 +8,7 @@ import {
   generateDatabase,
   generateSyncFiles,
   indexProject,
+  discoverDotnetServices,
   type InitProjectInput,
 } from "@arcbridge/core";
 import { getAdapter } from "@arcbridge/adapters";
@@ -26,6 +27,8 @@ interface DetectedInfo {
   template: ProjectTemplate;
   nameSource: string;
   templateSource: string;
+  /** For .sln-based projects: services discovered from solution */
+  dotnetServices?: Array<{ name: string; path: string; csprojPath: string; isTestProject: boolean }>;
 }
 
 const VALID_TEMPLATES: ProjectTemplate[] = [
@@ -57,7 +60,19 @@ function detectProjectInfo(projectRoot: string): DetectedInfo {
   let template: ProjectTemplate = "nextjs-app-router";
   let templateSource = "default";
 
-  // Check for .NET project first
+  // Check for .NET solution first (multi-project)
+  const entries = readdirSync(projectRoot);
+  const slnFile = entries.find((e) => e.endsWith(".sln"));
+  if (slnFile) {
+    name = slnFile.replace(".sln", "");
+    nameSource = ".sln file";
+    template = "dotnet-webapi";
+    templateSource = `detected (${slnFile} found)`;
+    const dotnetServices = discoverDotnetServices(projectRoot);
+    return { name, template, nameSource, templateSource, dotnetServices };
+  }
+
+  // Check for single .NET project
   const csproj = findCsproj(projectRoot);
   if (csproj) {
     name = csproj.replace(".csproj", "");
@@ -158,8 +173,22 @@ export async function init(
     if (options.spec) {
       console.log(`  Spec:     ${options.spec}`);
     }
+    if (detected.dotnetServices && detected.dotnetServices.length > 1) {
+      const nonTest = detected.dotnetServices.filter((s) => !s.isTestProject);
+      const test = detected.dotnetServices.filter((s) => s.isTestProject);
+      console.log(`  Services: ${nonTest.length} project(s) detected from solution`);
+      for (const svc of nonTest) {
+        console.log(`    - ${svc.name} (${svc.path})`);
+      }
+      if (test.length > 0) {
+        console.log(`  Tests:    ${test.length} test project(s) (excluded from indexing)`);
+      }
+    }
     console.log();
   }
+
+  // For multi-project .NET solutions, pass non-test services to the template
+  const nonTestServices = detected.dotnetServices?.filter((s) => !s.isTestProject);
 
   const input: InitProjectInput = {
     name: projectName,
@@ -167,6 +196,7 @@ export async function init(
     features: [],
     quality_priorities: ["security", "performance", "accessibility"],
     platforms,
+    dotnetServices: nonTestServices?.map((s) => ({ name: s.name, path: s.path })),
   };
 
   // 1. Generate config
@@ -220,7 +250,7 @@ export async function init(
     }
   }
 
-  // 9. Index TypeScript symbols (if tsconfig exists)
+  // 9. Index codebase
   let indexResult: {
     filesProcessed: number;
     symbolsIndexed: number;
@@ -230,6 +260,11 @@ export async function init(
   } | null = null;
   try {
     if (!json) console.log("Indexing codebase...");
+
+    // Index the whole project/solution as a single unit.
+    // For .NET solutions with multiple projects, all symbols are indexed together
+    // under the default service ("main") to preserve cross-project dependency resolution.
+    // Agents can filter by file_path prefix to scope queries to a specific project or layer.
     const result = indexProject(db, { projectRoot });
     indexResult = {
       filesProcessed: result.filesProcessed,
@@ -294,7 +329,7 @@ export async function init(
     } else {
       console.log(
         input.template === "dotnet-webapi"
-          ? "  Indexed:            not available yet for .NET projects (C# indexer planned)"
+          ? "  Indexed:            skipped (ensure .NET SDK is installed and dotnet-indexer is built)"
           : "  Indexed:            skipped (no tsconfig.json)",
       );
     }

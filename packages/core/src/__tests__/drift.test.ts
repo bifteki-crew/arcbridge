@@ -147,6 +147,53 @@ describe("detectDrift", () => {
     expect(stale[0]!.description).toContain("adr-001");
   });
 
+  it("detects new package dependencies without ADRs", () => {
+    indexProject(db, { projectRoot: TS_FIXTURE });
+
+    // Add a package dependency
+    db.prepare(
+      "INSERT INTO package_dependencies (name, version, source, service) VALUES (?, ?, ?, ?)",
+    ).run("some-important-library", "1.0.0", "npm", "main");
+
+    const entries = detectDrift(db);
+    const newDeps = entries.filter((e) => e.kind === "new_dependency");
+    expect(newDeps.length).toBeGreaterThan(0);
+    expect(newDeps[0]!.description).toContain("some-important-library");
+  });
+
+  it("does not flag package dependencies mentioned in ADRs", () => {
+    indexProject(db, { projectRoot: TS_FIXTURE });
+
+    db.prepare(
+      "INSERT INTO package_dependencies (name, version, source, service) VALUES (?, ?, ?, ?)",
+    ).run("serilog", "3.0.0", "nuget", "main");
+
+    db.prepare(
+      `INSERT INTO adrs (id, title, status, date, decision)
+       VALUES ('adr-010', 'Logging Strategy', 'accepted', '2024-01-01', 'We chose Serilog for structured logging')`,
+    ).run();
+
+    const entries = detectDrift(db);
+    const newDeps = entries.filter(
+      (e) => e.kind === "new_dependency" && e.description.includes("serilog"),
+    );
+    expect(newDeps.length).toBe(0);
+  });
+
+  it("does not flag trivial dev dependencies", () => {
+    indexProject(db, { projectRoot: TS_FIXTURE });
+
+    db.prepare(
+      "INSERT INTO package_dependencies (name, version, source, service) VALUES (?, ?, ?, ?)",
+    ).run("typescript", "5.0.0", "npm", "main");
+
+    const entries = detectDrift(db);
+    const newDeps = entries.filter(
+      (e) => e.kind === "new_dependency" && e.description.includes("typescript"),
+    );
+    expect(newDeps.length).toBe(0);
+  });
+
   it("does not flag stale ADRs for existing files", () => {
     indexProject(db, { projectRoot: TS_FIXTURE });
 

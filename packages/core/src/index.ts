@@ -57,6 +57,11 @@ export {
 // Indexer
 export {
   indexProject,
+  detectProjectLanguage,
+  discoverDotnetServices,
+  indexPackageDependencies,
+  type ProjectLanguage,
+  type DotnetProjectInfo,
   type IndexerOptions,
   type IndexResult,
   type ExtractedSymbol,
