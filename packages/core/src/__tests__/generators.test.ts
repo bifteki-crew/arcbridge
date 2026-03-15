@@ -349,4 +349,39 @@ describe("dotnet-webapi template", () => {
 
     db.close();
   });
+
+  it("dotnet init succeeds with empty features (regression: FK constraint)", () => {
+    const minimalInput: InitProjectInput = {
+      name: "bare-api",
+      template: "dotnet-webapi",
+      features: [],
+      quality_priorities: ["security", "performance", "reliability"],
+      platforms: ["claude"],
+    };
+
+    generateConfig(tempDir, minimalInput);
+    generateArc42(tempDir, minimalInput);
+    generatePlan(tempDir, minimalInput);
+    generateAgentRoles(tempDir, "dotnet-webapi");
+
+    // This would throw "FOREIGN KEY constraint failed" if auth-module
+    // or data-access building blocks are missing
+    const { db, warnings } = generateDatabase(tempDir, minimalInput);
+
+    expect(warnings).toHaveLength(0);
+
+    const blocks = db
+      .prepare("SELECT id FROM building_blocks ORDER BY id")
+      .all() as { id: string }[];
+    const blockIds = blocks.map((b) => b.id);
+    expect(blockIds).toContain("auth-module");
+    expect(blockIds).toContain("data-access");
+
+    const tasks = db
+      .prepare("SELECT COUNT(*) as count FROM tasks")
+      .get() as { count: number };
+    expect(tasks.count).toBeGreaterThan(0);
+
+    db.close();
+  });
 });

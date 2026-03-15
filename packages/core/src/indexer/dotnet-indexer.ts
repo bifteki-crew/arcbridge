@@ -157,13 +157,13 @@ function resolveIndexerProject(): string {
   // Resolve __dirname equivalent for ESM
   const currentDir = dirname(fileURLToPath(import.meta.url));
 
-  // From packages/core/dist/ or packages/core/src/indexer/ → packages/dotnet-indexer/
+  // Candidate paths from most to least specific:
+  // - From source: packages/core/src/indexer/ → ../../../../dotnet-indexer/
+  // - From dist:   packages/core/dist/        → ../../dotnet-indexer/
   const candidates = [
     resolve(currentDir, "../../../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
     resolve(currentDir, "../../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
     resolve(currentDir, "../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
-    // When running from dist/ (bundled)
-    resolve(currentDir, "../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
   ];
 
   for (const candidate of candidates) {
