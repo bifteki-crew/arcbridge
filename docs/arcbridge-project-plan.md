@@ -6,7 +6,7 @@
 
 **Target audience:** Solo developers and small teams (2–5 people) starting new TypeScript/React/Next.js or .NET/C# projects who want production-grade structure without enterprise overhead.
 
-**Core thesis:** The biggest waste in AI-assisted development isn't token cost — it's the agent lacking *intent* and the developer lacking *visibility*. The agent doesn't know why the code is structured this way, what quality attributes matter, or what phase the project is in. The developer doesn't see the architectural implications of daily coding decisions until they've accumulated into technical debt. ArcBridge fixes both by making planning, architecture, and code queryable through a single interface — and by surfacing the right questions at the right time, turning every project into a learning experience about what production-grade software actually requires.
+**Core thesis:** Three things hold back AI-assisted development: *token waste* (agents scanning files to rebuild context they should already have), *missing intent* (the agent doesn't know *why* the code is structured this way), and *invisible drift* (the developer doesn't see architectural implications of daily coding decisions until they've accumulated into technical debt). ArcBridge fixes all three: pre-indexed, queryable context reduces token burn; arc42 documentation and quality scenarios provide intent; and continuous drift detection provides visibility. Every project becomes a learning experience about what production-grade software actually requires.
 
 ---
 
@@ -180,23 +180,24 @@ Aider's repo map uses dependency graphs with PageRank to identify the most relev
 Where we diverge: Aider's graph is file-level. Ours is symbol-level *and* architecture-level — we can answer "which building block does this belong to" and "what quality scenarios constrain this module."
 
 ### From arc42
-Arc42 provides a proven 12-section architecture documentation template. We use a pragmatic subset:
+Arc42 provides a proven 12-section architecture documentation template. ArcBridge generates and maintains these sections:
 - Section 1: Introduction & Goals (→ project constitution + quality goals)
 - Section 3: Context & Scope (→ system boundary, external interfaces)
 - Section 5: Building Block View (→ module decomposition, mapped to code)
-- Section 6: Runtime View (→ key interaction flows, mapped to component trees)
-- Section 7: Deployment View (→ server/client split for Next.js, edge functions)
-- Section 9: Architecture Decisions (→ ADRs linked to affected code)
+- Section 6: Runtime View (→ key interaction flows, request pipelines)
+- Section 7: Deployment View (→ infrastructure, environments, deployment strategy)
+- Section 8: Crosscutting Concepts (→ established patterns: error handling, auth, logging, validation, DI)
+- Section 9: Architecture Decisions (→ ADRs linked to affected code and building blocks)
 - Section 10: Quality Requirements (→ quality scenarios that become agent constraints)
 - Section 11: Risks & Technical Debt (→ tracked and linked to code locations)
 
-Sections 2 (Constraints), 4 (Solution Strategy), 8 (Cross-cutting), and 12 (Glossary) are folded into other sections or generated on demand rather than maintained as separate documents.
+Sections 2 (Constraints), 4 (Solution Strategy), and 12 (Glossary) are folded into other sections rather than maintained as separate documents. Section 8 is generated with template-aware placeholder content (different patterns for .NET, React, and API projects) that agents fill in as conventions are established during development.
 
 ---
 
 ## Agent Role Templates
 
-A key differentiator: ArcBridge ships with predefined agent role templates that specialize AI behavior for different tasks. Each role has access to different subsets of the architecture and applies different quality constraints.
+A key differentiator: ArcBridge ships with predefined agent role templates that specialize AI behavior for different tasks. Each role has access to different subsets of the architecture and applies different quality constraints. All projects get 7 core roles; frontend projects (Next.js, React) additionally get a UX Reviewer. Roles are template-conditional — backend-only projects don't get UI-focused roles.
 
 ### Role: Architect Agent
 **Purpose:** Initial design, building block decomposition, ADR creation.
