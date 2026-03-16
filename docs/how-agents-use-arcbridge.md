@@ -159,10 +159,19 @@ The database is a **derived cache**, not the source of truth. The source of trut
 
 ```
 .arcbridge/
-├── arc42/05-building-blocks.md    ← defines what code belongs where
-├── arc42/10-quality-scenarios.yaml ← defines quality requirements
-├── plan/phases.yaml               ← defines the implementation plan
-├── plan/tasks/phase-1.yaml        ← task definitions and statuses per phase
+├── arc42/
+│   ├── 01-introduction.md         ← project goals and stakeholders
+│   ├── 03-context.md              ← external systems and integrations
+│   ├── 05-building-blocks.md      ← defines what code belongs where
+│   ├── 06-runtime-views.md        ← key workflows and request flows
+│   ├── 07-deployment.md           ← environments and infrastructure
+│   ├── 08-crosscutting.md         ← patterns: error handling, auth, logging, validation
+│   ├── 09-decisions/              ← Architecture Decision Records (ADRs)
+│   ├── 10-quality-scenarios.yaml  ← quality requirements (security, perf, a11y)
+│   └── 11-risks-debt.md           ← known risks and technical debt
+├── plan/
+│   ├── phases.yaml                ← the implementation plan
+│   └── tasks/phase-1.yaml         ← task definitions and statuses per phase
 └── index.db                       ← derived from the above + code analysis
 ```
 

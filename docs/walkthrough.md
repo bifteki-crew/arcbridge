@@ -69,14 +69,18 @@ ArcBridge created a complete architecture scaffold:
   index.db                        # SQLite database (symbols, deps, drift)
   arc42/
     01-introduction.md            # Project goals and stakeholders
-    03-context.md                 # System context diagram
+    03-context.md                 # System context and external integrations
     05-building-blocks.md         # Module decomposition
-    10-quality-scenarios.yaml     # Quality requirements (security, perf, a11y)
+    06-runtime-views.md           # Key workflows and request flows
+    07-deployment.md              # Deployment environments and infrastructure
+    08-crosscutting.md            # Patterns: error handling, auth, logging, validation
     09-decisions/                 # Architecture Decision Records (ADRs)
+    10-quality-scenarios.yaml     # Quality requirements (security, perf, a11y)
+    11-risks-debt.md              # Known risks and technical debt
   plan/
     phases.yaml                   # Phase definitions and gates
     tasks/                        # Per-phase task breakdowns
-  agents/                         # Agent role definitions (7 roles)
+  agents/                         # Agent role definitions
 CLAUDE.md                         # Instructions for Claude Code
 .claude/agents/                   # Claude-specific agent configs
 ```

@@ -278,7 +278,7 @@ function getActionGuidance(action: string): string | null {
     "refactoring":
       "- Ensure no cross-block boundary violations are introduced\n- Maintain existing public API contracts\n- Run tests before and after to verify behavior preservation\n- Check that no quality scenarios regress\n- If the refactoring changes architectural patterns, update or create an ADR to explain why\n- **Arc42:** Update `05-building-blocks.md` if module structure changed; update `08-crosscutting.md` if patterns changed",
     "general":
-      "- Check `arcbridge_get_relevant_adrs` for existing decisions that may constrain this change\n- If you're choosing between approaches, document the decision in an ADR\n- **Arc42:** Consider which documentation sections may need updating — run `arcbridge_propose_arc42_update` to check",
+      "- Check `arcbridge_get_relevant_adrs` for existing decisions that may constrain this change\n- If you're choosing between approaches, document the decision in an ADR\n- **Arc42:** Consider which documentation sections may need updating (check `.arcbridge/arc42/` — especially `05-building-blocks.md` and `08-crosscutting.md`)",
   };
 
   return guidance[action] ?? null;

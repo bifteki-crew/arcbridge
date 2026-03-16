@@ -10,6 +10,7 @@ import { runtimeViewsTemplate } from "../templates/arc42/06-runtime-views.js";
 import { deploymentTemplate } from "../templates/arc42/07-deployment.js";
 import { firstAdrTemplate } from "../templates/arc42/09-decisions.js";
 import { qualityScenariosTemplate } from "../templates/arc42/10-quality-scenarios.js";
+import { crosscuttingTemplate } from "../templates/arc42/08-crosscutting.js";
 import { risksDebtTemplate } from "../templates/arc42/11-risks-debt.js";
 
 function writeMarkdownWithFrontmatter(
@@ -38,6 +39,7 @@ export function generateArc42(
     { file: "05-building-blocks.md", template: buildingBlocksTemplate },
     { file: "06-runtime-views.md", template: runtimeViewsTemplate },
     { file: "07-deployment.md", template: deploymentTemplate },
+    { file: "08-crosscutting.md", template: crosscuttingTemplate },
     { file: "11-risks-debt.md", template: risksDebtTemplate },
   ];
 
