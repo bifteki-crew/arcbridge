@@ -60,6 +60,7 @@ describe("generateArc42", () => {
     expect(existsSync(join(arc42Dir, "05-building-blocks.md"))).toBe(true);
     expect(existsSync(join(arc42Dir, "06-runtime-views.md"))).toBe(true);
     expect(existsSync(join(arc42Dir, "07-deployment.md"))).toBe(true);
+    expect(existsSync(join(arc42Dir, "08-crosscutting.md"))).toBe(true);
     expect(existsSync(join(arc42Dir, "10-quality-scenarios.yaml"))).toBe(true);
     expect(existsSync(join(arc42Dir, "11-risks-debt.md"))).toBe(true);
     expect(

@@ -310,7 +310,21 @@ export function registerCompletePhase(
         lines.push(
           "",
           "---",
-          "*Run `arcbridge_propose_arc42_update` to generate documentation updates for this phase.*",
+          "## Arc42 Documentation Review",
+          "",
+          "Before moving on, review and update these arc42 sections for changes made in this phase:",
+          "",
+          "- [ ] **01 Introduction** — Do project goals still reflect reality?",
+          "- [ ] **03 Context** — Any new external systems or integrations added?",
+          "- [ ] **05 Building Blocks** — Are all new modules mapped? Run `arcbridge_check_drift` to verify.",
+          "- [ ] **06 Runtime Views** — Any new key workflows to document (auth flow, data processing, etc.)?",
+          "- [ ] **07 Deployment** — Any changes to infrastructure, environments, or deployment strategy?",
+          "- [ ] **08 Crosscutting Concepts** — Any new patterns established (error handling, validation, logging)?",
+          "- [ ] **09 Decisions** — ADRs for all significant choices? Run `arcbridge_get_relevant_adrs` to check.",
+          "- [ ] **10 Quality Scenarios** — Any new quality requirements or changed thresholds?",
+          "- [ ] **11 Risks & Debt** — Any known limitations or tech debt introduced?",
+          "",
+          "*Run `arcbridge_propose_arc42_update` to auto-detect documentation gaps.*",
         );
       } else {
         const failCount = gates.filter((g) => !g.pass).length;
