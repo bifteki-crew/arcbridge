@@ -6,7 +6,7 @@
 
 **Target audience:** Solo developers and small teams (2–5 people) starting new TypeScript/React/Next.js or .NET/C# projects who want production-grade structure without enterprise overhead.
 
-**Core thesis:** The two biggest wastes in AI-assisted development are token cost (agents scanning files to rebuild context they should already have) and the agent lacking *intent* (not knowing *why* the code is structured this way). The developer, meanwhile, lacks *visibility* — they don't see the architectural implications of daily coding decisions until they've accumulated into technical debt. ArcBridge fixes all three: it gives agents pre-indexed, queryable context (reducing token burn), architectural awareness (providing intent), and continuous drift detection (providing visibility). Every project becomes a learning experience about what production-grade software actually requires.
+**Core thesis:** Three things hold back AI-assisted development: *token waste* (agents scanning files to rebuild context they should already have), *missing intent* (the agent doesn't know *why* the code is structured this way), and *invisible drift* (the developer doesn't see architectural implications of daily coding decisions until they've accumulated into technical debt). ArcBridge fixes all three: pre-indexed, queryable context reduces token burn; arc42 documentation and quality scenarios provide intent; and continuous drift detection provides visibility. Every project becomes a learning experience about what production-grade software actually requires.
 
 ---
 
