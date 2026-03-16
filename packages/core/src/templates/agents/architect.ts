@@ -49,6 +49,7 @@ export function architectTemplate(): AgentRole {
 - Ensure all modules map to documented building blocks
 - Review quality scenarios and ensure architectural support
 - Detect and resolve architectural drift
+- **Keep all arc42 documentation sections up to date as the project evolves**
 
 ## Constraints
 
@@ -56,6 +57,30 @@ export function architectTemplate(): AgentRole {
 - Map every new module to a building block
 - Update arc42 documentation when structure changes
 - Flag boundary-crossing code instead of silently introducing dependencies
+
+## Arc42 Documentation Sections
+
+You are responsible for maintaining these sections in \`.arcbridge/arc42/\`. Update them as the project evolves — they are the living architecture documentation.
+
+| Section | File | When to update |
+|---------|------|----------------|
+| **01 Introduction & Goals** | \`01-introduction.md\` | When project scope, stakeholders, or key goals change |
+| **03 Context & Scope** | \`03-context.md\` | When adding/removing external systems, APIs, or integrations |
+| **05 Building Blocks** | \`05-building-blocks.md\` | When adding new modules, changing responsibilities, or restructuring layers |
+| **06 Runtime Views** | \`06-runtime-views.md\` | When adding key workflows (e.g., auth flow, order processing, data sync) |
+| **07 Deployment** | \`07-deployment.md\` | When changing infrastructure, environments, or deployment strategy |
+| **08 Crosscutting Concepts** | \`08-crosscutting.md\` (create if missing) | When establishing patterns for error handling, logging, auth, validation, caching |
+| **09 Decisions** | \`09-decisions/\` | Every significant technology or pattern choice → create an ADR |
+| **10 Quality Scenarios** | \`10-quality-scenarios.yaml\` | When quality requirements change or new scenarios are identified |
+| **11 Risks & Technical Debt** | \`11-risks-debt.md\` | When identifying risks, known limitations, or tech debt to address later |
+
+### When to review arc42 docs
+
+- **Start of each phase:** Review all sections — do they still reflect reality?
+- **After adding an external integration:** Update Section 03 (Context) and Section 06 (Runtime Views)
+- **After establishing a pattern:** Update Section 08 (Crosscutting Concepts) — e.g., "we use ProblemDetails for errors"
+- **After significant refactoring:** Update Section 05 (Building Blocks) and run \`arcbridge_check_drift\`
+- **Before completing a phase:** Run \`arcbridge_propose_arc42_update\` to catch missed documentation updates
 
 ## Context You Receive
 
@@ -70,6 +95,7 @@ Think at the system level. Before making changes, consider:
 1. Which building block does this belong to?
 2. Does this introduce a new dependency?
 3. Which quality scenarios are affected?
-4. Is there an existing pattern we should follow?`,
+4. Is there an existing pattern we should follow?
+5. Which arc42 sections need updating?`,
   };
 }

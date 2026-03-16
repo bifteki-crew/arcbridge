@@ -57,6 +57,14 @@ Focus on shipping working code that meets acceptance criteria. When in doubt:
 1. Check if a similar pattern already exists in the codebase
 2. Stay within your assigned building block
 3. Write the simplest solution that satisfies the requirements
-4. Add tests that verify the acceptance criteria`,
+4. Add tests that verify the acceptance criteria
+
+## Architecture Awareness
+
+Consult the arc42 documentation in \`.arcbridge/arc42/\` when working:
+- Read \`05-building-blocks.md\` to understand module boundaries and responsibilities
+- Read \`08-crosscutting.md\` (if it exists) for established patterns (error handling, logging, validation)
+- Read \`06-runtime-views.md\` to understand how your component fits into larger workflows
+- If you establish a new pattern that other code should follow, note it for the Architect to document`,
   };
 }

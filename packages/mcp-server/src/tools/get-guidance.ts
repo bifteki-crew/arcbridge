@@ -266,19 +266,19 @@ function filterRelevantScenarios(
 function getActionGuidance(action: string): string | null {
   const guidance: Record<string, string> = {
     "adding-component":
-      "- Follow existing component patterns in this directory\n- Add props interface alongside the component\n- Consider server vs. client: does this need interactivity (`'use client'`)?\n- Check accessibility: keyboard navigation, ARIA labels, screen reader support",
+      "- Follow existing component patterns in this directory\n- Add props interface alongside the component\n- Consider server vs. client: does this need interactivity (`'use client'`)?\n- Check accessibility: keyboard navigation, ARIA labels, screen reader support\n- **Arc42:** If this introduces a new UI pattern, document it in `08-crosscutting.md`",
     "adding-api-route":
-      "- Ensure authentication middleware covers this route\n- Validate all input with zod or equivalent\n- Follow existing error response patterns\n- Consider rate limiting for public endpoints\n- If this introduces a new API pattern or convention, document it in an ADR",
+      "- Ensure authentication middleware covers this route\n- Validate all input with zod or equivalent\n- Follow existing error response patterns\n- Consider rate limiting for public endpoints\n- If this introduces a new API pattern or convention, document it in an ADR\n- **Arc42:** Update `03-context.md` if this route exposes a new external integration; update `06-runtime-views.md` if it's a key workflow",
     "adding-hook":
       "- Follow the `use` prefix convention\n- Keep hooks focused — one responsibility per hook\n- Consider memoization for expensive computations\n- Document the hook's return type",
     "modifying-auth":
-      "- Check all API routes still have auth coverage after changes\n- Verify no secrets leak to client components\n- Test edge cases: expired tokens, revoked sessions, role changes\n- Update security quality scenarios if behavior changes\n- Document the auth strategy and any changes in an ADR — auth decisions are critical to trace",
+      "- Check all API routes still have auth coverage after changes\n- Verify no secrets leak to client components\n- Test edge cases: expired tokens, revoked sessions, role changes\n- Update security quality scenarios if behavior changes\n- Document the auth strategy and any changes in an ADR — auth decisions are critical to trace\n- **Arc42:** Update `08-crosscutting.md` with the auth pattern; update `06-runtime-views.md` with the auth flow",
     "new-dependency":
-      "- Document the dependency rationale in an ADR\n- Check bundle size impact (client-side deps)\n- Verify the dependency doesn't introduce known CVEs\n- Ensure the dependency's license is compatible",
+      "- Document the dependency rationale in an ADR\n- Check bundle size impact (client-side deps)\n- Verify the dependency doesn't introduce known CVEs\n- Ensure the dependency's license is compatible\n- **Arc42:** If this dependency introduces a new external system, update `03-context.md`",
     "refactoring":
-      "- Ensure no cross-block boundary violations are introduced\n- Maintain existing public API contracts\n- Run tests before and after to verify behavior preservation\n- Check that no quality scenarios regress\n- If the refactoring changes architectural patterns, update or create an ADR to explain why",
+      "- Ensure no cross-block boundary violations are introduced\n- Maintain existing public API contracts\n- Run tests before and after to verify behavior preservation\n- Check that no quality scenarios regress\n- If the refactoring changes architectural patterns, update or create an ADR to explain why\n- **Arc42:** Update `05-building-blocks.md` if module structure changed; update `08-crosscutting.md` if patterns changed",
     "general":
-      "- Check `arcbridge_get_relevant_adrs` for existing decisions that may constrain this change\n- If you're choosing between approaches, document the decision in an ADR",
+      "- Check `arcbridge_get_relevant_adrs` for existing decisions that may constrain this change\n- If you're choosing between approaches, document the decision in an ADR\n- **Arc42:** Consider which documentation sections may need updating — run `arcbridge_propose_arc42_update` to check",
   };
 
   return guidance[action] ?? null;
