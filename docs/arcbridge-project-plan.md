@@ -2,9 +2,9 @@
 
 ## Working Title & Concept
 
-**ArcBridge** (working name) is an MCP server and project starter that bridges architectural thinking (arc42), structured planning (inspired by spec-kit), and code-level intelligence (via the TypeScript compiler API) into a single system. It gives AI coding agents architectural awareness, quality-driven constraints, and phase-aware context — so they build code that fits the system, not just code that compiles.
+**ArcBridge** (working name) is an MCP server and project starter that bridges architectural thinking (arc42), structured planning (inspired by spec-kit), and code-level intelligence (via the TypeScript compiler API and Roslyn) into a single system. It gives AI coding agents architectural awareness, quality-driven constraints, and phase-aware context — so they build code that fits the system, not just code that compiles.
 
-**Target audience:** Solo developers and small teams (2–5 people) starting new TypeScript/React/Next.js projects who want production-grade structure without enterprise overhead.
+**Target audience:** Solo developers and small teams (2–5 people) starting new TypeScript/React/Next.js or .NET/C# projects who want production-grade structure without enterprise overhead.
 
 **Core thesis:** The biggest waste in AI-assisted development isn't token cost — it's the agent lacking *intent* and the developer lacking *visibility*. The agent doesn't know why the code is structured this way, what quality attributes matter, or what phase the project is in. The developer doesn't see the architectural implications of daily coding decisions until they've accumulated into technical debt. ArcBridge fixes both by making planning, architecture, and code queryable through a single interface — and by surfacing the right questions at the right time, turning every project into a learning experience about what production-grade software actually requires.
 
@@ -304,53 +304,71 @@ accessibility). Focus on what a senior developer would catch in a pull request.
 
 **Note on role boundaries:** The Code Reviewer complements the Security Reviewer and Quality Guardian rather than replacing them. Security and quality concerns are handled by their specialized roles with deeper domain tooling. The Code Reviewer handles the general "does this code make sense?" review that sits between those specialized checks.
 
+### Role: UX Reviewer Agent (Frontend Projects Only)
+**Purpose:** Reviews UI components, interaction patterns, and accessibility for projects with frontend code.
+**Context provided:** Component graph, route map, boundary analysis, building blocks, quality scenarios (A11Y-*, PERF-*, MAINT-*).
+**Constraints applied:** Read-only. Evaluates component structure, interaction states, accessibility, layout/navigation consistency, and styling patterns.
+**Template-conditional:** Only generated for `nextjs-app-router` and `react-vite` templates. Excluded for `api-service` and `dotnet-webapi`.
+**System prompt summary:**
+```
+You are the UX Reviewer agent. You evaluate UI implementation for usability,
+visual consistency, and adherence to design intent. During planning (Phase 0-1),
+review specs for usability issues and propose component hierarchy. After
+implementation (Phase 2-3), review components for consistency, interaction state
+coverage, accessibility, and unnecessary complexity. You cannot see screenshots,
+but you CAN reason about UI quality through the component graph, route structure,
+prop interfaces, client/server boundaries, and styling patterns.
+```
+
 ---
 
 ## Technical Architecture
 
-### Three Analysis Layers
+### Analysis Layers
+
+ArcBridge supports two language stacks with parallel analysis layers. Both write to the same abstract symbol model in SQLite.
 
 ```
-┌─────────────────────────────────────────────────┐
-│              MCP Server (ArcBridge)               │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│  Layer 3: Next.js Convention Analysis            │
-│  ├── Route tree from app/ directory structure    │
-│  ├── Special files (page, layout, loading, etc.) │
-│  ├── Server/client boundary detection            │
-│  └── Middleware and API route mapping            │
-│                                                 │
-│  Layer 2: React Semantic Analysis                │
-│  ├── Component hierarchy (JSX composition)       │
-│  ├── State boundaries (useState, useReducer)     │
-│  ├── Context flow (createContext → Provider →     │
-│  │   useContext consumer chain)                  │
-│  ├── Effect dependencies (useEffect arrays)      │
-│  └── Custom hook dependency graphs               │
-│                                                 │
-│  Layer 1: TypeScript Compiler API                │
-│  ├── Full type resolution and inference          │
-│  ├── Import/export dependency graph              │
-│  ├── Interface and type alias definitions        │
-│  ├── Generic type parameter resolution           │
-│  └── Symbol table with source locations          │
-│                                                 │
-├─────────────────────────────────────────────────┤
-│  Arc42 Document Layer                            │
-│  ├── Building block ↔ code module mapping        │
-│  ├── Quality scenario ↔ test/code mapping        │
-│  ├── ADR ↔ affected file mapping                │
-│  └── Phase plan ↔ task ↔ code status tracking    │
-│                                                 │
-├─────────────────────────────────────────────────┤
-│  Storage: SQLite (local, no external deps)       │
-│  ├── symbols, types, dependencies                │
-│  ├── components, contexts, hooks                 │
-│  ├── routes, layouts, server_client_boundary     │
-│  ├── building_blocks, quality_scenarios, adrs    │
-│  └── phases, tasks, drift_log                    │
-└─────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                     MCP Server (ArcBridge)                        │
+├──────────────────────────┬───────────────────────────────────────┤
+│  TypeScript / React      │  .NET / C#                            │
+│                          │                                       │
+│  Layer 3: Next.js        │  Layer 3: ASP.NET Core                │
+│  ├── Route tree (app/)   │  ├── Controller routes ([HttpGet])    │
+│  ├── Special files       │  ├── Minimal API routes (MapGet)      │
+│  ├── Server/client       │  ├── MapGroup() route prefixes        │
+│  │   boundary            │  ├── [Authorize] / RequireAuth()      │
+│  └── API route mapping   │  └── Multi-project .sln support       │
+│                          │                                       │
+│  Layer 2: React          │  Layer 2: ASP.NET Patterns             │
+│  ├── Component graph     │  ├── Class/interface hierarchy        │
+│  ├── State boundaries    │  ├── Cross-project dependencies       │
+│  ├── Context flow        │  ├── Implements/extends/calls/        │
+│  └── Custom hooks        │  │   uses_type tracking               │
+│                          │  └── Doc comment extraction            │
+│  Layer 1: TS Compiler    │                                       │
+│  ├── Type resolution     │  Layer 1: Roslyn (via JSON-over-      │
+│  ├── Import/export deps  │  stdout subprocess)                   │
+│  ├── Interface defs      │  ├── Full semantic analysis           │
+│  └── Symbol table        │  ├── Incremental content hashing      │
+│                          │  └── NuGet dependency parsing          │
+├──────────────────────────┴───────────────────────────────────────┤
+│  Shared: Arc42 Document Layer                                     │
+│  ├── Building block ↔ code module mapping                        │
+│  ├── Quality scenario ↔ test/code mapping                        │
+│  ├── ADR ↔ affected file mapping                                 │
+│  ├── Phase plan ↔ task ↔ code status tracking                    │
+│  └── Package dependency tracking (npm + NuGet)                   │
+│                                                                   │
+├───────────────────────────────────────────────────────────────────┤
+│  Storage: SQLite (local, no external deps)                        │
+│  ├── symbols (language: 'typescript' | 'csharp')                 │
+│  ├── dependencies, components, routes                            │
+│  ├── package_dependencies (npm, npm-dev, nuget)                  │
+│  ├── building_blocks, quality_scenarios, adrs                    │
+│  └── phases, tasks, drift_log                                    │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
 ### Why TypeScript Compiler API, Not Tree-sitter
@@ -362,7 +380,7 @@ For a TypeScript-specific tool, the compiler API is strictly superior:
 - **Declaration merging, module augmentation, path aliases:** all handled natively by the compiler, all invisible to tree-sitter.
 - **Error tolerance:** `ts.createProgram` with `noEmit: true` can parse and type-check even incomplete or partially broken code.
 
-The cost is that the compiler API is slower than tree-sitter (seconds vs. milliseconds for large projects) and TypeScript-only. Since we're explicitly scoping to TypeScript/React/Next.js, the trade-off is worth it.
+The cost is that the compiler API is slower than tree-sitter (seconds vs. milliseconds for large projects) and TypeScript-only. For .NET projects, the equivalent is Roslyn (`Microsoft.CodeAnalysis`), which provides the same depth of analysis for C#. Both produce the same abstract symbol model — agents don't need to know which language they're querying.
 
 ### React Analysis Details
 
@@ -1162,14 +1180,28 @@ The auto-generation aspect is critical: these aren't diagrams someone draws and 
 - Template library: reusable quality scenarios, agent role templates, arc42 skeletons for common project types (SaaS, e-commerce, internal tool, API service)
 - Community contribution model for templates and agent roles
 
-### Phase 10: .NET 10 Backend Support (~10–13 weeks, can run in parallel after Phase 1)
+### Phase 10: .NET Backend Support — PARTIALLY IMPLEMENTED
+
 **Goal:** Extend code intelligence to .NET/C# services, enabling full-stack coverage for TypeScript frontend + .NET backend architectures.
 
-**Why this matters:**
-Next.js frontend + .NET backend is one of the most common enterprise patterns, and a very attractive setup for solo devs and small teams who want the .NET ecosystem's performance, type safety, and mature tooling on the backend. Today, no tool gives an agent cross-stack visibility across this combination. ArcBridge with .NET support would be the first.
+**Current status:** The core .NET indexer is **implemented and working**. Agents can search C# symbols, trace dependencies, detect routes, and run drift detection on .NET projects. What remains is deeper framework-specific analysis (DI container, EF Core, middleware pipeline ordering) — see "Future Consideration" notes below.
 
-**What's already done (zero extra effort):**
-Everything above Layer 1 is language-agnostic by design. Arc42, agent roles, quality scenarios, the planning system, the sync loop, the MCP tool API, and the SQLite schema all work for .NET services without modification. This is roughly 60–70% of the system.
+**What's implemented:**
+- Roslyn-based C# indexer (`packages/dotnet-indexer/`) — symbol extraction, dependency tracking, content hashing
+- ASP.NET route detection — both controller-based ([HttpGet], [Route], [Authorize]) and minimal APIs (MapGet, MapGroup, .RequireAuthorization())
+- Multi-project .sln support — solution parsing, auto-detection
+- .NET-specific quality scenarios — startup time, GC pressure, async-all-the-way, CORS, health checks, structured logging, DI validation
+- dotnet-webapi template — config, building blocks, phases, tasks, arc42 docs
+- Package dependency tracking — NuGet packages from .csproj, drift detection for undocumented dependencies
+- Language auto-detection — tsconfig.json → TypeScript, .csproj/.sln → C#
+- All existing MCP tools work with C# symbols (search, dependency graph, route map, drift)
+
+**What's deferred (not needed for MVP):**
+- DI container analysis (analyzing `Services.AddScoped<I,T>()` registrations)
+- EF Core model extraction
+- Middleware pipeline ordering analysis
+- Cross-language contract verification (OpenAPI spec matching)
+- See the planning document's "Future Consideration" sections for rationale
 
 **Layer 1 equivalent: Roslyn (.NET Compiler Platform)**
 
@@ -1182,13 +1214,14 @@ Roslyn (`Microsoft.CodeAnalysis`) is the C#/.NET equivalent of the TypeScript co
 - Error tolerance → `Compilation` object works with incomplete/broken code, reports diagnostics separately
 - Workspace model → `MSBuildWorkspace.OpenSolutionAsync()` loads an entire `.sln` with all project references resolved
 
-**Implementation approach:** A separate .NET CLI tool (`arcbridge-dotnet-indexer`) that:
-1. Loads the `.sln` or `.csproj` via Roslyn's MSBuild workspace
-2. Walks the syntax trees and semantic model to extract symbols, types, dependencies
-3. Writes to the same SQLite database using the same schema (symbols tagged with `language: "csharp"` and `service: "order-service"`)
-4. Runs as a subprocess called by the main ArcBridge MCP server
+**Implementation approach (implemented):** A .NET console app (`packages/dotnet-indexer/`) using a JSON-over-stdout protocol:
+1. Node.js spawns `dotnet run --project packages/dotnet-indexer/` with the `.sln` or `.csproj` path
+2. The .NET app loads the solution via Roslyn's MSBuild workspace
+3. Walks syntax trees and semantic model to extract symbols, dependencies, and routes
+4. Outputs JSON to stdout (symbols, dependencies, routes, file hashes)
+5. Node.js parses the JSON and writes to SQLite using the existing `db-writer.ts`
 
-This keeps the MCP server in TypeScript/Node.js (where MCP tooling is strongest) while using Roslyn natively in .NET (where it actually works). The two processes communicate through the shared SQLite database — no complex IPC needed.
+This keeps all DB write logic in TypeScript (single source of truth), avoids WAL locking conflicts between processes, and makes the JSON contract independently testable. Content hashing is identical between TypeScript and C# (SHA-256, first 16 hex chars) — verified by cross-language tests.
 
 **Layer 2/3 equivalent: ASP.NET Core framework analysis**
 
@@ -1267,20 +1300,22 @@ The agent roles stay the same, but their context and checks expand:
 - **Quality Guardian** adds .NET metrics: EF query count per request, DI container validation, assembly coupling metrics
 - **Architect** understands .NET solution structure (`.sln` → projects → layers) and maps it to arc42 building blocks
 
-**Effort breakdown:**
+**Implementation status:**
 
-| Component | Weeks | Notes |
+| Component | Status | Notes |
 |---|---|---|
-| Roslyn indexer CLI (Layer 1) | 3–4 | .NET CLI tool. Symbol extraction, type resolution, dependency graph. Roslyn APIs are well-documented and map closely to what we do with TS compiler. |
-| ASP.NET framework analysis (Layer 2/3) | 2–3 | Controller/minimal API detection, DI analysis, middleware pipeline, auth scanning, EF model extraction. Patterns are standardized. |
-| Cross-language contract bridge | 2 | OpenAPI parsing, `.proto` parsing, cross-language dependency stitching in the unified index. |
-| Agent role adaptation | 1 | .NET-specific guidance, quality scenarios, pattern libraries for each role. |
-| Quality scenario library | 0.5 | .NET-specific scenarios as shown above, plus adaptation of existing CROSS-* scenarios. |
-| Starter template for TS + .NET | 0.5 | Monorepo template with Next.js app + .NET service + OpenAPI contract generation. |
-| Testing and integration | 1–2 | Mixed TS + .NET solution indexing, cross-language queries, contract verification. |
-| **Total** | **~10–13** | Can start after Phase 1 (TS indexing) is stable. Runs in parallel with Phases 2–4. |
+| Roslyn indexer (Layer 1) | **Done** | Symbol extraction, dependency tracking, content hashing, incremental indexing. 288 tests passing. |
+| ASP.NET route analysis (Layer 2/3) | **Done** | Controller routes + minimal APIs (MapGet/MapGroup/RequireAuthorization). |
+| .NET quality scenarios | **Done** | Startup time, GC pressure, async-all-the-way, CORS, health checks, structured logging, DI validation. |
+| dotnet-webapi template | **Done** | Config, building blocks, phases, tasks, arc42 docs. |
+| Package dependency tracking | **Done** | NuGet from .csproj + npm from package.json. Drift detection for undocumented packages. |
+| Multi-project .sln support | **Done** | Solution parsing, project discovery, test project detection. |
+| DI container analysis | Deferred | Would provide richer dependency graph but not needed for MVP. |
+| EF Core model extraction | Deferred | Useful for data layer visibility but not blocking. |
+| Cross-language contract bridge | Deferred | OpenAPI spec matching — deferred until multi-service demand materializes. |
+| Starter template for TS + .NET | In progress | Testing with prompt-exchange sample project (Next.js + .NET). |
 
-**Feasibility verdict:** Very feasible. Roslyn is a more mature analysis platform than the TS compiler API, .NET patterns are more standardized than the JS ecosystem, and the ArcBridge architecture already separates language-specific indexing from everything else. The DI container analysis is actually a *better* dependency graph than anything available in the TypeScript world. The main engineering cost is building the Roslyn indexer CLI — everything else is incremental extension of existing components.
+**Architecture decision:** The abstract symbol model (class, function, interface, enum, variable, constant) is shared across languages. Agents don't need to know whether they're querying TypeScript or C# — the same MCP tools work for both. Language-specific analysis (DI containers, EF Core, React hooks) is only added when it unlocks agent capability that the abstract model can't provide. See the planning document's "Language-Specific vs. Language-Agnostic Indexing" section for the full rationale.
 
 ---
 
@@ -1686,12 +1721,11 @@ ArcBridge MCP Server + CLI
 └── Project structure (monorepo):
     ├── packages/
     │   ├── mcp-server/          — The MCP server (core product)
-    │   ├── cli/                 — create-arcbridge CLI
-    │   ├── core/                — Shared types, schemas, utilities
-    │   └── adapters/            — Platform-specific config generators
-    ├── templates/               — Arc42 skeletons, agent roles, starter projects
-    ├── tests/
-    ├── docs/                    — Convention documentation (Phase 9)
+    │   ├── cli/                 — arcbridge CLI (init, sync, status, drift)
+    │   ├── core/                — Shared types, schemas, indexer, drift, templates
+    │   ├── adapters/            — Platform-specific config generators (Claude, Copilot)
+    │   └── dotnet-indexer/      — .NET/Roslyn C# indexer (separate .NET console app)
+    ├── docs/                    — Convention documentation, project plan
     ├── pnpm-workspace.yaml
     ├── tsconfig.base.json
     └── package.json
