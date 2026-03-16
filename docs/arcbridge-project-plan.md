@@ -180,17 +180,18 @@ Aider's repo map uses dependency graphs with PageRank to identify the most relev
 Where we diverge: Aider's graph is file-level. Ours is symbol-level *and* architecture-level — we can answer "which building block does this belong to" and "what quality scenarios constrain this module."
 
 ### From arc42
-Arc42 provides a proven 12-section architecture documentation template. We use a pragmatic subset:
+Arc42 provides a proven 12-section architecture documentation template. ArcBridge generates and maintains these sections:
 - Section 1: Introduction & Goals (→ project constitution + quality goals)
 - Section 3: Context & Scope (→ system boundary, external interfaces)
 - Section 5: Building Block View (→ module decomposition, mapped to code)
-- Section 6: Runtime View (→ key interaction flows, mapped to component trees)
-- Section 7: Deployment View (→ server/client split for Next.js, edge functions)
-- Section 9: Architecture Decisions (→ ADRs linked to affected code)
+- Section 6: Runtime View (→ key interaction flows, request pipelines)
+- Section 7: Deployment View (→ infrastructure, environments, deployment strategy)
+- Section 8: Crosscutting Concepts (→ established patterns: error handling, auth, logging, validation, DI)
+- Section 9: Architecture Decisions (→ ADRs linked to affected code and building blocks)
 - Section 10: Quality Requirements (→ quality scenarios that become agent constraints)
 - Section 11: Risks & Technical Debt (→ tracked and linked to code locations)
 
-Sections 2 (Constraints), 4 (Solution Strategy), 8 (Cross-cutting), and 12 (Glossary) are folded into other sections or generated on demand rather than maintained as separate documents.
+Sections 2 (Constraints), 4 (Solution Strategy), and 12 (Glossary) are folded into other sections rather than maintained as separate documents. Section 8 is generated with template-aware placeholder content (different patterns for .NET, React, and API projects) that agents fill in as conventions are established during development.
 
 ---
 
