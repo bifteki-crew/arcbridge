@@ -171,7 +171,7 @@ The database is a **derived cache**, not the source of truth. The source of trut
 │   └── 11-risks-debt.md           ← known risks and technical debt
 ├── plan/
 │   ├── phases.yaml                ← the implementation plan
-│   └── tasks/phase-1.yaml         ← task definitions and statuses per phase
+│   └── tasks/{phase-id}.yaml       ← task definitions and statuses per phase
 └── index.db                       ← derived from the above + code analysis
 ```
 
