@@ -111,19 +111,21 @@ export function buildingBlocksTemplate(
       });
     }
 
-    // API client for consuming external backend services
-    blocks.push({
-      id: "api-client",
-      name: "API Client",
-      level: 1,
-      code_paths: ["src/lib/api/", "src/services/"],
-      interfaces: [],
-      quality_scenarios: ["PERF-02"],
-      adrs: [],
-      responsibility:
-        "API client layer for communicating with external services. Defines request/response types, handles errors, and manages the contract with consumed APIs. Applies to any project that calls external APIs — frontend calling a backend, or a service calling another service.",
-      service: "main",
-    });
+    // API client block — only for frontend templates that consume a backend API
+    if (inp.template === "nextjs-app-router" || inp.template === "react-vite") {
+      blocks.push({
+        id: "api-client",
+        name: "API Client",
+        level: 1,
+        code_paths: ["src/lib/api/", "src/services/"],
+        interfaces: [],
+        quality_scenarios: ["PERF-02"],
+        adrs: [],
+        responsibility:
+          "API client layer for communicating with backend services. Defines request/response types, handles errors, and manages the contract with consumed APIs.",
+        service: "main",
+      });
+    }
 
     return blocks;
   }
