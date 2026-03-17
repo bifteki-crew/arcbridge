@@ -49,6 +49,25 @@ function dotnetConcepts(): string {
 - Service registration organization (by feature, by layer)
 - Lifetime choices (Scoped, Singleton, Transient) and when to use each
 - Options pattern for configuration
+
+## API Contract
+
+*Document how this service exposes its API to consumers.*
+
+- OpenAPI/Swagger generation approach
+- How consumers (frontend, other services) discover and use the API contract
+- Versioning strategy for breaking changes
+- Response envelope format and error conventions
+
+## Events & Messaging
+
+*Document if this service publishes or subscribes to events/messages.*
+
+- Messaging infrastructure (RabbitMQ, Azure Service Bus, Kafka, MediatR, etc.)
+- Event naming conventions and schema format
+- Publisher/subscriber topology — which services produce and consume which events
+- Error handling and retry strategy for failed message processing
+- Schema versioning approach for event contracts
 `;
 }
 
@@ -154,6 +173,25 @@ function apiConcepts(): string {
 - ORM/query builder choice
 - Connection pooling and transaction patterns
 - Migration strategy
+
+## API Contract
+
+*Document how this service exposes its API to consumers.*
+
+- OpenAPI/Swagger generation approach
+- How consumers (frontend, other services) discover and use the API contract
+- Versioning strategy for breaking changes
+- Response envelope format and error conventions
+
+## Events & Messaging
+
+*Document if this service publishes or subscribes to events/messages.*
+
+- Messaging infrastructure (RabbitMQ, Kafka, Redis Pub/Sub, etc.)
+- Event naming conventions and schema format
+- Publisher/subscriber topology
+- Error handling and retry strategy for failed message processing
+- Schema versioning approach for event contracts
 `;
 }
 

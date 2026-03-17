@@ -121,7 +121,7 @@ export function buildingBlocksTemplate(
       quality_scenarios: ["PERF-02"],
       adrs: [],
       responsibility:
-        "API client layer for communicating with backend services. Defines request/response types, handles errors, and manages the contract with external APIs.",
+        "API client layer for communicating with external services. Defines request/response types, handles errors, and manages the contract with consumed APIs. Applies to any project that calls external APIs — frontend calling a backend, or a service calling another service.",
       service: "main",
     });
 
