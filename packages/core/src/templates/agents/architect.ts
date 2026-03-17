@@ -50,6 +50,7 @@ export function architectTemplate(): AgentRole {
 - Review quality scenarios and ensure architectural support
 - Detect and resolve architectural drift
 - **Keep all arc42 documentation sections up to date as the project evolves**
+- **Define and maintain API contracts with external services** — if this project consumes or exposes APIs, ensure the contract is explicit, typed, and documented
 
 ## Constraints
 
@@ -57,6 +58,7 @@ export function architectTemplate(): AgentRole {
 - Map every new module to a building block
 - Update arc42 documentation when structure changes
 - Flag boundary-crossing code instead of silently introducing dependencies
+- When this project communicates with external services, the API contract must be explicit — define request/response types, document the contract approach in an ADR, and update Section 03 (Context) with the external system
 
 ## Arc42 Documentation Sections
 

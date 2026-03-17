@@ -101,6 +101,16 @@ function frontendConcepts(): string {
 - Server-side vs. client-side fetching strategy
 - Caching and revalidation approach
 - API client structure and conventions
+
+## API Contract
+
+*Document how this frontend communicates with backend services.*
+
+- Backend API base URL and environment configuration
+- How request/response types are defined (OpenAPI-generated, manual, shared package)
+- Error response handling (how backend errors map to UI states)
+- Authentication token flow (how auth tokens are passed to the API)
+- If using OpenAPI: how to regenerate types when the backend contract changes
 `;
 }
 

@@ -186,7 +186,9 @@ export function phaseTasksTemplate(
             "Swagger/OpenAPI enabled and accessible in development",
             "All endpoints have summary and response type annotations",
             "Request/response DTOs documented with XML comments or attributes",
+            "OpenAPI spec is the API contract — frontend clients should generate types from it",
             "Use arcbridge_get_route_map to verify all routes are captured",
+            "Update .arcbridge/arc42/03-context.md with API consumers (frontend, mobile, etc.)",
           ],
         },
         {

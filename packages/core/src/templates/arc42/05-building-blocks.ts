@@ -111,6 +111,20 @@ export function buildingBlocksTemplate(
       });
     }
 
+    // API client for consuming external backend services
+    blocks.push({
+      id: "api-client",
+      name: "API Client",
+      level: 1,
+      code_paths: ["src/lib/api/", "src/services/"],
+      interfaces: [],
+      quality_scenarios: ["PERF-02"],
+      adrs: [],
+      responsibility:
+        "API client layer for communicating with backend services. Defines request/response types, handles errors, and manages the contract with external APIs.",
+      service: "main",
+    });
+
     return blocks;
   }
 
