@@ -2617,7 +2617,27 @@ This entire flow — from `npx create-arcbridge` to having an architecturally-aw
 
 8. **Copilot coding agent has constraints.** It only supports MCP tools (not resources or prompts), doesn't support OAuth-based remote MCP servers, and runs in a sandboxed GitHub Actions environment. The ArcBridge MCP server must work within these constraints for the CI/CD sync loop. This means all data must be exposed as tool responses, and the MCP server must be deployable as a local stdio process that the Actions runner can invoke.
 
-9. **Monorepo support.** Many Next.js projects live in monorepos (Turborepo, Nx). The initial version scopes to single-project repos, but monorepo support will be needed eventually.
+9. **Monorepo support — validated with a real multi-tech project.** The Prompt Exchange example project (Next.js frontend + .NET backend in one repo) exposed concrete gaps. Currently each subdirectory needs its own `.arcbridge/` with independent building blocks, quality scenarios, phase plans, and indexing. This works but loses cross-service visibility. Specific needs identified:
+
+   **P0 — Foundation:**
+   - Root-level `config.yaml` with service declarations (`id`, `path`, `type`, `language`) so ArcBridge knows the repo structure
+   - Multi-language indexing in one pass — detect service boundaries from config, run the right indexer per service (TypeScript for frontend, C# for backend), store symbols in a shared index with service prefixes
+
+   **P1 — Cross-service architecture:**
+   - System-level building blocks (level 0 = service, level 1+ = within-service blocks as today). `interfaces` between level-0 blocks declare cross-service dependencies with protocol and contract info
+   - Cross-service drift detection — e.g., "frontend calls `/api/ratings` but backend doesn't expose that endpoint"
+
+   **P2 — Contract alignment (killer feature for API-backed frontends):**
+   - Parse backend endpoint definitions (route + DTO shapes) and frontend API client types
+   - Detect mismatches: field name casing (`authorUsername` vs `AuthorUsername`), missing fields, type disagreements
+   - New drift category: `contract_mismatch`
+
+   **P3 — Unified workflows:**
+   - Cross-service tasks in phase plans (`services: [frontend, backend]`)
+   - Quality scenarios that span services (e.g., E2E tests)
+   - Unified `arcbridge_get_project_status` showing all services and cross-service health
+
+   The minimum viable monorepo support (P0 + P1) would have caught the `localhost:5000` vs `localhost:5009` port mismatch that occurred during development of the example project.
 
 10. **The "two primary platforms" decision.** Supporting Claude Code + Copilot from day one doubles the adapter work in Phase 0 but gives us terminal + CI/CD coverage. If this proves too much for the MVP, fall back to Claude Code only and add Copilot in Phase 2.
 
