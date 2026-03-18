@@ -7,20 +7,21 @@ export function buildingBlocksTemplate(
 ): TemplateOutput {
   const now = new Date().toISOString();
 
-  // Detect project layout: does the project use a src/ directory?
-  // Check for src/ itself (covers all JS frameworks), not just src/app (Next.js-specific).
-  // Default to src/ for new projects (convention for Next.js, Vite, CRA).
-  const hasSrcDir = input.projectRoot
-    ? existsSync(join(input.projectRoot, "src"))
-    : true;
+  // Detect project layout from actual directory structure.
+  // When projectRoot is not provided (e.g., template preview), default to src/ convention.
+  const root = input.projectRoot;
+  const hasSrcDir = root ? existsSync(join(root, "src")) : true;
+  const hasSrcApp = root ? existsSync(join(root, "src", "app")) : false;
+  const hasRootApp = root ? existsSync(join(root, "app")) : false;
 
   // Prefix for general source files (components, lib, services)
   const srcPrefix = hasSrcDir ? "src/" : "";
 
-  // Prefix for app router files (Next.js specific)
-  const appPrefix = hasSrcDir
-    ? (existsSync(join(input.projectRoot ?? "", "src", "app")) ? "src/app" : "app")
-    : "src/app";
+  // Prefix for app router files (Next.js specific):
+  // 1. src/app exists → "src/app"
+  // 2. app/ exists at root → "app"
+  // 3. Neither exists (new project) → follow srcPrefix convention
+  const appPrefix = hasSrcApp ? "src/app" : hasRootApp ? "app" : `${srcPrefix}app`;
 
   type BlockDef = {
     id: string;
