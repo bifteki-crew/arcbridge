@@ -7,7 +7,6 @@ export function buildingBlocksTemplate(
   const now = new Date().toISOString();
 
   const layout = detectProjectLayout(input.projectRoot, input.template);
-  const { srcPrefix, entrypoints } = layout;
 
   type BlockDef = {
     id: string;
