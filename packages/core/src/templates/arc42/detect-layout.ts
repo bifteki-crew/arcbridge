@@ -17,7 +17,7 @@ export interface ProjectLayout {
  * 2. app/ exists at root → srcPrefix="", appPrefix="app"
  * 3. src/ exists (no app/) → srcPrefix="src/", appPrefix="src/app" (convention)
  * 4. No projectRoot → srcPrefix="src/", appPrefix="src/app" (default for new projects)
- * 5. Empty project (no src/, no app/) → srcPrefix="", appPrefix="app" (Next.js default without src)
+ * 5. Empty project (no src/, no app/) → srcPrefix="src/", appPrefix="src/app" (convention default)
  */
 export function detectProjectLayout(projectRoot?: string): ProjectLayout {
   if (!projectRoot) {
@@ -40,6 +40,9 @@ export function detectProjectLayout(projectRoot?: string): ProjectLayout {
     return { srcPrefix: "src/", appPrefix: "src/app" };
   }
 
-  // Empty project without src/ — use Next.js default (app/ at root)
-  return { srcPrefix: "", appPrefix: "app" };
+  // Empty project — default to src/ convention (same as when projectRoot is omitted).
+  // This matches what Next.js, Vite, and CRA scaffold by default.
+  // arcbridge init typically runs before the framework creates src/, so this
+  // ensures generated code_paths are consistent with the expected layout.
+  return { srcPrefix: "src/", appPrefix: "src/app" };
 }
