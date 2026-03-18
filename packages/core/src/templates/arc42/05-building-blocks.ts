@@ -6,7 +6,8 @@ export function buildingBlocksTemplate(
 ): TemplateOutput {
   const now = new Date().toISOString();
 
-  const { srcPrefix, appPrefix } = detectProjectLayout(input.projectRoot);
+  const layout = detectProjectLayout(input.projectRoot, input.template);
+  const { srcPrefix, entrypoints } = layout;
 
   type BlockDef = {
     id: string;
@@ -23,20 +24,32 @@ export function buildingBlocksTemplate(
   const defaultBlocks: BlockDef[] =
     input.template === "dotnet-webapi"
       ? buildDotnetBlocks(input)
-      : buildJsBlocks(input, srcPrefix, appPrefix);
+      : buildJsBlocks(input, srcPrefix, entrypoints);
 
-  function buildJsBlocks(inp: InitProjectInput, src: string, app: string): BlockDef[] {
+  function buildJsBlocks(inp: InitProjectInput, src: string, entries: string[]): BlockDef[] {
+    // App shell block — template-specific entrypoints
+    const appShellName = inp.template === "nextjs-app-router"
+      ? "App Shell"
+      : inp.template === "react-vite"
+        ? "App Root"
+        : "Server Entry";
+
+    const appShellResponsibility = inp.template === "nextjs-app-router"
+      ? "Root layout, navigation, and top-level page structure"
+      : inp.template === "react-vite"
+        ? "Application root, router setup, and top-level providers"
+        : "Server entry point, middleware setup, and route registration";
+
     const blocks: BlockDef[] = [
       {
         id: "app-shell",
-        name: "App Shell",
+        name: appShellName,
         level: 1,
-        code_paths: [`${app}/layout.tsx`, `${app}/page.tsx`],
+        code_paths: entries,
         interfaces: [],
         quality_scenarios: [],
         adrs: [],
-        responsibility:
-          "Root layout, navigation, and top-level page structure",
+        responsibility: appShellResponsibility,
         service: "main",
       },
       {
@@ -79,11 +92,14 @@ export function buildingBlocksTemplate(
     }
 
     if (inp.features.includes("api")) {
+      const apiPaths = inp.template === "nextjs-app-router"
+        ? [`${layout.appPrefix}/api/`]
+        : [`${src}routes/`, `${src}api/`];
       blocks.push({
         id: "api-layer",
         name: "API Layer",
         level: 1,
-        code_paths: [`${app}/api/`],
+        code_paths: apiPaths,
         interfaces: [],
         quality_scenarios: ["SEC-03"],
         adrs: [],

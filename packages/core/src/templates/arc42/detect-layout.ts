@@ -4,45 +4,67 @@ import { join } from "node:path";
 export interface ProjectLayout {
   /** Prefix for general source files: "src/" or "" */
   srcPrefix: string;
-  /** Prefix for Next.js app router files: "src/app" or "app" */
+  /** Prefix for Next.js app router files. Only meaningful for nextjs-app-router template. */
   appPrefix: string;
+  /** Entrypoint files for the project (template-dependent) */
+  entrypoints: string[];
 }
 
 /**
- * Detect the project's directory layout from actual filesystem structure.
+ * Detect the project's directory layout from actual filesystem structure and template.
  * Used by arc42 templates to generate consistent code_paths.
  *
- * Detection priority:
- * 1. src/app exists → srcPrefix="src/", appPrefix="src/app"
- * 2. app/ exists at root → srcPrefix="", appPrefix="app"
- * 3. src/ exists (no app/) → srcPrefix="src/", appPrefix="src/app" (convention)
- * 4. No projectRoot → srcPrefix="src/", appPrefix="src/app" (default for new projects)
- * 5. Empty project (no src/, no app/) → srcPrefix="src/", appPrefix="src/app" (convention default)
+ * srcPrefix detection:
+ * 1. src/ exists → "src/"
+ * 2. No src/ but projectRoot provided → "" (root-level layout)
+ * 3. No projectRoot → "src/" (default convention for new projects)
+ *
+ * appPrefix is only relevant for nextjs-app-router. For other templates
+ * it defaults to srcPrefix + "app" but should not be used for building blocks.
  */
-export function detectProjectLayout(projectRoot?: string): ProjectLayout {
-  if (!projectRoot) {
-    // New project or template preview — default to src/ convention
-    return { srcPrefix: "src/", appPrefix: "src/app" };
-  }
+export function detectProjectLayout(
+  projectRoot?: string,
+  template?: string,
+): ProjectLayout {
+  const srcPrefix = detectSrcPrefix(projectRoot);
+  const appPrefix = detectAppPrefix(projectRoot, srcPrefix);
 
-  const hasSrcApp = existsSync(join(projectRoot, "src", "app"));
-  if (hasSrcApp) {
-    return { srcPrefix: "src/", appPrefix: "src/app" };
-  }
+  // Template-specific entrypoints
+  const entrypoints = getEntrypoints(template ?? "nextjs-app-router", srcPrefix, appPrefix);
 
-  const hasRootApp = existsSync(join(projectRoot, "app"));
-  if (hasRootApp) {
-    return { srcPrefix: "", appPrefix: "app" };
-  }
+  return { srcPrefix, appPrefix, entrypoints };
+}
 
-  const hasSrc = existsSync(join(projectRoot, "src"));
-  if (hasSrc) {
-    return { srcPrefix: "src/", appPrefix: "src/app" };
-  }
+function detectSrcPrefix(projectRoot?: string): string {
+  if (!projectRoot) return "src/";
 
-  // Empty project — default to src/ convention (same as when projectRoot is omitted).
-  // This matches what Next.js, Vite, and CRA scaffold by default.
-  // arcbridge init typically runs before the framework creates src/, so this
-  // ensures generated code_paths are consistent with the expected layout.
-  return { srcPrefix: "src/", appPrefix: "src/app" };
+  if (existsSync(join(projectRoot, "src"))) return "src/";
+
+  // Empty or root-level project — default to src/ convention
+  // (frameworks like Next.js, Vite, CRA scaffold src/ by default)
+  return "src/";
+}
+
+function detectAppPrefix(projectRoot: string | undefined, srcPrefix: string): string {
+  if (!projectRoot) return `${srcPrefix}app`;
+
+  // Check actual directories for Next.js app router
+  if (existsSync(join(projectRoot, "src", "app"))) return "src/app";
+  if (existsSync(join(projectRoot, "app"))) return "app";
+
+  // Default follows srcPrefix
+  return `${srcPrefix}app`;
+}
+
+function getEntrypoints(template: string, srcPrefix: string, appPrefix: string): string[] {
+  switch (template) {
+    case "nextjs-app-router":
+      return [`${appPrefix}/layout.tsx`, `${appPrefix}/page.tsx`];
+    case "react-vite":
+      return [`${srcPrefix}main.tsx`, `${srcPrefix}App.tsx`];
+    case "api-service":
+      return [`${srcPrefix}index.ts`, `${srcPrefix}app.ts`, `${srcPrefix}server.ts`];
+    default:
+      return [`${srcPrefix}index.ts`];
+  }
 }

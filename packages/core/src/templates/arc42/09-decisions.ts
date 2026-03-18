@@ -16,7 +16,7 @@ export function firstAdrTemplate(input: InitProjectInput): AdrResult {
 }
 
 function nextjsAdr(input: InitProjectInput, date: string): AdrResult {
-  const { appPrefix } = detectProjectLayout(input.projectRoot);
+  const { appPrefix } = detectProjectLayout(input.projectRoot, input.template);
 
   return {
     filename: "001-nextjs-app-router.md",
