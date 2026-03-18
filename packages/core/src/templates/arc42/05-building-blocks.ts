@@ -7,11 +7,20 @@ export function buildingBlocksTemplate(
 ): TemplateOutput {
   const now = new Date().toISOString();
 
-  // Detect whether the project uses src/ directory
+  // Detect project layout: does the project use a src/ directory?
+  // Check for src/ itself (covers all JS frameworks), not just src/app (Next.js-specific).
+  // Default to src/ for new projects (convention for Next.js, Vite, CRA).
   const hasSrcDir = input.projectRoot
-    ? existsSync(join(input.projectRoot, "src", "app"))
-    : false;
-  const appPrefix = hasSrcDir ? "src/app" : "app";
+    ? existsSync(join(input.projectRoot, "src"))
+    : true;
+
+  // Prefix for general source files (components, lib, services)
+  const srcPrefix = hasSrcDir ? "src/" : "";
+
+  // Prefix for app router files (Next.js specific)
+  const appPrefix = hasSrcDir
+    ? (existsSync(join(input.projectRoot ?? "", "src", "app")) ? "src/app" : "app")
+    : "src/app";
 
   type BlockDef = {
     id: string;
@@ -28,15 +37,15 @@ export function buildingBlocksTemplate(
   const defaultBlocks: BlockDef[] =
     input.template === "dotnet-webapi"
       ? buildDotnetBlocks(input)
-      : buildJsBlocks(input, appPrefix);
+      : buildJsBlocks(input, srcPrefix, appPrefix);
 
-  function buildJsBlocks(inp: InitProjectInput, prefix: string): BlockDef[] {
+  function buildJsBlocks(inp: InitProjectInput, src: string, app: string): BlockDef[] {
     const blocks: BlockDef[] = [
       {
         id: "app-shell",
         name: "App Shell",
         level: 1,
-        code_paths: [`${prefix}/layout.tsx`, `${prefix}/page.tsx`],
+        code_paths: [`${app}/layout.tsx`, `${app}/page.tsx`],
         interfaces: [],
         quality_scenarios: [],
         adrs: [],
@@ -48,7 +57,7 @@ export function buildingBlocksTemplate(
         id: "ui-components",
         name: "UI Components",
         level: 1,
-        code_paths: ["src/components/"],
+        code_paths: [`${src}components/`],
         interfaces: [],
         quality_scenarios: [],
         adrs: [],
@@ -59,7 +68,7 @@ export function buildingBlocksTemplate(
         id: "lib-utilities",
         name: "Library & Utilities",
         level: 1,
-        code_paths: ["src/lib/"],
+        code_paths: [`${src}lib/`],
         interfaces: [],
         quality_scenarios: [],
         adrs: [],
@@ -73,7 +82,7 @@ export function buildingBlocksTemplate(
         id: "auth-module",
         name: "Authentication",
         level: 1,
-        code_paths: ["src/lib/auth/"],
+        code_paths: [`${src}lib/auth/`],
         interfaces: [],
         quality_scenarios: ["SEC-01"],
         adrs: [],
@@ -88,7 +97,7 @@ export function buildingBlocksTemplate(
         id: "api-layer",
         name: "API Layer",
         level: 1,
-        code_paths: [`${prefix}/api/`],
+        code_paths: [`${app}/api/`],
         interfaces: [],
         quality_scenarios: ["SEC-03"],
         adrs: [],
@@ -102,7 +111,7 @@ export function buildingBlocksTemplate(
         id: "data-access",
         name: "Data Access",
         level: 1,
-        code_paths: ["src/lib/db/"],
+        code_paths: [`${src}lib/db/`],
         interfaces: [],
         quality_scenarios: [],
         adrs: [],
@@ -113,12 +122,11 @@ export function buildingBlocksTemplate(
 
     // API client block — only for frontend templates that consume a backend API
     if (inp.template === "nextjs-app-router" || inp.template === "react-vite") {
-      const libPrefix = prefix.startsWith("src/") ? "src/" : "";
       blocks.push({
         id: "api-client",
         name: "API Client",
         level: 1,
-        code_paths: [`${libPrefix}lib/api/`, `${libPrefix}services/`],
+        code_paths: [`${src}lib/api/`, `${src}services/`],
         interfaces: [],
         quality_scenarios: [],
         adrs: [],

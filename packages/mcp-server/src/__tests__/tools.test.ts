@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -28,6 +28,9 @@ let _ctx: ServerContext;
 
 beforeEach(() => {
   tempDir = mkdtempSync(join(tmpdir(), "arcbridge-tool-test-"));
+
+  // Create src/ directory to match Next.js convention (affects building block path detection)
+  mkdirSync(join(tempDir, "src"), { recursive: true });
 
   // Generate full project
   generateConfig(tempDir, TEST_INPUT);
