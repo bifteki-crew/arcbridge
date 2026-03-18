@@ -113,13 +113,14 @@ export function buildingBlocksTemplate(
 
     // API client block — only for frontend templates that consume a backend API
     if (inp.template === "nextjs-app-router" || inp.template === "react-vite") {
+      const libPrefix = prefix.startsWith("src/") ? "src/" : "";
       blocks.push({
         id: "api-client",
         name: "API Client",
         level: 1,
-        code_paths: ["src/lib/api/", "src/services/"],
+        code_paths: [`${libPrefix}lib/api/`, `${libPrefix}services/`],
         interfaces: [],
-        quality_scenarios: ["PERF-02"],
+        quality_scenarios: [],
         adrs: [],
         responsibility:
           "API client layer for communicating with backend services. Defines request/response types, handles errors, and manages the contract with consumed APIs.",

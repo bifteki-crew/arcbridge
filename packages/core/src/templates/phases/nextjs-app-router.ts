@@ -136,7 +136,7 @@ export function phaseTasksTemplate(
           title: "Set up API client layer",
           status: "todo",
           building_block: "api-client",
-          quality_scenarios: ["PERF-02"],
+          quality_scenarios: [],
           acceptance_criteria: [
             "API client module created with typed request/response interfaces",
             "Base URL and auth token handling configured",
