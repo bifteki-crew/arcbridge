@@ -265,6 +265,24 @@ describe("api-client building block", () => {
     expect(validated.blocks.map((b) => b.id)).toContain("api-client");
   });
 
+  it("is present for react-vite template", () => {
+    const viteInput: InitProjectInput = {
+      name: "my-app",
+      template: "react-vite",
+      features: [],
+      quality_priorities: ["security", "performance", "accessibility"],
+      platforms: ["claude"],
+    };
+    generateArc42(tempDir, viteInput);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      "utf-8",
+    );
+    const { data } = matter(raw);
+    const validated = BuildingBlocksFrontmatterSchema.parse(data);
+    expect(validated.blocks.map((b) => b.id)).toContain("api-client");
+  });
+
   it("is absent for api-service template", () => {
     const apiInput: InitProjectInput = {
       name: "my-api",

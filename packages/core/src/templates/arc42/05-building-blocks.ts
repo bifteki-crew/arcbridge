@@ -1,27 +1,12 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import type { InitProjectInput, TemplateOutput } from "../types.js";
+import { detectProjectLayout } from "./detect-layout.js";
 
 export function buildingBlocksTemplate(
   input: InitProjectInput,
 ): TemplateOutput {
   const now = new Date().toISOString();
 
-  // Detect project layout from actual directory structure.
-  // When projectRoot is not provided (e.g., template preview), default to src/ convention.
-  const root = input.projectRoot;
-  const hasSrcDir = root ? existsSync(join(root, "src")) : true;
-  const hasSrcApp = root ? existsSync(join(root, "src", "app")) : false;
-  const hasRootApp = root ? existsSync(join(root, "app")) : false;
-
-  // Prefix for general source files (components, lib, services)
-  const srcPrefix = hasSrcDir ? "src/" : "";
-
-  // Prefix for app router files (Next.js specific):
-  // 1. src/app exists → "src/app"
-  // 2. app/ exists at root → "app"
-  // 3. Neither exists (new project) → follow srcPrefix convention
-  const appPrefix = hasSrcApp ? "src/app" : hasRootApp ? "app" : `${srcPrefix}app`;
+  const { srcPrefix, appPrefix } = detectProjectLayout(input.projectRoot);
 
   type BlockDef = {
     id: string;
