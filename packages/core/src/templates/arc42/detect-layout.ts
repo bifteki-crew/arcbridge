@@ -36,13 +36,14 @@ export function detectProjectLayout(
 }
 
 function detectSrcPrefix(projectRoot?: string): string {
+  // No projectRoot (template preview) — default to src/ convention
   if (!projectRoot) return "src/";
 
+  // Actual project — check what exists
   if (existsSync(join(projectRoot, "src"))) return "src/";
 
-  // Empty or root-level project — default to src/ convention
-  // (frameworks like Next.js, Vite, CRA scaffold src/ by default)
-  return "src/";
+  // No src/ directory — use root-level paths
+  return "";
 }
 
 function detectAppPrefix(projectRoot: string | undefined, srcPrefix: string): string {

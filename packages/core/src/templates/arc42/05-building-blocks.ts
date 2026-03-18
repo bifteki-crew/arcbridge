@@ -24,9 +24,11 @@ export function buildingBlocksTemplate(
   const defaultBlocks: BlockDef[] =
     input.template === "dotnet-webapi"
       ? buildDotnetBlocks(input)
-      : buildJsBlocks(input, srcPrefix, entrypoints);
+      : buildJsBlocks(input, layout);
 
-  function buildJsBlocks(inp: InitProjectInput, src: string, entries: string[]): BlockDef[] {
+  function buildJsBlocks(inp: InitProjectInput, lt: typeof layout): BlockDef[] {
+    const src = lt.srcPrefix;
+    const entries = lt.entrypoints;
     // App shell block — template-specific entrypoints
     const appShellName = inp.template === "nextjs-app-router"
       ? "App Shell"
@@ -93,7 +95,7 @@ export function buildingBlocksTemplate(
 
     if (inp.features.includes("api")) {
       const apiPaths = inp.template === "nextjs-app-router"
-        ? [`${layout.appPrefix}/api/`]
+        ? [`${lt.appPrefix}/api/`]
         : [`${src}routes/`, `${src}api/`];
       blocks.push({
         id: "api-layer",
