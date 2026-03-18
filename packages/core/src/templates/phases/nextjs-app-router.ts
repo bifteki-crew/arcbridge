@@ -132,7 +132,21 @@ export function phaseTasksTemplate(
           ],
         },
         {
-          id: "task-1.3-document-decisions",
+          id: "task-1.3-api-client",
+          title: "Set up API client layer",
+          status: "todo",
+          building_block: "api-client",
+          quality_scenarios: [],
+          acceptance_criteria: [
+            "API client module created with typed request/response interfaces",
+            "Base URL and auth token handling configured",
+            "Error handling standardized (network errors, API errors, validation errors)",
+            "Request/response types match the backend API contract",
+            "Document the API contract approach in an ADR (e.g., OpenAPI-generated types vs. manual types)",
+          ],
+        },
+        {
+          id: "task-1.4-document-decisions",
           title: "Document architectural decisions as ADRs",
           status: "todo",
           quality_scenarios: [],

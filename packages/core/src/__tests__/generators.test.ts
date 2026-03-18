@@ -82,6 +82,8 @@ describe("generateArc42", () => {
     const ids = validated.blocks.map((b) => b.id);
     expect(ids).toContain("auth-module");
     expect(ids).toContain("api-layer");
+    // Frontend templates always get an api-client block
+    expect(ids).toContain("api-client");
   });
 
   it("produces valid quality scenarios", () => {
@@ -251,6 +253,73 @@ describe("generateDatabase", () => {
   });
 });
 
+describe("api-client building block", () => {
+  it("is present for nextjs-app-router template", () => {
+    generateArc42(tempDir, TEST_INPUT);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      "utf-8",
+    );
+    const { data } = matter(raw);
+    const validated = BuildingBlocksFrontmatterSchema.parse(data);
+    expect(validated.blocks.map((b) => b.id)).toContain("api-client");
+  });
+
+  it("is present for react-vite template", () => {
+    const viteInput: InitProjectInput = {
+      name: "my-app",
+      template: "react-vite",
+      features: [],
+      quality_priorities: ["security", "performance", "accessibility"],
+      platforms: ["claude"],
+    };
+    generateArc42(tempDir, viteInput);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      "utf-8",
+    );
+    const { data } = matter(raw);
+    const validated = BuildingBlocksFrontmatterSchema.parse(data);
+    expect(validated.blocks.map((b) => b.id)).toContain("api-client");
+  });
+
+  it("is absent for api-service template", () => {
+    const apiInput: InitProjectInput = {
+      name: "my-api",
+      template: "api-service",
+      features: [],
+      quality_priorities: ["security", "performance", "reliability"],
+      platforms: ["claude"],
+    };
+    generateArc42(tempDir, apiInput);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      "utf-8",
+    );
+    const { data } = matter(raw);
+    const validated = BuildingBlocksFrontmatterSchema.parse(data);
+    expect(validated.blocks.map((b) => b.id)).not.toContain("api-client");
+  });
+
+  it("is absent for dotnet-webapi template", () => {
+    const dotnetInput: InitProjectInput = {
+      name: "my-api",
+      template: "dotnet-webapi",
+      features: [],
+      quality_priorities: ["security", "performance", "reliability"],
+      platforms: ["claude"],
+    };
+    generateArc42(tempDir, dotnetInput);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      "utf-8",
+    );
+    const { data } = matter(raw);
+    const validated = BuildingBlocksFrontmatterSchema.parse(data);
+    expect(validated.blocks.map((b) => b.id)).not.toContain("api-client");
+  });
+});
+
 describe("dotnet-webapi template", () => {
   const DOTNET_INPUT: InitProjectInput = {
     name: "my-api",
@@ -290,6 +359,7 @@ describe("dotnet-webapi template", () => {
     // Should NOT contain JS-specific blocks
     expect(ids).not.toContain("app-shell");
     expect(ids).not.toContain("ui-components");
+    expect(ids).not.toContain("api-client");
   });
 
   it("generates ASP.NET Core ADR", () => {

@@ -1,6 +1,5 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import type { InitProjectInput, TemplateOutput } from "../types.js";
+import { detectProjectLayout } from "./detect-layout.js";
 
 interface AdrResult extends TemplateOutput {
   filename: string;
@@ -17,10 +16,7 @@ export function firstAdrTemplate(input: InitProjectInput): AdrResult {
 }
 
 function nextjsAdr(input: InitProjectInput, date: string): AdrResult {
-  const hasSrcDir = input.projectRoot
-    ? existsSync(join(input.projectRoot, "src", "app"))
-    : false;
-  const appPrefix = hasSrcDir ? "src/app" : "app";
+  const { appPrefix } = detectProjectLayout(input.projectRoot, input.template);
 
   return {
     filename: "001-nextjs-app-router.md",

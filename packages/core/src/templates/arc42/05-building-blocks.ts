@@ -1,17 +1,12 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import type { InitProjectInput, TemplateOutput } from "../types.js";
+import { detectProjectLayout } from "./detect-layout.js";
 
 export function buildingBlocksTemplate(
   input: InitProjectInput,
 ): TemplateOutput {
   const now = new Date().toISOString();
 
-  // Detect whether the project uses src/ directory
-  const hasSrcDir = input.projectRoot
-    ? existsSync(join(input.projectRoot, "src", "app"))
-    : false;
-  const appPrefix = hasSrcDir ? "src/app" : "app";
+  const layout = detectProjectLayout(input.projectRoot, input.template);
 
   type BlockDef = {
     id: string;
@@ -28,27 +23,41 @@ export function buildingBlocksTemplate(
   const defaultBlocks: BlockDef[] =
     input.template === "dotnet-webapi"
       ? buildDotnetBlocks(input)
-      : buildJsBlocks(input, appPrefix);
+      : buildJsBlocks(input, layout);
 
-  function buildJsBlocks(inp: InitProjectInput, prefix: string): BlockDef[] {
+  function buildJsBlocks(inp: InitProjectInput, lt: typeof layout): BlockDef[] {
+    const src = lt.srcPrefix;
+    const entries = lt.entrypoints;
+    // App shell block — template-specific entrypoints
+    const appShellName = inp.template === "nextjs-app-router"
+      ? "App Shell"
+      : inp.template === "react-vite"
+        ? "App Root"
+        : "Server Entry";
+
+    const appShellResponsibility = inp.template === "nextjs-app-router"
+      ? "Root layout, navigation, and top-level page structure"
+      : inp.template === "react-vite"
+        ? "Application root, router setup, and top-level providers"
+        : "Server entry point, middleware setup, and route registration";
+
     const blocks: BlockDef[] = [
       {
         id: "app-shell",
-        name: "App Shell",
+        name: appShellName,
         level: 1,
-        code_paths: [`${prefix}/layout.tsx`, `${prefix}/page.tsx`],
+        code_paths: entries,
         interfaces: [],
         quality_scenarios: [],
         adrs: [],
-        responsibility:
-          "Root layout, navigation, and top-level page structure",
+        responsibility: appShellResponsibility,
         service: "main",
       },
       {
         id: "ui-components",
         name: "UI Components",
         level: 1,
-        code_paths: ["src/components/"],
+        code_paths: [`${src}components/`],
         interfaces: [],
         quality_scenarios: [],
         adrs: [],
@@ -59,7 +68,7 @@ export function buildingBlocksTemplate(
         id: "lib-utilities",
         name: "Library & Utilities",
         level: 1,
-        code_paths: ["src/lib/"],
+        code_paths: [`${src}lib/`],
         interfaces: [],
         quality_scenarios: [],
         adrs: [],
@@ -73,7 +82,7 @@ export function buildingBlocksTemplate(
         id: "auth-module",
         name: "Authentication",
         level: 1,
-        code_paths: ["src/lib/auth/"],
+        code_paths: [`${src}lib/auth/`],
         interfaces: [],
         quality_scenarios: ["SEC-01"],
         adrs: [],
@@ -84,11 +93,14 @@ export function buildingBlocksTemplate(
     }
 
     if (inp.features.includes("api")) {
+      const apiPaths = inp.template === "nextjs-app-router"
+        ? [`${lt.appPrefix}/api/`]
+        : [`${src}routes/`, `${src}api/`];
       blocks.push({
         id: "api-layer",
         name: "API Layer",
         level: 1,
-        code_paths: [`${prefix}/api/`],
+        code_paths: apiPaths,
         interfaces: [],
         quality_scenarios: ["SEC-03"],
         adrs: [],
@@ -102,11 +114,27 @@ export function buildingBlocksTemplate(
         id: "data-access",
         name: "Data Access",
         level: 1,
-        code_paths: ["src/lib/db/"],
+        code_paths: [`${src}lib/db/`],
         interfaces: [],
         quality_scenarios: [],
         adrs: [],
         responsibility: "Database connections, queries, and data models",
+        service: "main",
+      });
+    }
+
+    // API client block — only for frontend templates that consume a backend API
+    if (inp.template === "nextjs-app-router" || inp.template === "react-vite") {
+      blocks.push({
+        id: "api-client",
+        name: "API Client",
+        level: 1,
+        code_paths: [`${src}lib/api/`, `${src}services/`],
+        interfaces: [],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility:
+          "API client layer for communicating with backend services. Defines request/response types, handles errors, and manages the contract with consumed APIs.",
         service: "main",
       });
     }

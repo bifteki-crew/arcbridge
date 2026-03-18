@@ -168,7 +168,9 @@ export function phaseTasksTemplate(
             "OpenAPI/Swagger spec generated from route definitions",
             "All endpoints have descriptions and response types",
             "Request/response schemas documented",
+            "OpenAPI spec is the API contract — frontend clients should generate types from it",
             "Use arcbridge_get_route_map to verify all routes are captured",
+            "Update .arcbridge/arc42/03-context.md with API consumers (frontend, mobile, etc.)",
           ],
         },
         {
