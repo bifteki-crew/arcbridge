@@ -2631,7 +2631,7 @@ This entire flow — from `npx create-arcbridge` to having an architecturally-aw
    **P2 — Contract alignment (killer feature for API-backed frontends):**
    - Parse backend endpoint definitions (route + DTO shapes) and frontend API client types
    - Detect mismatches: field name casing (`authorUsername` vs `AuthorUsername`), missing fields, type disagreements
-   - New drift category: `contract_mismatch` (requires: adding to the `DriftKind` union in `packages/core/src/drift/detector.ts`, adding to the `drift_log.kind` CHECK constraint in `packages/core/src/db/schema.ts`, implementing the detection function, and updating tests. Note: the current DB initialization uses `CREATE TABLE IF NOT EXISTS` without migrations, so updating the CHECK constraint also requires either introducing a migration system or requiring users to delete and regenerate `.arcbridge/index.db`)
+   - New drift category: `contract_mismatch` (requires: adding to the `DriftKind` union in `packages/core/src/drift/detector.ts`, adding to the `drift_log.kind` CHECK constraint in `packages/core/src/db/schema.ts`, implementing the detection function, and updating tests. A migration system already exists (`packages/core/src/db/migrations.ts`, called via `migrate(db)` in the CLI) though no migration steps are currently defined — extending the CHECK constraint will require a migration that rebuilds the `drift_log` table, or as a fallback, a DB reset)
 
    **P3 — Unified workflows:**
    - Cross-service tasks in phase plans (`services: [frontend, backend]`)
