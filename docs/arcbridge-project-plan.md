@@ -2617,10 +2617,10 @@ This entire flow — from `npx create-arcbridge` to having an architecturally-aw
 
 8. **Copilot coding agent has constraints.** It only supports MCP tools (not resources or prompts), doesn't support OAuth-based remote MCP servers, and runs in a sandboxed GitHub Actions environment. The ArcBridge MCP server must work within these constraints for the CI/CD sync loop. This means all data must be exposed as tool responses, and the MCP server must be deployable as a local stdio process that the Actions runner can invoke.
 
-9. **Monorepo support — validated with a real multi-tech project.** The Prompt Exchange example project (Next.js frontend + .NET backend in one repo) exposed concrete gaps. Currently each subdirectory needs its own `.arcbridge/` with independent building blocks, quality scenarios, phase plans, and indexing. This works but loses cross-service visibility. Specific needs identified:
+9. **Monorepo support — validated with a real multi-tech project.** The prompt-exchange example project (Next.js frontend + .NET backend in one repo) exposed concrete gaps. Currently each subdirectory needs its own `.arcbridge/` with independent building blocks, quality scenarios, phase plans, and indexing. This works but loses cross-service visibility. Specific needs identified:
 
    **P0 — Foundation:**
-   - Solution-level `.arcbridge/config.yaml` at the repo root with service declarations (`id`, `path`, `type`, `language`) so ArcBridge knows the repo structure
+   - Solution-level `.arcbridge/config.yaml` at the repo root with extended service declarations. The current schema uses `services[].name`, `path`, `type` — this would add a `language` field (proposed schema change, not yet implemented) so ArcBridge can dispatch the correct indexer per service
    - Multi-language indexing in one pass — detect service boundaries from config, run the right indexer per service (TypeScript for frontend, C# for backend), store symbols in a shared SQLite index using the existing `service` column to isolate per-service symbols
 
    **P1 — Cross-service architecture:**
@@ -2630,7 +2630,7 @@ This entire flow — from `npx create-arcbridge` to having an architecturally-aw
    **P2 — Contract alignment (killer feature for API-backed frontends):**
    - Parse backend endpoint definitions (route + DTO shapes) and frontend API client types
    - Detect mismatches: field name casing (`authorUsername` vs `AuthorUsername`), missing fields, type disagreements
-   - New drift category: `contract_mismatch` (future addition to `drift_log.kind` — not in the current schema, would be added when this phase is implemented)
+   - New drift category: `contract_mismatch` (requires a schema migration: adding the value to the `drift_log.kind` CHECK constraint and bumping the schema version — not in the current schema)
 
    **P3 — Unified workflows:**
    - Cross-service tasks in phase plans (`services: [frontend, backend]`)
