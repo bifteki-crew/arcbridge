@@ -2620,8 +2620,8 @@ This entire flow — from `npx create-arcbridge` to having an architecturally-aw
 9. **Monorepo support — validated with a real multi-tech project.** The prompt-exchange example project (Next.js frontend + .NET backend in one repo) exposed concrete gaps. Currently each subdirectory needs its own `.arcbridge/` with independent building blocks, quality scenarios, phase plans, and indexing. This works but loses cross-service visibility. Specific needs identified:
 
    **P0 — Foundation:**
-   - Solution-level `.arcbridge/config.yaml` at the repo root with extended service declarations. The current schema uses `services[].name`, `path`, `type` — this would add a `language` field (proposed schema change, not yet implemented) so ArcBridge can dispatch the correct indexer per service
-   - Multi-language indexing in one pass — detect service boundaries from config, run the right indexer per service (TypeScript for frontend, C# for backend), store symbols in a shared SQLite index using the existing `service` column to isolate per-service symbols
+   - Solution-level `.arcbridge/config.yaml` at the repo root that orchestrates multi-service indexing. The existing config schema already has the pieces needed — `services[].type` (including `"dotnet"`) and optional `tsconfig`/`csproj` fields, plus the DB already stores `symbols.language`. The missing piece is a root-level init that iterates services, runs the right indexer per service path, and writes to a shared SQLite index using the existing `service` column for isolation
+   - Multi-language indexing in one pass — detect service boundaries from config, run the right indexer per service (TypeScript for frontend, C# for backend)
 
    **P1 — Cross-service architecture:**
    - System-level building blocks (level 0 = service, level 1+ = within-service blocks as today). `interfaces` between level-0 blocks declare cross-service dependencies with protocol and contract info
@@ -2630,7 +2630,7 @@ This entire flow — from `npx create-arcbridge` to having an architecturally-aw
    **P2 — Contract alignment (killer feature for API-backed frontends):**
    - Parse backend endpoint definitions (route + DTO shapes) and frontend API client types
    - Detect mismatches: field name casing (`authorUsername` vs `AuthorUsername`), missing fields, type disagreements
-   - New drift category: `contract_mismatch` (requires a schema migration: adding the value to the `drift_log.kind` CHECK constraint and bumping the schema version — not in the current schema)
+   - New drift category: `contract_mismatch` (requires: adding to the `DriftKind` TypeScript union in `detector.ts`, adding to the `drift_log.kind` CHECK constraint in `schema.ts`, implementing the detection function, updating tests, and bumping the schema version)
 
    **P3 — Unified workflows:**
    - Cross-service tasks in phase plans (`services: [frontend, backend]`)
