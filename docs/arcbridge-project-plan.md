@@ -2620,8 +2620,8 @@ This entire flow — from `npx create-arcbridge` to having an architecturally-aw
 9. **Monorepo support — validated with a real multi-tech project.** The Prompt Exchange example project (Next.js frontend + .NET backend in one repo) exposed concrete gaps. Currently each subdirectory needs its own `.arcbridge/` with independent building blocks, quality scenarios, phase plans, and indexing. This works but loses cross-service visibility. Specific needs identified:
 
    **P0 — Foundation:**
-   - Root-level `config.yaml` with service declarations (`id`, `path`, `type`, `language`) so ArcBridge knows the repo structure
-   - Multi-language indexing in one pass — detect service boundaries from config, run the right indexer per service (TypeScript for frontend, C# for backend), store symbols in a shared index with service prefixes
+   - Solution-level `.arcbridge/config.yaml` at the repo root with service declarations (`id`, `path`, `type`, `language`) so ArcBridge knows the repo structure
+   - Multi-language indexing in one pass — detect service boundaries from config, run the right indexer per service (TypeScript for frontend, C# for backend), store symbols in a shared SQLite index using the existing `service` column to isolate per-service symbols
 
    **P1 — Cross-service architecture:**
    - System-level building blocks (level 0 = service, level 1+ = within-service blocks as today). `interfaces` between level-0 blocks declare cross-service dependencies with protocol and contract info
@@ -2630,7 +2630,7 @@ This entire flow — from `npx create-arcbridge` to having an architecturally-aw
    **P2 — Contract alignment (killer feature for API-backed frontends):**
    - Parse backend endpoint definitions (route + DTO shapes) and frontend API client types
    - Detect mismatches: field name casing (`authorUsername` vs `AuthorUsername`), missing fields, type disagreements
-   - New drift category: `contract_mismatch`
+   - New drift category: `contract_mismatch` (future addition to `drift_log.kind` — not in the current schema, would be added when this phase is implemented)
 
    **P3 — Unified workflows:**
    - Cross-service tasks in phase plans (`services: [frontend, backend]`)
