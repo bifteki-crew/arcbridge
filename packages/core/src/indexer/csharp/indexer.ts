@@ -88,7 +88,8 @@ export function indexCSharpTreeSitter(
   // 5. Extract symbols from changed files
   const allNewSymbols: ExtractedSymbol[] = [];
   for (const relPath of changedFiles) {
-    const cached = fileCache.get(relPath)!;
+    const cached = fileCache.get(relPath);
+    if (!cached) continue;
     const symbols = extractCSharpSymbols(cached.tree, relPath, cached.content);
     allNewSymbols.push(...symbols);
   }

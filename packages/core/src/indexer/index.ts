@@ -1,6 +1,7 @@
 import { relative, join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import YAML from "yaml";
 import type Database from "better-sqlite3";
 import type { IndexerOptions, IndexResult } from "./types.js";
 import { createTsProgram } from "./program.js";
@@ -80,8 +81,24 @@ export function indexProject(
  */
 export function resolveCSharpBackend(projectRoot: string): CSharpBackend {
   // Use the existing config loader for validated config access
-  const { config } = loadConfig(projectRoot);
-  const setting = config?.indexing?.csharp_indexer;
+  const { config, error } = loadConfig(projectRoot);
+  let setting = config?.indexing?.csharp_indexer;
+
+  // If full config validation failed but the file exists, try to extract
+  // just the csharp_indexer setting from raw YAML so an unrelated config
+  // error doesn't silently override the user's explicit backend choice
+  if (!setting && error) {
+    try {
+      const raw = readFileSync(join(projectRoot, ".arcbridge", "config.yaml"), "utf-8");
+      const parsed = YAML.parse(raw);
+      const rawSetting = parsed?.indexing?.csharp_indexer;
+      if (rawSetting === "roslyn" || rawSetting === "tree-sitter") {
+        setting = rawSetting;
+      }
+    } catch {
+      // Ignore — proceed with auto
+    }
+  }
 
   if (setting === "roslyn" || setting === "tree-sitter") {
     return setting;
