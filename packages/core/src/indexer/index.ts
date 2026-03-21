@@ -1,7 +1,6 @@
 import { relative, join } from "node:path";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import YAML from "yaml";
 import type Database from "better-sqlite3";
 import type { IndexerOptions, IndexResult } from "./types.js";
 import { createTsProgram } from "./program.js";
@@ -19,6 +18,7 @@ import {
 import { indexDotnetProjectRoslyn, findDotnetProject } from "./dotnet-indexer.js";
 import { indexCSharpTreeSitter } from "./csharp/indexer.js";
 import { indexPackageDependencies } from "./package-deps.js";
+import { loadConfig } from "../config/loader.js";
 
 export type ProjectLanguage = "typescript" | "csharp" | "auto";
 export type CSharpBackend = "roslyn" | "tree-sitter";
@@ -75,34 +75,28 @@ export function indexProject(
 
 /**
  * Resolve which C# indexer backend to use.
- * 1. Check config for explicit setting
- * 2. If "auto": check if `arcbridge-dotnet-indexer` global tool is on PATH → Roslyn, otherwise tree-sitter
+ * 1. Check config for explicit `indexing.csharp_indexer` setting
+ * 2. If "auto" (default): check if `dotnet` CLI is available → Roslyn, otherwise tree-sitter
  */
 export function resolveCSharpBackend(projectRoot: string): CSharpBackend {
-  // Try to read config for explicit backend preference
-  try {
-    const configPath = join(projectRoot, ".arcbridge/config.yaml");
-    if (existsSync(configPath)) {
-      const raw = readFileSync(configPath, "utf-8");
-      const config = YAML.parse(raw);
-      const backend = config?.indexing?.csharp_indexer;
-      if (backend === "roslyn" || backend === "tree-sitter") {
-        return backend;
-      }
-    }
-  } catch {
-    // Ignore config read errors, proceed with auto
+  // Use the existing config loader for validated config access
+  const { config } = loadConfig(projectRoot);
+  const setting = config?.indexing?.csharp_indexer;
+
+  if (setting === "roslyn" || setting === "tree-sitter") {
+    return setting;
   }
 
-  // Auto: check for Roslyn global tool on PATH
+  // Auto: check if .NET SDK is available (required by indexDotnetProjectRoslyn
+  // which shells out to `dotnet run --project <indexer>`)
   try {
-    execFileSync("arcbridge-dotnet-indexer", ["--version"], {
+    execFileSync("dotnet", ["--version"], {
       encoding: "utf-8",
       timeout: 5000,
     });
     return "roslyn";
   } catch {
-    // Global tool not available — use tree-sitter
+    // .NET SDK not available — use tree-sitter
     return "tree-sitter";
   }
 }

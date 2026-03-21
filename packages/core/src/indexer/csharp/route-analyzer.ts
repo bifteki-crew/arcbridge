@@ -185,8 +185,8 @@ function extractMinimalApiRoutes(
       routePath = template;
     }
     routePath = routePath.startsWith("/") ? routePath : `/${routePath}`;
-    // Clean up double slashes and trailing slashes (but keep root /)
-    routePath = routePath.replace(/\/\//g, "/").replace(/\/+$/, "") || "/";
+    // Clean up multiple slashes and trailing slashes (but keep root /)
+    routePath = routePath.replace(/\/{2,}/g, "/").replace(/\/+$/, "") || "/";
 
     const id = `route::${routePath.slice(1)}::${httpMethod}`;
     routes.push({

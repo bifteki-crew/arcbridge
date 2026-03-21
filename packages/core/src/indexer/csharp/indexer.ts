@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type Database from "better-sqlite3";
 import { globbySync } from "globby";
 import type { IndexResult, ExtractedSymbol } from "../types.js";
@@ -55,7 +56,7 @@ export function indexCSharpTreeSitter(
     const relPath = filePath.replace(/\\/g, "/");
     currentPaths.add(relPath);
 
-    const fullPath = `${projectRoot}/${relPath}`;
+    const fullPath = join(projectRoot, relPath);
     const content = readFileSync(fullPath, "utf-8");
     const hash = hashContent(content);
     const tree = parseCSharp(content);
@@ -78,6 +79,9 @@ export function indexCSharpTreeSitter(
   }
 
   // 4. Remove stale symbols for changed + removed files
+  // TODO: removeSymbolsForFiles deletes by file_path without service scoping —
+  // safe when services use distinct file paths (typical), but could collide in
+  // edge cases. Same limitation exists in the TypeScript indexer.
   const filesToClean = [...removed, ...changedFiles];
   removeSymbolsForFiles(db, filesToClean);
 
