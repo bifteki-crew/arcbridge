@@ -55,7 +55,7 @@ const describeIfDotnet = isReady ? describe : describe.skip;
 describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
   let db: Database.Database;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     db = openMemoryDatabase();
     initializeSchema(db);
   });
@@ -64,13 +64,13 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     db?.close();
   });
 
-  it("detects project language as csharp", () => {
+  it("detects project language as csharp", async () => {
     const lang = detectProjectLanguage(FIXTURE_DIR);
     expect(lang).toBe("csharp");
   });
 
-  it("indexes the .NET fixture project", () => {
-    const result = indexProject(db, {
+  it("indexes the .NET fixture project", async () => {
+    const result = await indexProject(db, {
       projectRoot: FIXTURE_DIR,
       language: "csharp",
     });
@@ -81,7 +81,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(result.routesAnalyzed).toBeGreaterThan(0);
   });
 
-  it("stores symbols with language=csharp", () => {
+  it("stores symbols with language=csharp", async () => {
     const symbols = db
       .prepare("SELECT * FROM symbols WHERE language = 'csharp'")
       .all() as Array<{ id: string; name: string; kind: string; language: string }>;
@@ -90,7 +90,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(symbols.every((s) => s.language === "csharp")).toBe(true);
   });
 
-  it("stores all solution symbols under one service", () => {
+  it("stores all solution symbols under one service", async () => {
     const services = db
       .prepare("SELECT DISTINCT service FROM symbols WHERE language = 'csharp'")
       .all() as Array<{ service: string }>;
@@ -100,7 +100,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(services[0].service).toBe("main");
   });
 
-  it("extracts classes correctly", () => {
+  it("extracts classes correctly", async () => {
     const classes = db
       .prepare("SELECT * FROM symbols WHERE kind = 'class' AND language = 'csharp'")
       .all() as Array<{ name: string; qualified_name: string; is_exported: number }>;
@@ -112,7 +112,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(names).toContain("CreateOrderRequest");
   });
 
-  it("extracts interfaces", () => {
+  it("extracts interfaces", async () => {
     const interfaces = db
       .prepare("SELECT * FROM symbols WHERE kind = 'interface' AND language = 'csharp'")
       .all() as Array<{ name: string }>;
@@ -120,7 +120,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(interfaces.map((i) => i.name)).toContain("IOrderService");
   });
 
-  it("extracts enums", () => {
+  it("extracts enums", async () => {
     const enums = db
       .prepare("SELECT * FROM symbols WHERE kind = 'enum' AND language = 'csharp'")
       .all() as Array<{ name: string }>;
@@ -128,7 +128,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(enums.map((e) => e.name)).toContain("OrderStatus");
   });
 
-  it("extracts methods as functions", () => {
+  it("extracts methods as functions", async () => {
     const functions = db
       .prepare("SELECT * FROM symbols WHERE kind = 'function' AND language = 'csharp'")
       .all() as Array<{ name: string; is_async: number; qualified_name: string }>;
@@ -144,7 +144,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(getAll?.is_async).toBe(1);
   });
 
-  it("extracts properties as variables", () => {
+  it("extracts properties as variables", async () => {
     const props = db
       .prepare(
         "SELECT * FROM symbols WHERE kind = 'variable' AND language = 'csharp' AND file_path LIKE '%Order.cs'",
@@ -158,7 +158,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(names).toContain("Status");
   });
 
-  it("extracts doc comments", () => {
+  it("extracts doc comments", async () => {
     const order = db
       .prepare(
         "SELECT * FROM symbols WHERE name = 'Order' AND kind = 'class' AND language = 'csharp'",
@@ -168,7 +168,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(order?.doc_comment).toContain("customer order");
   });
 
-  it("extracts dependencies", () => {
+  it("extracts dependencies", async () => {
     const deps = db.prepare("SELECT * FROM dependencies").all() as Array<{
       source_symbol: string;
       target_symbol: string;
@@ -194,7 +194,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(callsDep).toBeDefined();
   });
 
-  it("extracts controller-based ASP.NET routes", () => {
+  it("extracts controller-based ASP.NET routes", async () => {
     const routes = db
       .prepare("SELECT * FROM routes")
       .all() as Array<{
@@ -227,7 +227,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(getById).toBeDefined();
   });
 
-  it("extracts minimal API routes", () => {
+  it("extracts minimal API routes", async () => {
     const routes = db
       .prepare("SELECT * FROM routes")
       .all() as Array<{
@@ -265,8 +265,8 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(getProduct).toBeDefined();
   });
 
-  it("is incremental — skips unchanged files on second run", () => {
-    const result = indexProject(db, {
+  it("is incremental — skips unchanged files on second run", async () => {
+    const result = await indexProject(db, {
       projectRoot: FIXTURE_DIR,
       language: "csharp",
     });
@@ -277,7 +277,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(result.filesSkipped).toBeGreaterThanOrEqual(result.filesProcessed);
   });
 
-  it("generates stable symbol IDs", () => {
+  it("generates stable symbol IDs", async () => {
     const orderClass = db
       .prepare("SELECT id FROM symbols WHERE name = 'Order' AND kind = 'class'")
       .get() as { id: string } | undefined;
@@ -287,7 +287,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(orderClass!.id).toMatch(/#class$/);
   });
 
-  it("discovers services from .sln file", () => {
+  it("discovers services from .sln file", async () => {
     const services = discoverDotnetServices(FIXTURE_DIR);
     expect(services.length).toBeGreaterThanOrEqual(1);
 
@@ -297,7 +297,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(testApi!.csprojPath).toContain("TestApi.csproj");
   });
 
-  it("parses solution project references", () => {
+  it("parses solution project references", async () => {
     const slnPath = join(FIXTURE_DIR, "TestApi.sln");
     const projects = parseSolutionProjects(slnPath);
     expect(projects.length).toBe(1);
@@ -305,7 +305,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(projects[0].isTestProject).toBe(false);
   });
 
-  it("indexes NuGet package dependencies from .csproj", () => {
+  it("indexes NuGet package dependencies from .csproj", async () => {
     const deps = db
       .prepare("SELECT * FROM package_dependencies WHERE source = 'nuget'")
       .all() as Array<{ name: string; version: string; source: string }>;
@@ -317,7 +317,7 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(names.some((n) => n.includes("Microsoft.AspNetCore"))).toBe(true);
   });
 
-  it("produces content hashes identical to TypeScript hasher", () => {
+  it("produces content hashes identical to TypeScript hasher", async () => {
     // The C# indexer computes content hashes for each file.
     // Verify they match what the TypeScript hasher would produce for the same content.
     const orderFile = join(FIXTURE_DIR, "Models/Order.cs");

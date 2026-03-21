@@ -26,7 +26,7 @@ const TS_FIXTURE = join(
 
 let db: Database.Database;
 
-beforeEach(() => {
+beforeEach(async () => {
   db = openMemoryDatabase();
   initializeSchema(db);
 });
@@ -36,8 +36,8 @@ afterEach(() => {
 });
 
 describe("complete_phase gate checks", () => {
-  it("all gates pass when tasks done, no drift, no failing scenarios", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("all gates pass when tasks done, no drift, no failing scenarios", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     // Setup: phase with all tasks done
     db.prepare(
@@ -73,7 +73,7 @@ describe("complete_phase gate checks", () => {
     expect(failing.length).toBe(0);
   });
 
-  it("tasks gate fails when tasks incomplete", () => {
+  it("tasks gate fails when tasks incomplete", async () => {
     db.prepare(
       "INSERT INTO phases (id, name, phase_number, status, description) VALUES ('p1', 'Phase 1', 1, 'in-progress', 'Test')",
     ).run();
@@ -89,8 +89,8 @@ describe("complete_phase gate checks", () => {
     expect(incomplete.length).toBe(1);
   });
 
-  it("drift gate fails when dependency violations exist", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("drift gate fails when dependency violations exist", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       `INSERT INTO building_blocks (id, name, responsibility, code_paths, interfaces)
@@ -106,7 +106,7 @@ describe("complete_phase gate checks", () => {
     expect(critical.length).toBeGreaterThan(0);
   });
 
-  it("quality gate fails when must scenarios are failing", () => {
+  it("quality gate fails when must scenarios are failing", async () => {
     db.prepare(
       `INSERT INTO quality_scenarios (id, name, category, scenario, expected, priority, status)
        VALUES ('SEC-01', 'Auth', 'security', 'scenario', 'expected', 'must', 'failing')`,
@@ -120,7 +120,7 @@ describe("complete_phase gate checks", () => {
     expect(failing.length).toBe(1);
   });
 
-  it("phase transitions to complete and next phase starts", () => {
+  it("phase transitions to complete and next phase starts", async () => {
     db.prepare(
       "INSERT INTO phases (id, name, phase_number, status, description) VALUES ('p1', 'Phase 1', 1, 'in-progress', 'Test')",
     ).run();
@@ -141,7 +141,7 @@ describe("complete_phase gate checks", () => {
 });
 
 describe("activate_role context loading", () => {
-  it("loads building blocks for all roles", () => {
+  it("loads building blocks for all roles", async () => {
     db.prepare(
       `INSERT INTO building_blocks (id, name, responsibility)
        VALUES ('auth', 'Auth Module', 'Authentication')`,
@@ -155,7 +155,7 @@ describe("activate_role context loading", () => {
     expect(blocks[0]!.id).toBe("auth");
   });
 
-  it("loads quality scenarios filtered by role focus", () => {
+  it("loads quality scenarios filtered by role focus", async () => {
     db.prepare(
       `INSERT INTO quality_scenarios (id, name, category, scenario, expected, priority, status)
        VALUES ('SEC-01', 'Auth', 'security', 's', 'e', 'must', 'untested')`,
@@ -181,7 +181,7 @@ describe("activate_role context loading", () => {
     expect(focused[0]!.id).toBe("SEC-01");
   });
 
-  it("loads phase plan for phase-manager role", () => {
+  it("loads phase plan for phase-manager role", async () => {
     db.prepare(
       "INSERT INTO phases (id, name, phase_number, status, description) VALUES ('p1', 'Phase 1', 1, 'complete', 'Done')",
     ).run();
@@ -198,7 +198,7 @@ describe("activate_role context loading", () => {
     expect(phases[1]!.status).toBe("in-progress");
   });
 
-  it("loads focused block tasks for implementer role", () => {
+  it("loads focused block tasks for implementer role", async () => {
     db.prepare(
       "INSERT INTO phases (id, name, phase_number, status, description) VALUES ('p1', 'Phase 1', 1, 'in-progress', 'Test')",
     ).run();
@@ -227,7 +227,7 @@ describe("activate_role context loading", () => {
 });
 
 describe("sync file generation", () => {
-  it("generates sync files for claude + copilot platforms", () => {
+  it("generates sync files for claude + copilot platforms", async () => {
     const tmpDir = mkdtempSync(join(tmpdir(), "arcbridge-sync-"));
 
     const config: ArcBridgeConfig = {
@@ -272,7 +272,7 @@ describe("sync file generation", () => {
     rmSync(tmpDir, { recursive: true });
   });
 
-  it("skips Claude skill when claude not in platforms", () => {
+  it("skips Claude skill when claude not in platforms", async () => {
     const tmpDir = mkdtempSync(join(tmpdir(), "arcbridge-sync-"));
 
     const config: ArcBridgeConfig = {

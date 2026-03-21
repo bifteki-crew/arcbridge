@@ -108,7 +108,7 @@ export function registerInitProject(
         routesAnalyzed: number;
       } | null = null;
       try {
-        const result = indexProject(db, { projectRoot: targetDir });
+        const result = await indexProject(db, { projectRoot: targetDir });
         indexResult = {
           symbolsIndexed: result.symbolsIndexed,
           dependenciesIndexed: result.dependenciesIndexed,

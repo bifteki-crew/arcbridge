@@ -11,7 +11,7 @@ import {
   writeSymbols,
   writeDependencies,
 } from "../db-writer.js";
-import { parseCSharp } from "./parser.js";
+import { ensureCSharpParser, parseCSharp } from "./parser.js";
 import { extractCSharpSymbols } from "./symbol-extractor.js";
 import {
   extractCSharpDependencies,
@@ -29,11 +29,14 @@ export interface CSharpTreeSitterOptions {
  * Index a C# project using tree-sitter (no .NET SDK required).
  * Mirrors the TypeScript indexer flow: discover → hash → parse → extract → write.
  */
-export function indexCSharpTreeSitter(
+export async function indexCSharpTreeSitter(
   db: Database.Database,
   options: CSharpTreeSitterOptions,
-): IndexResult {
+): Promise<IndexResult> {
   const start = Date.now();
+
+  // One-time async init of the WASM-based tree-sitter parser
+  await ensureCSharpParser();
   const service = options.service ?? "main";
   const projectRoot = options.projectRoot;
 

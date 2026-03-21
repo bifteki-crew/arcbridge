@@ -10,7 +10,7 @@ const FIXTURE_DIR = join(__dirname, "fixtures", "ts-project");
 
 let db: Database.Database;
 
-beforeEach(() => {
+beforeEach(async () => {
   db = openMemoryDatabase();
   initializeSchema(db);
 });
@@ -20,8 +20,8 @@ afterEach(() => {
 });
 
 describe("indexProject", () => {
-  it("indexes the fixture project and populates symbols", () => {
-    const result = indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("indexes the fixture project and populates symbols", async () => {
+    const result = await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     expect(result.filesProcessed).toBeGreaterThan(0);
     expect(result.symbolsIndexed).toBeGreaterThan(0);
@@ -37,8 +37,8 @@ describe("indexProject", () => {
     expect(count).toBe(result.symbolsIndexed);
   });
 
-  it("extracts functions correctly", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("extracts functions correctly", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const formatName = db
       .prepare("SELECT * FROM symbols WHERE name = 'formatName'")
@@ -50,8 +50,8 @@ describe("indexProject", () => {
     expect(formatName!.signature).toContain("string");
   });
 
-  it("extracts arrow functions as functions", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("extracts arrow functions as functions", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const parseIntSafe = db
       .prepare("SELECT * FROM symbols WHERE name = 'parseIntSafe'")
@@ -62,8 +62,8 @@ describe("indexProject", () => {
     expect(parseIntSafe!.is_exported).toBe(1);
   });
 
-  it("extracts constants", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("extracts constants", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const maxRetries = db
       .prepare("SELECT * FROM symbols WHERE name = 'MAX_RETRIES'")
@@ -74,8 +74,8 @@ describe("indexProject", () => {
     expect(maxRetries!.is_exported).toBe(1);
   });
 
-  it("extracts classes with methods", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("extracts classes with methods", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const userEntity = db
       .prepare("SELECT * FROM symbols WHERE name = 'UserEntity' AND kind = 'class'")
@@ -94,8 +94,8 @@ describe("indexProject", () => {
     expect(isAdmin!.kind).toBe("function");
   });
 
-  it("extracts interfaces", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("extracts interfaces", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const user = db
       .prepare("SELECT * FROM symbols WHERE name = 'User' AND kind = 'interface'")
@@ -105,8 +105,8 @@ describe("indexProject", () => {
     expect(user!.is_exported).toBe(1);
   });
 
-  it("extracts type aliases", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("extracts type aliases", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const result = db
       .prepare("SELECT * FROM symbols WHERE name = 'Result' AND kind = 'type'")
@@ -117,8 +117,8 @@ describe("indexProject", () => {
     expect(result!.return_type).toBeTruthy();
   });
 
-  it("extracts enums", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("extracts enums", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const userRole = db
       .prepare("SELECT * FROM symbols WHERE name = 'UserRole' AND kind = 'enum'")
@@ -128,8 +128,8 @@ describe("indexProject", () => {
     expect(userRole!.is_exported).toBe(1);
   });
 
-  it("extracts async functions", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("extracts async functions", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const authenticate = db
       .prepare("SELECT * FROM symbols WHERE name = 'authenticate'")
@@ -140,8 +140,8 @@ describe("indexProject", () => {
     expect(authenticate!.return_type).toContain("Promise");
   });
 
-  it("detects non-exported functions", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects non-exported functions", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const internal = db
       .prepare("SELECT * FROM symbols WHERE name = '_internalHelper'")
@@ -151,8 +151,8 @@ describe("indexProject", () => {
     expect(internal!.is_exported).toBe(0);
   });
 
-  it("extracts doc comments", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("extracts doc comments", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const formatName = db
       .prepare("SELECT * FROM symbols WHERE name = 'formatName'")
@@ -162,9 +162,9 @@ describe("indexProject", () => {
     expect(formatName!.doc_comment).toContain("Formats a name");
   });
 
-  it("is incremental — skips unchanged files on second run", () => {
-    const first = indexProject(db, { projectRoot: FIXTURE_DIR });
-    const second = indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("is incremental — skips unchanged files on second run", async () => {
+    const first = await indexProject(db, { projectRoot: FIXTURE_DIR });
+    const second = await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     // Files with symbols are skipped; barrel files (no symbols) may be reprocessed
     expect(second.filesSkipped).toBeGreaterThan(0);
@@ -179,8 +179,8 @@ describe("indexProject", () => {
     expect(count).toBe(first.symbolsIndexed);
   });
 
-  it("generates stable symbol IDs", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("generates stable symbol IDs", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const sym = db
       .prepare("SELECT id FROM symbols WHERE name = 'formatName'")
@@ -189,8 +189,8 @@ describe("indexProject", () => {
     expect(sym.id).toBe("src/utils.ts::formatName#function");
   });
 
-  it("stores file paths relative to project root", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("stores file paths relative to project root", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const paths = db
       .prepare("SELECT DISTINCT file_path FROM symbols ORDER BY file_path")
@@ -204,8 +204,8 @@ describe("indexProject", () => {
 });
 
 describe("dependency extraction", () => {
-  it("indexes dependencies", () => {
-    const result = indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("indexes dependencies", async () => {
+    const result = await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     expect(result.dependenciesIndexed).toBeGreaterThan(0);
 
@@ -217,8 +217,8 @@ describe("dependency extraction", () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  it("detects extends relationships", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects extends relationships", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const extendsEdges = db
       .prepare(
@@ -239,8 +239,8 @@ describe("dependency extraction", () => {
     expect(adminExtends).toBeDefined();
   });
 
-  it("detects type usage relationships", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects type usage relationships", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const usesTypeEdges = db
       .prepare(
@@ -261,8 +261,8 @@ describe("dependency extraction", () => {
     expect(authUsesUser).toBeDefined();
   });
 
-  it("detects import relationships", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects import relationships", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const importEdges = db
       .prepare(
@@ -275,8 +275,8 @@ describe("dependency extraction", () => {
     expect(importEdges.length).toBeGreaterThan(0);
   });
 
-  it("detects call relationships", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects call relationships", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const callEdges = db
       .prepare(
@@ -291,8 +291,8 @@ describe("dependency extraction", () => {
     expect(callEdges.length).toBeGreaterThanOrEqual(0);
   });
 
-  it("dependencies survive incremental re-indexing", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("dependencies survive incremental re-indexing", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const firstCount = (
       db.prepare("SELECT COUNT(*) as count FROM dependencies").get() as {
@@ -301,7 +301,7 @@ describe("dependency extraction", () => {
     ).count;
 
     // Re-index — deps should be maintained
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const secondCount = (
       db.prepare("SELECT COUNT(*) as count FROM dependencies").get() as {
@@ -314,8 +314,8 @@ describe("dependency extraction", () => {
 });
 
 describe("agent workflow simulation (TypeScript)", () => {
-  it("agent can trace from auth service to user model", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("agent can trace from auth service to user model", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     // Step 1: Agent searches for auth-related symbols
     const authSymbols = db
@@ -361,8 +361,8 @@ describe("agent workflow simulation (TypeScript)", () => {
     }
   });
 
-  it("agent can find which building block a file belongs to", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("agent can find which building block a file belongs to", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     // Add building blocks
     db.prepare(`
@@ -393,8 +393,8 @@ describe("agent workflow simulation (TypeScript)", () => {
     expect(matched).toBe("Authentication");
   });
 
-  it("agent can discover dependency violations", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("agent can discover dependency violations", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     // services block depends on models but doesn't declare it
     db.prepare(`
@@ -413,8 +413,8 @@ describe("agent workflow simulation (TypeScript)", () => {
     expect(violations.some((e) => e.affectedBlock === "services-block")).toBe(true);
   });
 
-  it("agent can search by file path prefix for a layer", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("agent can search by file path prefix for a layer", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     // Search only in models layer
     const modelSymbols = db

@@ -52,12 +52,12 @@ const describeIfDotnet = isReady ? describe : describe.skip;
 describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => {
   let db: Database.Database;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     db = openMemoryDatabase();
     initializeSchema(db);
 
     // Index the .NET fixture
-    indexProject(db, { projectRoot: FIXTURE_DIR, language: "csharp" });
+    await indexProject(db, { projectRoot: FIXTURE_DIR, language: "csharp" });
 
     // Add building blocks to simulate a real initialized project
     db.prepare(`
@@ -85,7 +85,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
   // --- search_symbols queries ---
 
   describe("search_symbols", () => {
-    it("finds symbols by name query", () => {
+    it("finds symbols by name query", async () => {
       const rows = db
         .prepare(
           "SELECT id, name, qualified_name, kind, file_path, start_line, signature FROM symbols WHERE name LIKE ? ORDER BY name LIMIT 50",
@@ -99,7 +99,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(names).toContain("OrderService");
     });
 
-    it("filters by kind", () => {
+    it("filters by kind", async () => {
       const interfaces = db
         .prepare("SELECT name FROM symbols WHERE kind = ? ORDER BY name")
         .all("interface") as Array<{ name: string }>;
@@ -107,7 +107,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(interfaces.map((i) => i.name)).toContain("IOrderService");
     });
 
-    it("filters by file_path prefix", () => {
+    it("filters by file_path prefix", async () => {
       const controllerSymbols = db
         .prepare("SELECT name, kind FROM symbols WHERE file_path LIKE ? ORDER BY name")
         .all("Controllers/%") as Array<{ name: string; kind: string }>;
@@ -118,7 +118,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(controllerSymbols.some((s) => s.name === "OrderService")).toBe(false);
     });
 
-    it("filters by building block via code_paths", () => {
+    it("filters by building block via code_paths", async () => {
       const block = db
         .prepare("SELECT code_paths FROM building_blocks WHERE id = ?")
         .get("services") as { code_paths: string };
@@ -136,7 +136,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(symbols.some((s) => s.name === "OrdersController")).toBe(false);
     });
 
-    it("filters exported symbols", () => {
+    it("filters exported symbols", async () => {
       const exported = db
         .prepare("SELECT name FROM symbols WHERE is_exported = 1 AND kind = 'class' ORDER BY name")
         .all() as Array<{ name: string }>;
@@ -145,7 +145,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(exported.map((e) => e.name)).toContain("OrderService");
     });
 
-    it("returns signatures for methods", () => {
+    it("returns signatures for methods", async () => {
       const methods = db
         .prepare("SELECT name, signature, return_type, is_async FROM symbols WHERE kind = 'function' AND name = 'GetAll'")
         .all() as Array<{ name: string; signature: string; return_type: string; is_async: number }>;
@@ -155,7 +155,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(methods[0].is_async).toBe(1);
     });
 
-    it("returns doc comments", () => {
+    it("returns doc comments", async () => {
       const order = db
         .prepare("SELECT doc_comment FROM symbols WHERE name = 'Order' AND kind = 'class'")
         .get() as { doc_comment: string | null } | undefined;
@@ -167,7 +167,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
   // --- get_dependency_graph queries ---
 
   describe("get_dependency_graph", () => {
-    it("finds dependencies from Controllers/ module", () => {
+    it("finds dependencies from Controllers/ module", async () => {
       const deps = db
         .prepare(
           `SELECT d.source_symbol as source_id, s1.name as source_name, s1.file_path as source_file,
@@ -198,7 +198,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(usesType.some((d) => d.target_name === "IOrderService")).toBe(true);
     });
 
-    it("finds dependents of Services/ module", () => {
+    it("finds dependents of Services/ module", async () => {
       const deps = db
         .prepare(
           `SELECT d.source_symbol as source_id, s1.name as source_name, s1.file_path as source_file,
@@ -224,7 +224,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(deps.some((d) => d.source_file.startsWith("Controllers/"))).toBe(true);
     });
 
-    it("captures implements relationships", () => {
+    it("captures implements relationships", async () => {
       const implements_ = db
         .prepare(
           `SELECT s1.name as source_name, s2.name as target_name
@@ -247,7 +247,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
   // --- get_route_map queries ---
 
   describe("get_route_map", () => {
-    it("returns all routes", () => {
+    it("returns all routes", async () => {
       const routes = db
         .prepare("SELECT * FROM routes ORDER BY route_path, kind")
         .all() as Array<{
@@ -263,7 +263,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(routes.every((r) => r.kind === "api-route")).toBe(true);
     });
 
-    it("filters by route prefix", () => {
+    it("filters by route prefix", async () => {
       const orderRoutes = db
         .prepare("SELECT * FROM routes WHERE route_path LIKE ? ORDER BY route_path")
         .all("/api/orders%") as Array<{ route_path: string; http_methods: string }>;
@@ -274,7 +274,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(paths).toContain("/api/orders/{id}");
     });
 
-    it("filters by kind (api-route)", () => {
+    it("filters by kind (api-route)", async () => {
       const apiRoutes = db
         .prepare("SELECT * FROM routes WHERE kind = ?")
         .all("api-route") as Array<{ route_path: string }>;
@@ -282,7 +282,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(apiRoutes.length).toBeGreaterThan(0);
     });
 
-    it("shows auth status correctly", () => {
+    it("shows auth status correctly", async () => {
       const authRoutes = db
         .prepare("SELECT route_path, http_methods, has_auth FROM routes WHERE has_auth = 1")
         .all() as Array<{ route_path: string; http_methods: string; has_auth: number }>;
@@ -302,7 +302,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
   // --- check_drift queries ---
 
   describe("check_drift", () => {
-    it("detects undocumented modules", () => {
+    it("detects undocumented modules", async () => {
       const entries = detectDrift(db, { projectType: "dotnet-webapi" });
       const undocumented = entries.filter((e) => e.kind === "undocumented_module");
 
@@ -310,7 +310,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(undocumented.some((e) => e.affectedFile?.includes("WeatherForecast"))).toBe(true);
     });
 
-    it("does not flag files covered by building blocks", () => {
+    it("does not flag files covered by building blocks", async () => {
       const entries = detectDrift(db, { projectType: "dotnet-webapi" });
       const undocumented = entries.filter((e) => e.kind === "undocumented_module");
 
@@ -320,7 +320,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(undocumented.some((e) => e.affectedFile === "Models/Order.cs")).toBe(false);
     });
 
-    it("detects dependency violations across building blocks", () => {
+    it("detects dependency violations across building blocks", async () => {
       const entries = detectDrift(db);
       const violations = entries.filter((e) => e.kind === "dependency_violation");
 
@@ -338,7 +338,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       }
     });
 
-    it("detects new package dependencies without ADRs", () => {
+    it("detects new package dependencies without ADRs", async () => {
       const entries = detectDrift(db);
       const newDeps = entries.filter((e) => e.kind === "new_dependency");
 
@@ -349,7 +349,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       }
     });
 
-    it("ignores dotnet framework files in undocumented check", () => {
+    it("ignores dotnet framework files in undocumented check", async () => {
       const entries = detectDrift(db, { projectType: "dotnet-webapi" });
       const undocumented = entries.filter((e) => e.kind === "undocumented_module");
 
@@ -361,7 +361,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
   // --- Cross-cutting: agent workflow simulation ---
 
   describe("agent workflow simulation", () => {
-    it("agent can trace a bug from route to implementation", () => {
+    it("agent can trace a bug from route to implementation", async () => {
       // Step 1: Agent finds the route for POST /api/orders
       const route = db
         .prepare("SELECT * FROM routes WHERE route_path = '/api/orders' AND http_methods LIKE '%POST%'")
@@ -401,7 +401,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(files).toContain("Services/OrderService.cs");
     });
 
-    it("agent can find which building block a file belongs to", () => {
+    it("agent can find which building block a file belongs to", async () => {
       const blocks = db
         .prepare("SELECT id, name, code_paths FROM building_blocks")
         .all() as Array<{ id: string; name: string; code_paths: string }>;
@@ -424,7 +424,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(matchedBlock).toBe("API Controllers");
     });
 
-    it("agent can discover the full API surface", () => {
+    it("agent can discover the full API surface", async () => {
       const routes = db
         .prepare("SELECT route_path, http_methods, has_auth FROM routes WHERE kind = 'api-route' ORDER BY route_path")
         .all() as Array<{ route_path: string; http_methods: string; has_auth: number }>;

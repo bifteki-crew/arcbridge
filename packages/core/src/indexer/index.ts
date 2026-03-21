@@ -45,10 +45,10 @@ export function detectProjectLanguage(projectRoot: string): "typescript" | "csha
  * Index a project, auto-detecting the language unless explicitly specified.
  * Dispatches to the TypeScript or .NET indexer accordingly.
  */
-export function indexProject(
+export async function indexProject(
   db: Database.Database,
   options: IndexerOptions,
-): IndexResult {
+): Promise<IndexResult> {
   const language = options.language ?? "auto";
   const resolvedLanguage = language === "auto"
     ? detectProjectLanguage(options.projectRoot)
@@ -65,7 +65,7 @@ export function indexProject(
         service: options.service,
       });
     }
-    return indexCSharpTreeSitter(db, {
+    return await indexCSharpTreeSitter(db, {
       projectRoot: options.projectRoot,
       service: options.service,
     });

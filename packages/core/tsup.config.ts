@@ -6,5 +6,5 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ["tree-sitter", "tree-sitter-c-sharp"],
+  external: ["web-tree-sitter"],
 });

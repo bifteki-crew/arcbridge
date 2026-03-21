@@ -21,10 +21,10 @@ const REACT_FIXTURE_DIR = join(
 
 let db: Database.Database;
 
-beforeEach(() => {
+beforeEach(async () => {
   db = openMemoryDatabase();
   initializeSchema(db);
-  indexProject(db, { projectRoot: REACT_FIXTURE_DIR });
+  await indexProject(db, { projectRoot: REACT_FIXTURE_DIR });
 });
 
 afterEach(() => {
@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 describe("component graph queries", () => {
-  it("finds all components", () => {
+  it("finds all components", async () => {
     const components = db
       .prepare(
         `SELECT s.name, c.is_client, c.has_state, c.props_type
@@ -49,7 +49,7 @@ describe("component graph queries", () => {
     expect(names).toContain("UserCard");
   });
 
-  it("identifies client components", () => {
+  it("identifies client components", async () => {
     const clientComponents = db
       .prepare(
         `SELECT s.name FROM components c
@@ -62,7 +62,7 @@ describe("component graph queries", () => {
     expect(names).toContain("ClientCounter");
   });
 
-  it("identifies stateful components", () => {
+  it("identifies stateful components", async () => {
     const stateful = db
       .prepare(
         `SELECT s.name FROM components c
@@ -76,7 +76,7 @@ describe("component graph queries", () => {
     expect(names).toContain("ClientCounter");
   });
 
-  it("tracks render edges between components", () => {
+  it("tracks render edges between components", async () => {
     const renders = db
       .prepare(
         `SELECT ss.name as source, st.name as target
@@ -97,7 +97,7 @@ describe("component graph queries", () => {
 });
 
 describe("route map queries", () => {
-  it("finds page routes", () => {
+  it("finds page routes", async () => {
     const pages = db
       .prepare("SELECT route_path FROM routes WHERE kind = 'page' ORDER BY route_path")
       .all() as { route_path: string }[];
@@ -108,7 +108,7 @@ describe("route map queries", () => {
     expect(paths).toContain("/dashboard");
   });
 
-  it("finds API routes with methods", () => {
+  it("finds API routes with methods", async () => {
     const apiRoutes = db
       .prepare("SELECT route_path, http_methods FROM routes WHERE kind = 'api-route'")
       .all() as { route_path: string; http_methods: string }[];
@@ -123,7 +123,7 @@ describe("route map queries", () => {
     expect(methods).toContain("POST");
   });
 
-  it("finds layouts", () => {
+  it("finds layouts", async () => {
     const layouts = db
       .prepare("SELECT route_path FROM routes WHERE kind = 'layout'")
       .all() as { route_path: string }[];
@@ -131,7 +131,7 @@ describe("route map queries", () => {
     expect(layouts.length).toBeGreaterThan(0);
   });
 
-  it("handles route groups (no URL segment)", () => {
+  it("handles route groups (no URL segment)", async () => {
     const loginPage = db
       .prepare("SELECT route_path FROM routes WHERE route_path = '/login' AND kind = 'page'")
       .get() as { route_path: string } | undefined;
@@ -141,7 +141,7 @@ describe("route map queries", () => {
 });
 
 describe("boundary analysis queries", () => {
-  it("can distinguish client and server components", () => {
+  it("can distinguish client and server components", async () => {
     const client = db
       .prepare(
         `SELECT COUNT(*) as count FROM components WHERE is_client = 1`,
@@ -158,7 +158,7 @@ describe("boundary analysis queries", () => {
     expect(server.count).toBeGreaterThan(0);
   });
 
-  it("can find cross-boundary render edges", () => {
+  it("can find cross-boundary render edges", async () => {
     const crossEdges = db
       .prepare(
         `SELECT
@@ -184,7 +184,7 @@ describe("boundary analysis queries", () => {
     expect(crossEdges.length).toBeGreaterThanOrEqual(0);
   });
 
-  it("tracks context provider/consumer relationships", () => {
+  it("tracks context provider/consumer relationships", async () => {
     const contextEdges = db
       .prepare(
         `SELECT ss.name as source, st.name as target, d.kind
