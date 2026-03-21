@@ -1185,10 +1185,12 @@ The auto-generation aspect is critical: these aren't diagrams someone draws and 
 
 **Goal:** Extend code intelligence to .NET/C# services, enabling full-stack coverage for TypeScript frontend + .NET backend architectures.
 
-**Current status:** The core .NET indexer is **implemented and working**. Agents can search C# symbols, trace dependencies, detect routes, and run drift detection on .NET projects. What remains is deeper framework-specific analysis (DI container, EF Core, middleware pipeline ordering) — see "Future Consideration" notes below.
+**Current status:** The .NET indexer has **two backends**, both implemented and working. The tree-sitter backend (default) works everywhere Node.js runs — no .NET SDK required. The Roslyn backend provides deeper semantic analysis for users who have .NET installed. Agents can search C# symbols, trace dependencies, detect routes, and run drift detection on .NET projects. What remains is deeper framework-specific analysis (DI container, EF Core, middleware pipeline ordering) — see "Future Consideration" notes below.
 
 **What's implemented:**
-- Roslyn-based C# indexer (`packages/dotnet-indexer/`) — symbol extraction, dependency tracking, content hashing
+- **Tree-sitter C# indexer** (`packages/core/src/indexer/csharp/`) — default backend, ships with npm, no .NET SDK required. Uses native `tree-sitter` + `tree-sitter-c-sharp` bindings via `createRequire()` for ESM compatibility. Extracts symbols, dependencies (name-based resolution), and routes (controller + minimal API).
+- **Roslyn-based C# indexer** (`packages/dotnet-indexer/`) — opt-in advanced backend, requires .NET SDK. Provides deeper semantic analysis (cross-file type resolution, overload resolution, assembly-level filtering). Packaged as a .NET global tool (`arcbridge-dotnet-indexer`).
+- **Backend auto-detection** — configurable via `indexing.csharp_indexer: "auto" | "roslyn" | "tree-sitter"`. Auto mode checks for the Roslyn global tool on PATH; falls back to tree-sitter.
 - ASP.NET route detection — both controller-based ([HttpGet], [Route], [Authorize]) and minimal APIs (MapGet, MapGroup, .RequireAuthorization())
 - Multi-project .sln support — solution parsing, auto-detection
 - .NET-specific quality scenarios — startup time, GC pressure, async-all-the-way, CORS, health checks, structured logging, DI validation
@@ -1215,14 +1217,18 @@ Roslyn (`Microsoft.CodeAnalysis`) is the C#/.NET equivalent of the TypeScript co
 - Error tolerance → `Compilation` object works with incomplete/broken code, reports diagnostics separately
 - Workspace model → `MSBuildWorkspace.OpenSolutionAsync()` loads an entire `.sln` with all project references resolved
 
-**Implementation approach (implemented):** A .NET console app (`packages/dotnet-indexer/`) using a JSON-over-stdout protocol:
+**Implementation approach — dual backend:**
+
+*Tree-sitter backend (default):* A pure TypeScript indexer in `packages/core/src/indexer/csharp/` using native `tree-sitter` + `tree-sitter-c-sharp` Node.js bindings. Synchronous API (no `await Parser.init()`) loaded via `createRequire()` for ESM compatibility. Walks the concrete syntax tree to extract symbols, uses name-based resolution for dependencies, and pattern-matches attributes/method calls for routes. Trade-off: no cross-file type resolution or overload disambiguation, but sufficient for 90%+ of agent queries.
+
+*Roslyn backend (opt-in):* A .NET console app (`packages/dotnet-indexer/`) using a JSON-over-stdout protocol:
 1. Node.js spawns `dotnet run --project packages/dotnet-indexer/` with the `.sln` or `.csproj` path
 2. The .NET app loads the solution via Roslyn's MSBuild workspace
 3. Walks syntax trees and semantic model to extract symbols, dependencies, and routes
 4. Outputs JSON to stdout (symbols, dependencies, routes, file hashes)
 5. Node.js parses the JSON and writes to SQLite using the existing `db-writer.ts`
 
-This keeps all DB write logic in TypeScript (single source of truth), avoids WAL locking conflicts between processes, and makes the JSON contract independently testable. Content hashing is identical between TypeScript and C# (SHA-256, first 16 hex chars) — verified by cross-language tests.
+Both backends produce the same abstract symbol model, same ID format (`filePath::qualifiedName#kind`), and identical content hashes (SHA-256, first 16 hex chars). Content hashing compatibility is verified by cross-language tests. The Roslyn backend is packaged as a .NET global tool (`dotnet tool install -g arcbridge-dotnet-indexer`) for users who want deeper semantic analysis.
 
 **Layer 2/3 equivalent: ASP.NET Core framework analysis**
 
@@ -1305,8 +1311,10 @@ The agent roles stay the same, but their context and checks expand:
 
 | Component | Status | Notes |
 |---|---|---|
-| Roslyn indexer (Layer 1) | **Done** | Symbol extraction, dependency tracking, content hashing, incremental indexing. 288 tests passing. |
-| ASP.NET route analysis (Layer 2/3) | **Done** | Controller routes + minimal APIs (MapGet/MapGroup/RequireAuthorization). |
+| Tree-sitter C# indexer (default) | **Done** | Ships with npm, no .NET SDK needed. Symbol extraction, name-based dependency tracking, route analysis. 33 dedicated tests. |
+| Roslyn indexer (opt-in advanced) | **Done** | Deeper semantic analysis. Packaged as .NET global tool (`arcbridge-dotnet-indexer`). |
+| Backend auto-detection | **Done** | Config-driven (`indexing.csharp_indexer`). Auto mode: Roslyn if global tool on PATH, else tree-sitter. |
+| ASP.NET route analysis (Layer 2/3) | **Done** | Controller routes + minimal APIs (MapGet/MapGroup/RequireAuthorization). Both backends. |
 | .NET quality scenarios | **Done** | Startup time, GC pressure, async-all-the-way, CORS, health checks, structured logging, DI validation. |
 | dotnet-webapi template | **Done** | Config, building blocks, phases, tasks, arc42 docs. |
 | Package dependency tracking | **Done** | NuGet from .csproj + npm from package.json. Drift detection for undocumented packages. |

@@ -180,7 +180,7 @@ function resolveIndexerProject(): string {
  * Index a .NET project by shelling out to the Roslyn-based .NET indexer.
  * Parses the JSON output and writes symbols/dependencies/routes to SQLite.
  */
-export function indexDotnetProject(
+export function indexDotnetProjectRoslyn(
   db: Database.Database,
   options: DotnetIndexerOptions,
 ): IndexResult {

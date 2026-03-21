@@ -23,6 +23,7 @@ export function configTemplate(input: InitProjectInput): ArcBridgeConfig {
       include: ["**/*.cs"],
       exclude: ["bin", "obj", "TestResults", "node_modules"],
       default_mode: "fast",
+      csharp_indexer: "auto",
     },
     testing: {
       test_command: "dotnet test",

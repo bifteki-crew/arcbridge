@@ -45,6 +45,13 @@ export const ArcBridgeConfigSchema = z.object({
         .array(z.string())
         .default(["node_modules", "dist", ".next", "coverage"]),
       default_mode: z.enum(["fast", "deep"]).default("fast"),
+      csharp_indexer: z
+        .enum(["auto", "roslyn", "tree-sitter"])
+        .default("auto")
+        .describe(
+          "C# indexer backend: 'auto' uses Roslyn if available, otherwise tree-sitter. " +
+          "'tree-sitter' works without .NET SDK. 'roslyn' requires .NET SDK + global tool.",
+        ),
     })
     .default({}),
 

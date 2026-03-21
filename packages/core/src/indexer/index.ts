@@ -1,5 +1,7 @@
 import { relative, join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import YAML from "yaml";
 import type Database from "better-sqlite3";
 import type { IndexerOptions, IndexResult } from "./types.js";
 import { createTsProgram } from "./program.js";
@@ -14,10 +16,13 @@ import {
   writeSymbols,
   writeDependencies,
 } from "./db-writer.js";
-import { indexDotnetProject, findDotnetProject } from "./dotnet-indexer.js";
+import { indexDotnetProjectRoslyn, findDotnetProject } from "./dotnet-indexer.js";
+import { indexCSharpTreeSitter } from "./csharp/indexer.js";
 import { indexPackageDependencies } from "./package-deps.js";
+import { loadConfig } from "../config/loader.js";
 
 export type ProjectLanguage = "typescript" | "csharp" | "auto";
+export type CSharpBackend = "roslyn" | "tree-sitter";
 
 /**
  * Detect the project language from files in the project root.
@@ -53,13 +58,64 @@ export function indexProject(
   indexPackageDependencies(db, options.projectRoot, options.service ?? "main");
 
   if (resolvedLanguage === "csharp") {
-    return indexDotnetProject(db, {
+    const backend = resolveCSharpBackend(options.projectRoot);
+    if (backend === "roslyn") {
+      return indexDotnetProjectRoslyn(db, {
+        projectRoot: options.projectRoot,
+        service: options.service,
+      });
+    }
+    return indexCSharpTreeSitter(db, {
       projectRoot: options.projectRoot,
       service: options.service,
     });
   }
 
   return indexTypeScriptProject(db, options);
+}
+
+/**
+ * Resolve which C# indexer backend to use.
+ * 1. Check config for explicit `indexing.csharp_indexer` setting
+ * 2. If "auto" (default): check if `dotnet` CLI is available → Roslyn, otherwise tree-sitter
+ */
+export function resolveCSharpBackend(projectRoot: string): CSharpBackend {
+  // Use the existing config loader for validated config access
+  const { config, error } = loadConfig(projectRoot);
+  let setting = config?.indexing?.csharp_indexer;
+
+  // If full config validation failed but the file exists, try to extract
+  // just the csharp_indexer setting from raw YAML so an unrelated config
+  // error doesn't silently override the user's explicit backend choice
+  if (!setting && error) {
+    try {
+      const raw = readFileSync(join(projectRoot, ".arcbridge", "config.yaml"), "utf-8");
+      const parsed = YAML.parse(raw);
+      const rawSetting = parsed?.indexing?.csharp_indexer;
+      if (rawSetting === "roslyn" || rawSetting === "tree-sitter") {
+        setting = rawSetting;
+      }
+    } catch {
+      // Ignore — proceed with auto
+    }
+  }
+
+  if (setting === "roslyn" || setting === "tree-sitter") {
+    return setting;
+  }
+
+  // Auto: check if .NET SDK is available (required by indexDotnetProjectRoslyn
+  // which shells out to `dotnet run --project <indexer>`)
+  try {
+    execFileSync("dotnet", ["--version"], {
+      encoding: "utf-8",
+      timeout: 5000,
+    });
+    return "roslyn";
+  } catch {
+    // .NET SDK not available — use tree-sitter
+    return "tree-sitter";
+  }
 }
 
 function indexTypeScriptProject(
