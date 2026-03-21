@@ -1,7 +1,7 @@
 import { accessSync, constants } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { type Parser, type Language, type Tree } from "web-tree-sitter";
+import { type Parser, type Tree } from "web-tree-sitter";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 
