@@ -30,7 +30,9 @@ export async function generateConfigs(
   }
 
   // Load roles from files, fall back to generating built-in roles
-  let { roles, errors: roleErrors } = loadRoles(projectRoot);
+  const loaded = loadRoles(projectRoot);
+  let roles = loaded.roles;
+  const roleErrors = loaded.errors;
   let rolesSource: "custom" | "built-in" = "custom";
   if (roleErrors.length > 0) {
     errors.push(...roleErrors);

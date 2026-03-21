@@ -111,8 +111,8 @@ export function parseSolutionProjects(slnPath: string): DotnetProjectInfo[] {
     const projectDir = relative(slnDir, dirname(fullCsprojPath)).replace(/\\/g, "/") || ".";
     // Match .NET test project naming conventions: MyApp.Tests, MyApp.UnitTests, etc.
     // But NOT names that merely start with "Test" like TestApi
-    const isTestProject = /[.\-]tests?$/i.test(name) ||
-      /[.\-](unit|integration|functional|e2e)tests?$/i.test(name);
+    const isTestProject = /[.\x2d]tests?$/i.test(name) ||
+      /[.\x2d](unit|integration|functional|e2e)tests?$/i.test(name);
 
     projects.push({
       name,
@@ -141,8 +141,8 @@ export function discoverDotnetServices(projectRoot: string): DotnetProjectInfo[]
       name,
       path: ".",
       csprojPath: csproj,
-      isTestProject: /[.\-]tests?$/i.test(name) ||
-        /[.\-](unit|integration|functional|e2e)tests?$/i.test(name),
+      isTestProject: /[.\x2d]tests?$/i.test(name) ||
+        /[.\x2d](unit|integration|functional|e2e)tests?$/i.test(name),
     }];
   }
 
@@ -224,7 +224,7 @@ export function indexDotnetProjectRoslyn(
         cwd: projectRoot,
       },
     );
-  } catch (err) {
+  } catch {
     // Try again with build (first run may not have been built)
     try {
       stdout = execFileSync(
@@ -245,7 +245,7 @@ export function indexDotnetProjectRoslyn(
       );
     } catch (retryErr) {
       const message = retryErr instanceof Error ? retryErr.message : String(retryErr);
-      throw new Error(`.NET indexer failed: ${message}`);
+      throw new Error(`.NET indexer failed: ${message}`, { cause: retryErr });
     }
   }
 

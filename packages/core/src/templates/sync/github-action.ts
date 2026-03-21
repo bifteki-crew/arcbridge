@@ -4,7 +4,7 @@ import type { GeneratedFile } from "./claude-skill.js";
 /**
  * Generate the GitHub Action workflow for automated ArcBridge sync.
  */
-export function githubActionTemplate(config: ArcBridgeConfig): GeneratedFile {
+export function githubActionTemplate(_config: ArcBridgeConfig): GeneratedFile {
   const content = `name: ArcBridge Sync
 
 on:

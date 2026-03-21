@@ -55,7 +55,7 @@ export function extractCSharpRoutes(
 function extractControllerRoutes(
   root: TreeSitterNode,
   routes: CSharpRoute[],
-  relativePath: string,
+  _relativePath: string,
 ): void {
   const classes = findAllNodes(root, "class_declaration");
 
@@ -72,7 +72,6 @@ function extractControllerRoutes(
       const httpInfo = getHttpMethodFromAttributes(method);
       if (!httpInfo) continue;
 
-      const methodName = getIdentifier(method);
       const methodHasAuth = hasAuthorizeAttribute(method);
 
       // Build route path

@@ -241,6 +241,7 @@ describe("sync file generation", () => {
         include: ["src/**/*"],
         exclude: ["node_modules"],
         default_mode: "fast",
+        csharp_indexer: "auto",
       },
       testing: {
         test_command: "npx vitest run",
@@ -286,6 +287,7 @@ describe("sync file generation", () => {
         include: ["src/**/*"],
         exclude: ["node_modules"],
         default_mode: "fast",
+        csharp_indexer: "auto",
       },
       testing: {
         test_command: "npx vitest run",

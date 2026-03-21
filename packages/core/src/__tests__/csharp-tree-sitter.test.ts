@@ -280,11 +280,6 @@ describe("C# tree-sitter indexer", () => {
     });
 
     it("detects extends relationship", async () => {
-      const files = [
-        "Controllers/OrdersController.cs",
-        "Controllers/WeatherForecastController.cs",
-      ];
-
       // We need a "ControllerBase" in our index for extends to work
       // Since it's a framework type, it won't be found. Let's test with known types.
       const content = `

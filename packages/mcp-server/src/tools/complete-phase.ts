@@ -11,10 +11,9 @@ import {
   loadConfig,
   refreshFromDocs,
   syncPhaseToYaml,
-  syncTaskToYaml,
 } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult, safeParseJson } from "../helpers.js";
+import { ensureDb, notInitialized, textResult } from "../helpers.js";
 
 interface PhaseRow {
   id: string;

@@ -241,7 +241,7 @@ export function registerGetGuidance(
 function filterRelevantScenarios(
   scenarios: ScenarioRow[],
   action: string,
-  blockId: string | null,
+  _blockId: string | null,
 ): ScenarioRow[] {
   const categoryMap: Record<string, string[]> = {
     "adding-component": ["accessibility", "performance", "maintainability"],
