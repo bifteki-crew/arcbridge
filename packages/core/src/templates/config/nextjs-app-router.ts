@@ -21,6 +21,7 @@ export function configTemplate(input: InitProjectInput): ArcBridgeConfig {
       include: ["src/**/*", "app/**/*"],
       exclude: ["node_modules", "dist", ".next", "coverage"],
       default_mode: "fast",
+      csharp_indexer: "auto",
     },
     testing: {
       test_command: "npx vitest run",

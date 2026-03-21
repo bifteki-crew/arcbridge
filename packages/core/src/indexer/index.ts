@@ -1,5 +1,7 @@
 import { relative, join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import YAML from "yaml";
 import type Database from "better-sqlite3";
 import type { IndexerOptions, IndexResult } from "./types.js";
 import { createTsProgram } from "./program.js";
@@ -14,10 +16,12 @@ import {
   writeSymbols,
   writeDependencies,
 } from "./db-writer.js";
-import { indexDotnetProject, findDotnetProject } from "./dotnet-indexer.js";
+import { indexDotnetProjectRoslyn, findDotnetProject } from "./dotnet-indexer.js";
+import { indexCSharpTreeSitter } from "./csharp/indexer.js";
 import { indexPackageDependencies } from "./package-deps.js";
 
 export type ProjectLanguage = "typescript" | "csharp" | "auto";
+export type CSharpBackend = "roslyn" | "tree-sitter";
 
 /**
  * Detect the project language from files in the project root.
@@ -53,13 +57,54 @@ export function indexProject(
   indexPackageDependencies(db, options.projectRoot, options.service ?? "main");
 
   if (resolvedLanguage === "csharp") {
-    return indexDotnetProject(db, {
+    const backend = resolveCSharpBackend(options.projectRoot);
+    if (backend === "roslyn") {
+      return indexDotnetProjectRoslyn(db, {
+        projectRoot: options.projectRoot,
+        service: options.service,
+      });
+    }
+    return indexCSharpTreeSitter(db, {
       projectRoot: options.projectRoot,
       service: options.service,
     });
   }
 
   return indexTypeScriptProject(db, options);
+}
+
+/**
+ * Resolve which C# indexer backend to use.
+ * 1. Check config for explicit setting
+ * 2. If "auto": check if `arcbridge-dotnet-indexer` global tool is on PATH → Roslyn, otherwise tree-sitter
+ */
+export function resolveCSharpBackend(projectRoot: string): CSharpBackend {
+  // Try to read config for explicit backend preference
+  try {
+    const configPath = join(projectRoot, ".arcbridge/config.yaml");
+    if (existsSync(configPath)) {
+      const raw = readFileSync(configPath, "utf-8");
+      const config = YAML.parse(raw);
+      const backend = config?.indexing?.csharp_indexer;
+      if (backend === "roslyn" || backend === "tree-sitter") {
+        return backend;
+      }
+    }
+  } catch {
+    // Ignore config read errors, proceed with auto
+  }
+
+  // Auto: check for Roslyn global tool on PATH
+  try {
+    execFileSync("arcbridge-dotnet-indexer", ["--version"], {
+      encoding: "utf-8",
+      timeout: 5000,
+    });
+    return "roslyn";
+  } catch {
+    // Global tool not available — use tree-sitter
+    return "tree-sitter";
+  }
 }
 
 function indexTypeScriptProject(
