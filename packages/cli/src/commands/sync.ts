@@ -43,7 +43,7 @@ export async function sync(dir: string, json: boolean): Promise<void> {
 
     // Step 1: Reindex
     if (!json) console.log("Reindexing...");
-    const indexResult: IndexResult = indexProject(db, { projectRoot: dir });
+    const indexResult: IndexResult = await indexProject(db, { projectRoot: dir });
     if (!json)
       console.log(
         `  Indexed ${indexResult.filesProcessed} files, ${indexResult.symbolsIndexed} symbols, ${indexResult.dependenciesIndexed} deps`,

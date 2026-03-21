@@ -9,7 +9,7 @@ const FIXTURE_DIR = join(__dirname, "fixtures", "react-project");
 
 let db: Database.Database;
 
-beforeEach(() => {
+beforeEach(async () => {
   db = openMemoryDatabase();
   initializeSchema(db);
 });
@@ -19,8 +19,8 @@ afterEach(() => {
 });
 
 describe("React symbol classification", () => {
-  it("classifies function components as 'component'", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("classifies function components as 'component'", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const button = db
       .prepare("SELECT * FROM symbols WHERE name = 'Button' AND kind = 'component'")
@@ -31,8 +31,8 @@ describe("React symbol classification", () => {
     expect(button!.is_exported).toBe(1);
   });
 
-  it("classifies React.memo wrapped components as 'component'", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("classifies React.memo wrapped components as 'component'", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const memoized = db
       .prepare("SELECT * FROM symbols WHERE name = 'MemoizedList' AND kind = 'component'")
@@ -42,8 +42,8 @@ describe("React symbol classification", () => {
     expect(memoized!.kind).toBe("component");
   });
 
-  it("classifies React.forwardRef wrapped components as 'component'", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("classifies React.forwardRef wrapped components as 'component'", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const forwarded = db
       .prepare("SELECT * FROM symbols WHERE name = 'ForwardedInput' AND kind = 'component'")
@@ -53,8 +53,8 @@ describe("React symbol classification", () => {
     expect(forwarded!.kind).toBe("component");
   });
 
-  it("classifies custom hooks as 'hook'", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("classifies custom hooks as 'hook'", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const useAuth = db
       .prepare("SELECT * FROM symbols WHERE name = 'useAuth' AND kind = 'hook'")
@@ -71,8 +71,8 @@ describe("React symbol classification", () => {
     expect(useDebounce!.kind).toBe("hook");
   });
 
-  it("classifies useTheme as 'hook'", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("classifies useTheme as 'hook'", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const useTheme = db
       .prepare("SELECT * FROM symbols WHERE name = 'useTheme' AND kind = 'hook'")
@@ -81,8 +81,8 @@ describe("React symbol classification", () => {
     expect(useTheme).toBeDefined();
   });
 
-  it("classifies createContext as 'context'", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("classifies createContext as 'context'", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const ctx = db
       .prepare("SELECT * FROM symbols WHERE name = 'ThemeContext' AND kind = 'context'")
@@ -93,8 +93,8 @@ describe("React symbol classification", () => {
     expect(ctx!.is_exported).toBe(1);
   });
 
-  it("preserves interface/type symbols alongside components", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("preserves interface/type symbols alongside components", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const buttonProps = db
       .prepare("SELECT * FROM symbols WHERE name = 'ButtonProps' AND kind = 'interface'")
@@ -103,8 +103,8 @@ describe("React symbol classification", () => {
     expect(buttonProps).toBeDefined();
   });
 
-  it("classifies App Router page components as 'component'", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("classifies App Router page components as 'component'", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const homePage = db
       .prepare("SELECT * FROM symbols WHERE name = 'HomePage' AND kind = 'component'")
@@ -115,8 +115,8 @@ describe("React symbol classification", () => {
 });
 
 describe("component analysis", () => {
-  it("populates the components table", () => {
-    const result = indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("populates the components table", async () => {
+    const result = await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     expect(result.componentsAnalyzed).toBeGreaterThan(0);
 
@@ -126,8 +126,8 @@ describe("component analysis", () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  it("detects 'use client' directive", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects 'use client' directive", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const clientComponent = db
       .prepare(
@@ -142,8 +142,8 @@ describe("component analysis", () => {
     expect(clientComponent!.has_state).toBe(1);
   });
 
-  it("detects useState usage", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects useState usage", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const userCard = db
       .prepare(
@@ -157,8 +157,8 @@ describe("component analysis", () => {
     expect(userCard!.has_state).toBe(1);
   });
 
-  it("detects context providers", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects context providers", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const provider = db
       .prepare(
@@ -173,8 +173,8 @@ describe("component analysis", () => {
     expect(providers).toContain("ThemeContext");
   });
 
-  it("extracts props type", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("extracts props type", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const button = db
       .prepare(
@@ -190,8 +190,8 @@ describe("component analysis", () => {
 });
 
 describe("React dependency extraction", () => {
-  it("detects renders dependencies", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects renders dependencies", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const renders = db
       .prepare(
@@ -210,8 +210,8 @@ describe("React dependency extraction", () => {
     expect(userCardRendersButton).toBeDefined();
   });
 
-  it("detects provides_context dependencies", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects provides_context dependencies", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const provides = db
       .prepare(
@@ -232,8 +232,8 @@ describe("React dependency extraction", () => {
     expect(providerEdge).toBeDefined();
   });
 
-  it("detects consumes_context dependencies", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects consumes_context dependencies", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const consumes = db
       .prepare(
@@ -256,8 +256,8 @@ describe("React dependency extraction", () => {
 });
 
 describe("route analysis", () => {
-  it("populates the routes table", () => {
-    const result = indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("populates the routes table", async () => {
+    const result = await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     expect(result.routesAnalyzed).toBeGreaterThan(0);
 
@@ -267,8 +267,8 @@ describe("route analysis", () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  it("detects page routes", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects page routes", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const pages = db
       .prepare("SELECT * FROM routes WHERE kind = 'page'")
@@ -285,8 +285,8 @@ describe("route analysis", () => {
     expect(dashPage).toBeDefined();
   });
 
-  it("detects layout routes", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects layout routes", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const layouts = db
       .prepare("SELECT * FROM routes WHERE kind = 'layout'")
@@ -295,8 +295,8 @@ describe("route analysis", () => {
     expect(layouts.length).toBeGreaterThan(0);
   });
 
-  it("detects loading routes", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects loading routes", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const loading = db
       .prepare("SELECT * FROM routes WHERE kind = 'loading'")
@@ -305,8 +305,8 @@ describe("route analysis", () => {
     expect(loading.length).toBeGreaterThan(0);
   });
 
-  it("detects API routes with HTTP methods", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("detects API routes with HTTP methods", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const apiRoutes = db
       .prepare("SELECT * FROM routes WHERE kind = 'api-route'")
@@ -322,8 +322,8 @@ describe("route analysis", () => {
     expect(methods).toContain("POST");
   });
 
-  it("handles route groups (no URL segment)", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("handles route groups (no URL segment)", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const loginPage = db
       .prepare("SELECT * FROM routes WHERE route_path = '/login'")
@@ -333,8 +333,8 @@ describe("route analysis", () => {
     expect(loginPage!.kind).toBe("page");
   });
 
-  it("tracks parent layouts", () => {
-    indexProject(db, { projectRoot: FIXTURE_DIR });
+  it("tracks parent layouts", async () => {
+    await indexProject(db, { projectRoot: FIXTURE_DIR });
 
     const dashPage = db
       .prepare("SELECT * FROM routes WHERE route_path = '/dashboard' AND kind = 'page'")

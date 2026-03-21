@@ -13,7 +13,7 @@
     "directory": "packages/core"
   },
   "keywords": ["arcbridge", "architecture", "arc42", "mcp", "typescript", "indexer"],
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": ["dist", "wasm", "README.md", "LICENSE"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -30,8 +30,7 @@
     "better-sqlite3": "^11.0.0",
     "globby": "^14.0.0",
     "gray-matter": "^4.0.3",
-    "tree-sitter": "^0.22.4",
-    "tree-sitter-c-sharp": "0.23.1",
+    "web-tree-sitter": "^0.26.7",
     "typescript": "^5.9.3",
     "yaml": "^2.7.0",
     "zod": "^3.24.0"

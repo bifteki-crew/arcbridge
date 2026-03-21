@@ -21,10 +21,10 @@ const FIXTURE_DIR = join(
 
 let db: Database.Database;
 
-beforeEach(() => {
+beforeEach(async () => {
   db = openMemoryDatabase();
   initializeSchema(db);
-  indexProject(db, { projectRoot: FIXTURE_DIR });
+  await indexProject(db, { projectRoot: FIXTURE_DIR });
 });
 
 afterEach(() => {
@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 describe("symbol search queries", () => {
-  it("searches by name", () => {
+  it("searches by name", async () => {
     const results = db
       .prepare("SELECT id, name, kind FROM symbols WHERE name LIKE ?")
       .all("%format%") as { id: string; name: string; kind: string }[];
@@ -41,7 +41,7 @@ describe("symbol search queries", () => {
     expect(results.some((r) => r.name === "formatName")).toBe(true);
   });
 
-  it("filters by kind", () => {
+  it("filters by kind", async () => {
     const classes = db
       .prepare("SELECT id, name FROM symbols WHERE kind = ?")
       .all("class") as { id: string; name: string }[];
@@ -50,7 +50,7 @@ describe("symbol search queries", () => {
     expect(classes.some((c) => c.name === "UserEntity")).toBe(true);
   });
 
-  it("filters by file path prefix", () => {
+  it("filters by file path prefix", async () => {
     const results = db
       .prepare("SELECT name FROM symbols WHERE file_path LIKE ?")
       .all("src/models/%") as { name: string }[];
@@ -62,7 +62,7 @@ describe("symbol search queries", () => {
     expect(names).toContain("UserEntity");
   });
 
-  it("filters by exported status", () => {
+  it("filters by exported status", async () => {
     const internal = db
       .prepare("SELECT name FROM symbols WHERE is_exported = 0")
       .all() as { name: string }[];
@@ -73,7 +73,7 @@ describe("symbol search queries", () => {
 });
 
 describe("symbol detail queries", () => {
-  it("retrieves a symbol by ID", () => {
+  it("retrieves a symbol by ID", async () => {
     const sym = db
       .prepare("SELECT * FROM symbols WHERE id = ?")
       .get("src/utils.ts::formatName#function") as {
@@ -92,7 +92,7 @@ describe("symbol detail queries", () => {
     expect(sym!.is_exported).toBe(1);
   });
 
-  it("returns undefined for non-existent symbol", () => {
+  it("returns undefined for non-existent symbol", async () => {
     const sym = db
       .prepare("SELECT * FROM symbols WHERE id = ?")
       .get("nonexistent");
@@ -100,7 +100,7 @@ describe("symbol detail queries", () => {
     expect(sym).toBeUndefined();
   });
 
-  it("class methods have qualified names", () => {
+  it("class methods have qualified names", async () => {
     const methods = db
       .prepare(
         "SELECT name, qualified_name FROM symbols WHERE qualified_name LIKE 'UserEntity.%'",
@@ -115,7 +115,7 @@ describe("symbol detail queries", () => {
 });
 
 describe("file-level graph queries", () => {
-  it("lists symbols per file", () => {
+  it("lists symbols per file", async () => {
     const files = db
       .prepare(
         "SELECT file_path, COUNT(*) as count FROM symbols GROUP BY file_path ORDER BY file_path",
@@ -130,7 +130,7 @@ describe("file-level graph queries", () => {
     expect(utilsFile!.count).toBeGreaterThanOrEqual(4); // formatName, parseIntSafe, MAX_RETRIES, Result, counter
   });
 
-  it("finds exported symbols across the project", () => {
+  it("finds exported symbols across the project", async () => {
     const exported = db
       .prepare(
         "SELECT COUNT(*) as count FROM symbols WHERE is_exported = 1",
@@ -148,7 +148,7 @@ describe("file-level graph queries", () => {
 });
 
 describe("dependency graph queries", () => {
-  it("has dependency edges", () => {
+  it("has dependency edges", async () => {
     const count = (
       db.prepare("SELECT COUNT(*) as count FROM dependencies").get() as {
         count: number;
@@ -158,7 +158,7 @@ describe("dependency graph queries", () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  it("can query dependencies for a module", () => {
+  it("can query dependencies for a module", async () => {
     const deps = db
       .prepare(
         `SELECT d.source_symbol, d.target_symbol, d.kind
@@ -174,7 +174,7 @@ describe("dependency graph queries", () => {
     expect(kinds.has("extends")).toBe(true);
   });
 
-  it("can find dependents (what depends on a symbol)", () => {
+  it("can find dependents (what depends on a symbol)", async () => {
     // Find what depends on UserEntity
     const dependents = db
       .prepare(

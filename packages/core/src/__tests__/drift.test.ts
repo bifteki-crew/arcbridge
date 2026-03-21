@@ -10,7 +10,7 @@ const TS_FIXTURE = join(__dirname, "fixtures", "ts-project");
 
 let db: Database.Database;
 
-beforeEach(() => {
+beforeEach(async () => {
   db = openMemoryDatabase();
   initializeSchema(db);
 });
@@ -20,14 +20,14 @@ afterEach(() => {
 });
 
 describe("detectDrift", () => {
-  it("returns empty when no building blocks exist", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("returns empty when no building blocks exist", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
     const entries = detectDrift(db);
     expect(entries).toEqual([]);
   });
 
-  it("detects undocumented modules", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("detects undocumented modules", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     // Add a building block that only covers src/models/
     db.prepare(
@@ -43,8 +43,8 @@ describe("detectDrift", () => {
     expect(undocumented.some((e) => e.affectedFile?.includes("utils"))).toBe(true);
   });
 
-  it("detects missing modules", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("detects missing modules", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     // Add a building block that references a non-existent path
     db.prepare(
@@ -58,8 +58,8 @@ describe("detectDrift", () => {
     expect(missing[0]!.affectedBlock).toBe("phantom");
   });
 
-  it("detects dependency violations across blocks", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("detects dependency violations across blocks", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     // Create two blocks that cover different directories
     db.prepare(
@@ -79,8 +79,8 @@ describe("detectDrift", () => {
     expect(violations[0]!.severity).toBe("error");
   });
 
-  it("does not flag dependency violations when interfaces are declared", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("does not flag dependency violations when interfaces are declared", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     // Create two blocks with declared interface
     db.prepare(
@@ -99,8 +99,8 @@ describe("detectDrift", () => {
     expect(violations.length).toBe(0);
   });
 
-  it("detects unlinked test paths", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("detects unlinked test paths", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       `INSERT INTO quality_scenarios (id, name, category, scenario, expected, linked_tests)
@@ -113,8 +113,8 @@ describe("detectDrift", () => {
     expect(unlinked[0]!.affectedFile).toBe("tests/missing.test.ts");
   });
 
-  it("does not flag unlinked tests when files exist", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("does not flag unlinked tests when files exist", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     const existingFile = (
       db.prepare("SELECT file_path FROM symbols LIMIT 1").get() as { file_path: string }
@@ -132,8 +132,8 @@ describe("detectDrift", () => {
     expect(unlinked.length).toBe(0);
   });
 
-  it("detects stale ADR references", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("detects stale ADR references", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     // Add an ADR that references a file that doesn't exist
     db.prepare(
@@ -147,8 +147,8 @@ describe("detectDrift", () => {
     expect(stale[0]!.description).toContain("adr-001");
   });
 
-  it("detects new package dependencies without ADRs", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("detects new package dependencies without ADRs", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     // Add a package dependency
     db.prepare(
@@ -161,8 +161,8 @@ describe("detectDrift", () => {
     expect(newDeps[0]!.description).toContain("some-important-library");
   });
 
-  it("does not flag package dependencies mentioned in ADRs", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("does not flag package dependencies mentioned in ADRs", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       "INSERT INTO package_dependencies (name, version, source, service) VALUES (?, ?, ?, ?)",
@@ -180,8 +180,8 @@ describe("detectDrift", () => {
     expect(newDeps.length).toBe(0);
   });
 
-  it("does not flag trivial dev dependencies", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("does not flag trivial dev dependencies", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       "INSERT INTO package_dependencies (name, version, source, service) VALUES (?, ?, ?, ?)",
@@ -194,8 +194,8 @@ describe("detectDrift", () => {
     expect(newDeps.length).toBe(0);
   });
 
-  it("does not flag stale ADRs for existing files", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("does not flag stale ADRs for existing files", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       `INSERT INTO adrs (id, title, status, date, affected_files)
@@ -211,7 +211,7 @@ describe("detectDrift", () => {
 });
 
 describe("writeDriftLog", () => {
-  it("writes entries to drift_log table", () => {
+  it("writes entries to drift_log table", async () => {
     const entries = [
       {
         kind: "undocumented_module" as const,
@@ -230,7 +230,7 @@ describe("writeDriftLog", () => {
     expect(count).toBe(1);
   });
 
-  it("clears unresolved entries on re-run", () => {
+  it("clears unresolved entries on re-run", async () => {
     const entries = [
       {
         kind: "undocumented_module" as const,
@@ -252,7 +252,7 @@ describe("writeDriftLog", () => {
     expect(count).toBe(0);
   });
 
-  it("preserves resolved entries", () => {
+  it("preserves resolved entries", async () => {
     writeDriftLog(db, [
       {
         kind: "undocumented_module" as const,

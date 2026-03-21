@@ -23,7 +23,7 @@ const TS_FIXTURE = join(
 
 let db: Database.Database;
 
-beforeEach(() => {
+beforeEach(async () => {
   db = openMemoryDatabase();
   initializeSchema(db);
 });
@@ -33,8 +33,8 @@ afterEach(() => {
 });
 
 describe("check_drift tool queries", () => {
-  it("returns no drift when blocks cover all files", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("returns no drift when blocks cover all files", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     // Add blocks that cover all code paths
     db.prepare(
@@ -46,8 +46,8 @@ describe("check_drift tool queries", () => {
     expect(entries).toEqual([]);
   });
 
-  it("groups drift by kind", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("groups drift by kind", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     // Partial coverage → undocumented + missing
     db.prepare(
@@ -66,8 +66,8 @@ describe("check_drift tool queries", () => {
     expect(kinds.has("missing_module")).toBe(true);
   });
 
-  it("persists drift to drift_log table", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("persists drift to drift_log table", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       `INSERT INTO building_blocks (id, name, responsibility, code_paths)
@@ -87,8 +87,8 @@ describe("check_drift tool queries", () => {
 });
 
 describe("get_guidance tool queries", () => {
-  it("matches file to building block via code_paths", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("matches file to building block via code_paths", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       `INSERT INTO building_blocks (id, name, responsibility, code_paths, interfaces)
@@ -117,7 +117,7 @@ describe("get_guidance tool queries", () => {
     expect(matchedBlockId).toBe("models");
   });
 
-  it("returns null for unmapped files", () => {
+  it("returns null for unmapped files", async () => {
     db.prepare(
       `INSERT INTO building_blocks (id, name, responsibility, code_paths)
        VALUES ('models', 'Models', 'Data models', '["src/models/"]')`,
@@ -144,8 +144,8 @@ describe("get_guidance tool queries", () => {
     expect(matchedBlockId).toBeNull();
   });
 
-  it("finds existing patterns nearby", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("finds existing patterns nearby", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     const symbols = db
       .prepare(
@@ -156,7 +156,7 @@ describe("get_guidance tool queries", () => {
     expect(symbols.length).toBeGreaterThan(0);
   });
 
-  it("filters quality scenarios by action type", () => {
+  it("filters quality scenarios by action type", async () => {
     db.prepare(
       `INSERT INTO quality_scenarios (id, name, category, scenario, expected, priority)
        VALUES ('SEC-01', 'Auth on routes', 'security', 'API routes require auth', 'Unauthorized returns 401', 'must')`,
@@ -182,7 +182,7 @@ describe("get_guidance tool queries", () => {
 });
 
 describe("get_open_questions tool queries", () => {
-  it("surfaces untested must-have scenarios", () => {
+  it("surfaces untested must-have scenarios", async () => {
     db.prepare(
       `INSERT INTO quality_scenarios (id, name, category, scenario, expected, priority, status)
        VALUES ('SEC-01', 'Auth', 'security', 'scenario', 'expected', 'must', 'untested')`,
@@ -202,7 +202,7 @@ describe("get_open_questions tool queries", () => {
     expect(untested[0]!.id).toBe("SEC-01");
   });
 
-  it("finds building blocks without code_paths", () => {
+  it("finds building blocks without code_paths", async () => {
     db.prepare(
       `INSERT INTO building_blocks (id, name, responsibility, code_paths)
        VALUES ('empty', 'Empty Block', 'Nothing mapped', '[]')`,
@@ -224,7 +224,7 @@ describe("get_open_questions tool queries", () => {
     expect(emptyBlocks.length).toBe(1);
   });
 
-  it("finds unresolved drift entries", () => {
+  it("finds unresolved drift entries", async () => {
     db.prepare(
       `INSERT INTO drift_log (detected_at, kind, severity, description)
        VALUES ('2024-01-01', 'undocumented_module', 'warning', 'Test drift')`,
@@ -242,7 +242,7 @@ describe("get_open_questions tool queries", () => {
     expect(unresolved[0]!.kind).toBe("undocumented_module");
   });
 
-  it("finds tasks without acceptance criteria in current phase", () => {
+  it("finds tasks without acceptance criteria in current phase", async () => {
     db.prepare(
       `INSERT INTO phases (id, name, phase_number, status, description)
        VALUES ('phase-1', 'Phase 1', 1, 'in-progress', 'Current')`,
@@ -277,8 +277,8 @@ describe("get_open_questions tool queries", () => {
 });
 
 describe("get_building_block mapped symbols", () => {
-  it("returns symbols matching code_paths", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("returns symbols matching code_paths", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       `INSERT INTO building_blocks (id, name, responsibility, code_paths)
@@ -294,8 +294,8 @@ describe("get_building_block mapped symbols", () => {
     expect(symbols.length).toBeGreaterThan(0);
   });
 
-  it("returns empty for blocks with no matching symbols", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("returns empty for blocks with no matching symbols", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       `INSERT INTO building_blocks (id, name, responsibility, code_paths)
@@ -313,8 +313,8 @@ describe("get_building_block mapped symbols", () => {
 });
 
 describe("unlinked_test drift detection", () => {
-  it("detects quality scenarios with non-existent test paths", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("detects quality scenarios with non-existent test paths", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       `INSERT INTO quality_scenarios (id, name, category, scenario, expected, linked_tests)
@@ -327,8 +327,8 @@ describe("unlinked_test drift detection", () => {
     expect(unlinked[0]!.affectedFile).toBe("tests/auth.test.ts");
   });
 
-  it("does not flag linked tests that match indexed files", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("does not flag linked tests that match indexed files", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     // Use a path that actually exists in the indexed project
     const existingFile = db

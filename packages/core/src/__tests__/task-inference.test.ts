@@ -12,7 +12,7 @@ const DUMMY_ROOT = tmpdir();
 
 let db: Database.Database;
 
-beforeEach(() => {
+beforeEach(async () => {
   db = openMemoryDatabase();
   initializeSchema(db);
 });
@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 describe("inferTaskStatuses", () => {
-  it("returns empty for phase with no tasks", () => {
+  it("returns empty for phase with no tasks", async () => {
     db.prepare(
       "INSERT INTO phases (id, name, phase_number, status, description) VALUES ('p1', 'Phase 1', 1, 'in-progress', 'Test')",
     ).run();
@@ -31,8 +31,8 @@ describe("inferTaskStatuses", () => {
     expect(results).toEqual([]);
   });
 
-  it("infers in-progress when building block has code", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("infers in-progress when building block has code", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       "INSERT INTO phases (id, name, phase_number, status, description) VALUES ('p1', 'Phase 1', 1, 'in-progress', 'Test')",
@@ -52,8 +52,8 @@ describe("inferTaskStatuses", () => {
     expect(results[0]!.inferredStatus).toBe("in-progress");
   });
 
-  it("does not change tasks already done", () => {
-    indexProject(db, { projectRoot: TS_FIXTURE });
+  it("does not change tasks already done", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
 
     db.prepare(
       "INSERT INTO phases (id, name, phase_number, status, description) VALUES ('p1', 'Phase 1', 1, 'in-progress', 'Test')",
@@ -71,7 +71,7 @@ describe("inferTaskStatuses", () => {
     expect(results.length).toBe(0);
   });
 
-  it("infers done when all quality scenarios pass", () => {
+  it("infers done when all quality scenarios pass", async () => {
     db.prepare(
       "INSERT INTO phases (id, name, phase_number, status, description) VALUES ('p1', 'Phase 1', 1, 'in-progress', 'Test')",
     ).run();
@@ -91,7 +91,7 @@ describe("inferTaskStatuses", () => {
 });
 
 describe("applyInferences", () => {
-  it("updates task statuses in the database", () => {
+  it("updates task statuses in the database", async () => {
     db.prepare(
       "INSERT INTO phases (id, name, phase_number, status, description) VALUES ('p1', 'Phase 1', 1, 'in-progress', 'Test')",
     ).run();
@@ -115,7 +115,7 @@ describe("applyInferences", () => {
     expect(task.status).toBe("in-progress");
   });
 
-  it("sets completed_at when inferring done", () => {
+  it("sets completed_at when inferring done", async () => {
     db.prepare(
       "INSERT INTO phases (id, name, phase_number, status, description) VALUES ('p1', 'Phase 1', 1, 'in-progress', 'Test')",
     ).run();

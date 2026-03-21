@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import type Database from "better-sqlite3";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
-import { parseCSharp } from "../indexer/csharp/parser.js";
+import { ensureCSharpParser, parseCSharp } from "../indexer/csharp/parser.js";
 import { extractCSharpSymbols } from "../indexer/csharp/symbol-extractor.js";
 import {
   extractCSharpDependencies,
@@ -17,20 +17,24 @@ import { hashContent } from "../indexer/content-hash.js";
 const FIXTURE_DIR = resolve(__dirname, "fixtures/dotnet-project");
 
 describe("C# tree-sitter indexer", () => {
+  beforeAll(async () => {
+    await ensureCSharpParser();
+  });
+
   describe("parser", () => {
-    it("parses a simple C# file", () => {
+    it("parses a simple C# file", async () => {
       const tree = parseCSharp("namespace Foo { public class Bar { } }");
       expect(tree.rootNode.type).toBe("compilation_unit");
     });
 
-    it("parses file-scoped namespaces", () => {
+    it("parses file-scoped namespaces", async () => {
       const tree = parseCSharp("namespace Foo;\npublic class Bar { }");
       expect(tree.rootNode.type).toBe("compilation_unit");
     });
   });
 
   describe("symbol extraction", () => {
-    it("extracts classes from fixture", () => {
+    it("extracts classes from fixture", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Models/Order.cs"),
         "utf-8",
@@ -45,7 +49,7 @@ describe("C# tree-sitter indexer", () => {
       ).toBe("TestApi.Models.Order");
     });
 
-    it("extracts enums", () => {
+    it("extracts enums", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Models/Order.cs"),
         "utf-8",
@@ -57,7 +61,7 @@ describe("C# tree-sitter indexer", () => {
       expect(enums.map((e) => e.name)).toContain("OrderStatus");
     });
 
-    it("extracts interfaces", () => {
+    it("extracts interfaces", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Services/IOrderService.cs"),
         "utf-8",
@@ -73,7 +77,7 @@ describe("C# tree-sitter indexer", () => {
       expect(ifaces.map((i) => i.name)).toContain("IOrderService");
     });
 
-    it("extracts methods as functions", () => {
+    it("extracts methods as functions", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Controllers/OrdersController.cs"),
         "utf-8",
@@ -92,7 +96,7 @@ describe("C# tree-sitter indexer", () => {
       expect(names).toContain("Create");
     });
 
-    it("detects async methods", () => {
+    it("detects async methods", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Controllers/OrdersController.cs"),
         "utf-8",
@@ -110,7 +114,7 @@ describe("C# tree-sitter indexer", () => {
       expect(getAll?.isAsync).toBe(true);
     });
 
-    it("extracts properties as variables", () => {
+    it("extracts properties as variables", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Models/Order.cs"),
         "utf-8",
@@ -126,7 +130,7 @@ describe("C# tree-sitter indexer", () => {
       expect(names).toContain("Status");
     });
 
-    it("extracts constructors", () => {
+    it("extracts constructors", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Controllers/OrdersController.cs"),
         "utf-8",
@@ -143,7 +147,7 @@ describe("C# tree-sitter indexer", () => {
       expect(ctors[0].kind).toBe("function");
     });
 
-    it("extracts record declarations as classes", () => {
+    it("extracts record declarations as classes", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Controllers/OrdersController.cs"),
         "utf-8",
@@ -160,7 +164,7 @@ describe("C# tree-sitter indexer", () => {
       expect(record!.kind).toBe("class");
     });
 
-    it("extracts doc comments", () => {
+    it("extracts doc comments", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Models/Order.cs"),
         "utf-8",
@@ -174,7 +178,7 @@ describe("C# tree-sitter indexer", () => {
       expect(order?.docComment).toContain("customer order");
     });
 
-    it("marks public types as exported", () => {
+    it("marks public types as exported", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Models/Order.cs"),
         "utf-8",
@@ -188,7 +192,7 @@ describe("C# tree-sitter indexer", () => {
       expect(order?.isExported).toBe(true);
     });
 
-    it("generates correct symbol ID format", () => {
+    it("generates correct symbol ID format", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Models/Order.cs"),
         "utf-8",
@@ -204,7 +208,7 @@ describe("C# tree-sitter indexer", () => {
       );
     });
 
-    it("extracts method signatures", () => {
+    it("extracts method signatures", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Services/IOrderService.cs"),
         "utf-8",
@@ -220,7 +224,7 @@ describe("C# tree-sitter indexer", () => {
       expect(getById?.signature).toContain("int id");
     });
 
-    it("uses 1-indexed line numbers", () => {
+    it("uses 1-indexed line numbers", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Models/Order.cs"),
         "utf-8",
@@ -236,7 +240,7 @@ describe("C# tree-sitter indexer", () => {
   });
 
   describe("dependency extraction", () => {
-    it("detects implements relationship", () => {
+    it("detects implements relationship", async () => {
       // Index all files to build full symbol table
       const files = [
         "Services/IOrderService.cs",
@@ -275,7 +279,7 @@ describe("C# tree-sitter indexer", () => {
       expect(implementsDep).toBeDefined();
     });
 
-    it("detects extends relationship", () => {
+    it("detects extends relationship", async () => {
       const files = [
         "Controllers/OrdersController.cs",
         "Controllers/WeatherForecastController.cs",
@@ -302,7 +306,7 @@ public class Dog : Animal { }
       expect(extendsDep).toBeDefined();
     });
 
-    it("detects calls relationship", () => {
+    it("detects calls relationship", async () => {
       const files = [
         "Services/IOrderService.cs",
         "Services/OrderService.cs",
@@ -342,7 +346,7 @@ public class Dog : Animal { }
   });
 
   describe("route analysis", () => {
-    it("extracts controller-based routes", () => {
+    it("extracts controller-based routes", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Controllers/OrdersController.cs"),
         "utf-8",
@@ -380,7 +384,7 @@ public class Dog : Animal { }
       expect(getById).toBeDefined();
     });
 
-    it("extracts minimal API routes", () => {
+    it("extracts minimal API routes", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Endpoints/ProductEndpoints.cs"),
         "utf-8",
@@ -422,7 +426,7 @@ public class Dog : Animal { }
   });
 
   describe("content hash compatibility", () => {
-    it("produces hashes identical to TypeScript hasher", () => {
+    it("produces hashes identical to TypeScript hasher", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Models/Order.cs"),
         "utf-8",
@@ -438,7 +442,7 @@ public class Dog : Animal { }
   describe("full integration", () => {
     let db: Database.Database;
 
-    beforeAll(() => {
+    beforeAll(async () => {
       db = openMemoryDatabase();
       initializeSchema(db);
     });
@@ -447,8 +451,8 @@ public class Dog : Animal { }
       db?.close();
     });
 
-    it("indexes the .NET fixture project via tree-sitter", () => {
-      const result = indexCSharpTreeSitter(db, {
+    it("indexes the .NET fixture project via tree-sitter", async () => {
+      const result = await indexCSharpTreeSitter(db, {
         projectRoot: FIXTURE_DIR,
       });
 
@@ -458,7 +462,7 @@ public class Dog : Animal { }
       expect(result.routesAnalyzed).toBeGreaterThan(0);
     });
 
-    it("stores symbols with language=csharp", () => {
+    it("stores symbols with language=csharp", async () => {
       const symbols = db
         .prepare("SELECT * FROM symbols WHERE language = 'csharp'")
         .all() as Array<{
@@ -472,7 +476,7 @@ public class Dog : Animal { }
       expect(symbols.every((s) => s.language === "csharp")).toBe(true);
     });
 
-    it("stores classes correctly", () => {
+    it("stores classes correctly", async () => {
       const classes = db
         .prepare(
           "SELECT * FROM symbols WHERE kind = 'class' AND language = 'csharp'",
@@ -486,7 +490,7 @@ public class Dog : Animal { }
       expect(names).toContain("CreateOrderRequest");
     });
 
-    it("stores interfaces correctly", () => {
+    it("stores interfaces correctly", async () => {
       const interfaces = db
         .prepare(
           "SELECT * FROM symbols WHERE kind = 'interface' AND language = 'csharp'",
@@ -496,7 +500,7 @@ public class Dog : Animal { }
       expect(interfaces.map((i) => i.name)).toContain("IOrderService");
     });
 
-    it("stores enums correctly", () => {
+    it("stores enums correctly", async () => {
       const enums = db
         .prepare(
           "SELECT * FROM symbols WHERE kind = 'enum' AND language = 'csharp'",
@@ -506,7 +510,7 @@ public class Dog : Animal { }
       expect(enums.map((e) => e.name)).toContain("OrderStatus");
     });
 
-    it("stores methods correctly", () => {
+    it("stores methods correctly", async () => {
       const functions = db
         .prepare(
           "SELECT * FROM symbols WHERE kind = 'function' AND language = 'csharp'",
@@ -528,7 +532,7 @@ public class Dog : Animal { }
       expect(getAll?.is_async).toBe(1);
     });
 
-    it("stores properties correctly", () => {
+    it("stores properties correctly", async () => {
       const props = db
         .prepare(
           "SELECT * FROM symbols WHERE kind = 'variable' AND language = 'csharp' AND file_path LIKE '%Order.cs'",
@@ -542,7 +546,7 @@ public class Dog : Animal { }
       expect(names).toContain("Status");
     });
 
-    it("stores dependencies", () => {
+    it("stores dependencies", async () => {
       const deps = db
         .prepare("SELECT * FROM dependencies")
         .all() as Array<{
@@ -561,7 +565,7 @@ public class Dog : Animal { }
       expect(implementsDep).toBeDefined();
     });
 
-    it("stores controller routes", () => {
+    it("stores controller routes", async () => {
       const routes = db
         .prepare("SELECT * FROM routes")
         .all() as Array<{
@@ -589,7 +593,7 @@ public class Dog : Animal { }
       expect(create!.has_auth).toBe(1);
     });
 
-    it("stores minimal API routes", () => {
+    it("stores minimal API routes", async () => {
       const routes = db
         .prepare("SELECT * FROM routes")
         .all() as Array<{
@@ -617,8 +621,8 @@ public class Dog : Animal { }
       expect(createProduct!.has_auth).toBe(1);
     });
 
-    it("is incremental — skips unchanged files on second run", () => {
-      const result = indexCSharpTreeSitter(db, {
+    it("is incremental — skips unchanged files on second run", async () => {
+      const result = await indexCSharpTreeSitter(db, {
         projectRoot: FIXTURE_DIR,
       });
 
@@ -628,7 +632,7 @@ public class Dog : Animal { }
       expect(result.filesSkipped).toBeGreaterThanOrEqual(result.filesProcessed);
     });
 
-    it("generates stable symbol IDs", () => {
+    it("generates stable symbol IDs", async () => {
       const orderClass = db
         .prepare(
           "SELECT id FROM symbols WHERE name = 'Order' AND kind = 'class'",

@@ -36,7 +36,7 @@ export function registerReindex(
         // Refresh architecture docs into DB first (picks up manual edits)
         const docWarnings = refreshFromDocs(db, params.target_dir);
 
-        const result = indexProject(db, {
+        const result = await indexProject(db, {
           projectRoot: params.target_dir,
           tsconfigPath: params.tsconfig_path,
           service: params.service,
