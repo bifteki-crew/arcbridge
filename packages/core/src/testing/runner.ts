@@ -119,9 +119,9 @@ export function verifyScenarios(
     );
 
     const start = Date.now();
-    let passed = false;
-    let outcome: TestOutcome = "failed";
-    let output = "";
+    let passed: boolean;
+    let outcome: TestOutcome;
+    let output: string;
 
     try {
       const result = execFileSync(executable, [...baseArgs, ...existingPaths], {

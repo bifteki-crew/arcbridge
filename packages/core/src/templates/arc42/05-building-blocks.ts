@@ -142,7 +142,7 @@ export function buildingBlocksTemplate(
     return blocks;
   }
 
-  function buildDotnetBlocks(inp: InitProjectInput): BlockDef[] {
+  function buildDotnetBlocks(_inp: InitProjectInput): BlockDef[] {
     const blocks: BlockDef[] = [
       {
         id: "api-host",

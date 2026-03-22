@@ -40,7 +40,7 @@ function getFileDirective(
  */
 function analyzeComponentBody(
   node: ts.Node,
-  checker: ts.TypeChecker,
+  _checker: ts.TypeChecker,
 ): {
   hasState: boolean;
   contextProviders: string[];

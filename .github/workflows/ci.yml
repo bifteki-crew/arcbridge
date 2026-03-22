@@ -1,9 +1,10 @@
 name: CI
 
-# Temporarily disabled — workflows need .NET SDK setup and lint/typecheck script fixes.
-# Re-enable when CI is properly configured.
 on:
-  workflow_dispatch: # manual trigger only
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   check:

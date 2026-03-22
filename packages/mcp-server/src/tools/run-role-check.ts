@@ -8,7 +8,6 @@ import {
   resolveRef,
   getChangedFiles,
   type ChangedFile,
-  type DriftEntry,
 } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath } from "../helpers.js";

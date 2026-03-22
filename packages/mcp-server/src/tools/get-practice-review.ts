@@ -8,7 +8,7 @@ import {
 } from "@arcbridge/core";
 import type Database from "better-sqlite3";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult, safeParseJson, escapeLike, normalizeCodePath } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath } from "../helpers.js";
 
 interface BlockRow {
   id: string;
@@ -23,18 +23,6 @@ interface RouteRow {
   has_auth: number;
 }
 
-interface ComponentRow {
-  name: string;
-  file_path: string;
-  is_client: number;
-  is_server_action: number;
-}
-
-interface SymbolRow {
-  file_path: string;
-  name: string;
-  kind: string;
-}
 
 export function registerGetPracticeReview(
   server: McpServer,
