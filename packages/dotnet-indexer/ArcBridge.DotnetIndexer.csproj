@@ -9,7 +9,18 @@
     <PackAsTool>true</PackAsTool>
     <PackageId>arcbridge-dotnet-indexer</PackageId>
     <ToolCommandName>arcbridge-dotnet-indexer</ToolCommandName>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <Authors>bifteki-crew</Authors>
+    <Description>Roslyn-based C# indexer for ArcBridge — deep semantic analysis for .NET projects</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/bifteki-crew/arcbridge</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/bifteki-crew/arcbridge</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Locator" Version="1.7.8" />

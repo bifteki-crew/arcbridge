@@ -70,7 +70,7 @@ First release of ArcBridge — an MCP server and CLI that gives AI coding agents
 
 ### Developer Experience
 
-- 292 tests (251 passing + 41 skipped when .NET SDK unavailable)
+- 325 tests passing
 - End-to-end agent workflow tests for both TypeScript and C#
 - Cross-language content hash verification test
 - Shared `detect-layout.ts` helper for consistent path resolution across templates

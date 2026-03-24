@@ -16,7 +16,7 @@ import {
   writeSymbols,
   writeDependencies,
 } from "./db-writer.js";
-import { indexDotnetProjectRoslyn, findDotnetProject } from "./dotnet-indexer.js";
+import { indexDotnetProjectRoslyn, findDotnetProject, hasIndexerProject, hasGlobalTool } from "./dotnet-indexer.js";
 import { indexCSharpTreeSitter } from "./csharp/indexer.js";
 import { indexPackageDependencies } from "./package-deps.js";
 import { loadConfig } from "../config/loader.js";
@@ -77,7 +77,7 @@ export async function indexProject(
 /**
  * Resolve which C# indexer backend to use.
  * 1. Check config for explicit `indexing.csharp_indexer` setting
- * 2. If "auto" (default): check if `dotnet` CLI is available → Roslyn, otherwise tree-sitter
+ * 2. If "auto": global tool on PATH → Roslyn, else dotnet CLI + monorepo project → Roslyn, else tree-sitter
  */
 export function resolveCSharpBackend(projectRoot: string): CSharpBackend {
   // Use the existing config loader for validated config access
@@ -104,18 +104,25 @@ export function resolveCSharpBackend(projectRoot: string): CSharpBackend {
     return setting;
   }
 
-  // Auto: check if .NET SDK is available (required by indexDotnetProjectRoslyn
-  // which shells out to `dotnet run --project <indexer>`)
-  try {
-    execFileSync("dotnet", ["--version"], {
-      encoding: "utf-8",
-      timeout: 5000,
-    });
+  // Auto: prefer global tool, then monorepo source + dotnet CLI, else tree-sitter
+  if (hasGlobalTool()) {
     return "roslyn";
-  } catch {
-    // .NET SDK not available — use tree-sitter
-    return "tree-sitter";
   }
+
+  // Global tool not found — check if dotnet CLI + monorepo indexer project are available
+  if (hasIndexerProject()) {
+    try {
+      execFileSync("dotnet", ["--version"], {
+        encoding: "utf-8",
+        timeout: 5000,
+      });
+      return "roslyn";
+    } catch {
+      // .NET SDK not available
+    }
+  }
+
+  return "tree-sitter";
 }
 
 function indexTypeScriptProject(

@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { resolve, join, dirname, relative, basename } from "node:path";
-import { readdirSync, readFileSync, existsSync } from "node:fs";
+import { readdirSync, readFileSync, existsSync, accessSync, constants } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type Database from "better-sqlite3";
 import type { IndexResult, ExtractedSymbol } from "./types.js";
@@ -150,16 +150,40 @@ export function discoverDotnetServices(projectRoot: string): DotnetProjectInfo[]
 }
 
 /**
- * Resolve the path to the .NET indexer project.
- * Looks relative to this package (core) up to the monorepo root.
+ * Check if the arcbridge-dotnet-indexer global tool is available on PATH.
+ * Searches PATH directories directly (no dependency on which/where, works
+ * in minimal containers where those may be missing).
  */
-function resolveIndexerProject(): string {
-  // Resolve __dirname equivalent for ESM
+export function hasGlobalTool(): boolean {
+  const pathEnv = process.env.PATH ?? "";
+  const dirs = pathEnv.split(process.platform === "win32" ? ";" : ":");
+  const name = "arcbridge-dotnet-indexer";
+  const extensions = process.platform === "win32"
+    ? (process.env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD").split(";")
+    : [""];
+
+  for (const dir of dirs) {
+    if (!dir) continue;
+    for (const ext of extensions) {
+      try {
+        accessSync(join(dir, `${name}${ext}`), constants.X_OK);
+        return true;
+      } catch {
+        continue;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Resolve the path to the .NET indexer project (monorepo source fallback).
+ * Looks relative to this package (core) up to the monorepo root.
+ * Returns null if not found (e.g., running from installed npm package).
+ */
+function resolveIndexerProject(): string | null {
   const currentDir = dirname(fileURLToPath(import.meta.url));
 
-  // Candidate paths from most to least specific:
-  // - From source: packages/core/src/indexer/ → ../../../../dotnet-indexer/
-  // - From dist:   packages/core/dist/        → ../../dotnet-indexer/
   const candidates = [
     resolve(currentDir, "../../../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
     resolve(currentDir, "../../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj"),
@@ -170,10 +194,76 @@ function resolveIndexerProject(): string {
     if (existsSync(candidate)) return candidate;
   }
 
-  throw new Error(
-    "Could not find ArcBridge.DotnetIndexer.csproj. " +
-    "Ensure the dotnet-indexer package is present in the monorepo.",
-  );
+  return null;
+}
+
+/**
+ * Check if the monorepo indexer project is available (for development/source fallback).
+ */
+export function hasIndexerProject(): boolean {
+  return resolveIndexerProject() !== null;
+}
+
+const EXEC_OPTIONS = {
+  encoding: "utf-8" as const,
+  maxBuffer: 50 * 1024 * 1024, // 50MB for large projects
+  timeout: 300_000, // 5 minutes
+};
+
+/**
+ * Run the .NET indexer, trying global tool first, then monorepo source.
+ */
+function runDotnetIndexer(
+  dotnetProject: string,
+  hashesJson: string,
+  cwd: string,
+): string {
+  const args = [dotnetProject, "--existing-hashes", hashesJson];
+
+  // 1. Try the global tool unless ARCBRIDGE_PREFER_SOURCE is set
+  //    (useful for development/testing to ensure monorepo source is exercised)
+  const preferSource = process.env.ARCBRIDGE_PREFER_SOURCE === "1";
+  let globalToolError: unknown = null;
+  if (!preferSource && hasGlobalTool()) {
+    try {
+      return execFileSync("arcbridge-dotnet-indexer", args, { ...EXEC_OPTIONS, cwd });
+    } catch (err) {
+      globalToolError = err;
+    }
+  }
+
+  // 2. Fall back to monorepo source (dotnet run --project)
+  const indexerProject = resolveIndexerProject();
+  if (!indexerProject) {
+    const base =
+      "Roslyn C# indexer not available. Either install the global tool " +
+      "(`dotnet tool install -g arcbridge-dotnet-indexer`) or run from the ArcBridge monorepo.";
+    if (globalToolError) {
+      const msg = globalToolError instanceof Error ? globalToolError.message : String(globalToolError);
+      throw new Error(`${base} Global tool was found but failed: ${msg}`, { cause: globalToolError });
+    }
+    throw new Error(base);
+  }
+
+  try {
+    return execFileSync(
+      "dotnet",
+      ["run", "--project", indexerProject, "--no-build", "--", ...args],
+      { ...EXEC_OPTIONS, cwd },
+    );
+  } catch {
+    // Retry with build (first run may not have been built)
+    try {
+      return execFileSync(
+        "dotnet",
+        ["run", "--project", indexerProject, "--", ...args],
+        { ...EXEC_OPTIONS, cwd },
+      );
+    } catch (retryErr) {
+      const message = retryErr instanceof Error ? retryErr.message : String(retryErr);
+      throw new Error(`.NET indexer failed: ${message}`, { cause: retryErr });
+    }
+  }
 }
 
 /**
@@ -201,53 +291,8 @@ export function indexDotnetProjectRoslyn(
   const existingHashes = getExistingHashes(db, service);
   const hashesJson = JSON.stringify(Object.fromEntries(existingHashes));
 
-  // Resolve the .NET indexer project
-  const indexerProject = resolveIndexerProject();
-
-  // Shell out to the .NET indexer
-  let stdout: string;
-  try {
-    stdout = execFileSync(
-      "dotnet",
-      [
-        "run",
-        "--project", indexerProject,
-        "--no-build",
-        "--",
-        dotnetProject,
-        "--existing-hashes", hashesJson,
-      ],
-      {
-        encoding: "utf-8",
-        maxBuffer: 50 * 1024 * 1024, // 50MB for large projects
-        timeout: 300_000, // 5 minutes
-        cwd: projectRoot,
-      },
-    );
-  } catch {
-    // Try again with build (first run may not have been built)
-    try {
-      stdout = execFileSync(
-        "dotnet",
-        [
-          "run",
-          "--project", indexerProject,
-          "--",
-          dotnetProject,
-          "--existing-hashes", hashesJson,
-        ],
-        {
-          encoding: "utf-8",
-          maxBuffer: 50 * 1024 * 1024,
-          timeout: 300_000,
-          cwd: projectRoot,
-        },
-      );
-    } catch (retryErr) {
-      const message = retryErr instanceof Error ? retryErr.message : String(retryErr);
-      throw new Error(`.NET indexer failed: ${message}`, { cause: retryErr });
-    }
-  }
+  // Shell out to the .NET indexer — prefer global tool, fall back to monorepo source
+  const stdout = runDotnetIndexer(dotnetProject, hashesJson, projectRoot);
 
   // Parse JSON output (take last line that looks like JSON to skip any build output)
   const lines = stdout.trim().split("\n");
