@@ -56,7 +56,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
     db = openMemoryDatabase();
     initializeSchema(db);
 
-    // Index the .NET fixture
+    // Index the .NET fixture — dotnet run on first invocation can take >10s
     await indexProject(db, { projectRoot: FIXTURE_DIR, language: "csharp" });
 
     // Add building blocks to simulate a real initialized project
@@ -76,7 +76,7 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       INSERT INTO building_blocks (id, name, responsibility, code_paths, interfaces)
       VALUES ('endpoints', 'Minimal API Endpoints', 'HTTP endpoint mappings', '["Endpoints/"]', '["services"]')
     `).run();
-  });
+  }, 60_000);
 
   afterAll(() => {
     db?.close();
