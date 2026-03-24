@@ -1,6 +1,6 @@
 {
   "name": "@arcbridge/adapters",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Platform adapters for ArcBridge — Claude Code and GitHub Copilot config generators",
   "license": "MIT",
   "type": "module",
