@@ -1,6 +1,18 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.1 (2026-03-24)
+
+### Changes
+
+- **Web-tree-sitter (WASM)** — replaced native tree-sitter C/C++ bindings with web-tree-sitter. No C compiler required for `npm install`. C# grammar vendored as WASM (5.7MB).
+- **`indexProject()` is now async** — required by WASM parser init. All callers updated.
+- **Roslyn global tool auto-detection** — `arcbridge-dotnet-indexer` global tool is detected on PATH and preferred over monorepo source. Use `ARCBRIDGE_PREFER_SOURCE=1` to force monorepo source.
+- **NuGet publish workflow** — `dotnet tool install -g arcbridge-dotnet-indexer` publishes alongside npm on version tags. Version derived from git tag.
+- **CI enabled** — workflow runs on push to main and PRs. .NET 8 SDK added for Roslyn tests.
+- **Security fixes** — resolved `flatted` (high) and `hono` (moderate) vulnerabilities via pnpm overrides.
+- **All lint and typecheck errors fixed** — 0 lint errors, 0 type errors, 325 tests passing.
+
+## 0.1.0 (2026-03-24)
 
 First release of ArcBridge — an MCP server and CLI that gives AI coding agents architectural awareness via arc42 documentation. Supports TypeScript/React/Next.js and .NET/C# projects.
 
@@ -80,5 +92,5 @@ First release of ArcBridge — an MCP server and CLI that gives AI coding agents
 - .NET indexer requires .NET 8+ SDK installed locally (not bundled with npm packages)
 - DI container analysis, EF Core model extraction, and middleware pipeline ordering not yet implemented for .NET
 - Contracts table exists in schema but is not yet populated or queried (designed for future cross-service contract tracking)
-- CI workflow temporarily disabled pending .NET SDK setup
+- CI workflow runs on push to main and PRs (Node 20 + 22, .NET 8 SDK)
 - Monorepo support (single `.arcbridge/` for multiple services) not yet implemented — each service needs its own `.arcbridge/` directory
