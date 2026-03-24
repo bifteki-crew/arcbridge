@@ -77,7 +77,7 @@ export async function indexProject(
 /**
  * Resolve which C# indexer backend to use.
  * 1. Check config for explicit `indexing.csharp_indexer` setting
- * 2. If "auto" (default): check if `dotnet` CLI is available → Roslyn, otherwise tree-sitter
+ * 2. If "auto": global tool on PATH → Roslyn, else dotnet CLI + monorepo project → Roslyn, else tree-sitter
  */
 export function resolveCSharpBackend(projectRoot: string): CSharpBackend {
   // Use the existing config loader for validated config access

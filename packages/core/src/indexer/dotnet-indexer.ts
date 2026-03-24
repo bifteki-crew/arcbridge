@@ -215,22 +215,26 @@ function runDotnetIndexer(
   const args = [dotnetProject, "--existing-hashes", hashesJson];
 
   // 1. Try the global tool (installed via `dotnet tool install -g arcbridge-dotnet-indexer`)
+  let globalToolError: unknown = null;
   if (hasGlobalTool()) {
     try {
       return execFileSync("arcbridge-dotnet-indexer", args, { ...EXEC_OPTIONS, cwd });
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      throw new Error(`.NET indexer (global tool) failed: ${message}`, { cause: err });
+      globalToolError = err;
     }
   }
 
   // 2. Fall back to monorepo source (dotnet run --project)
   const indexerProject = resolveIndexerProject();
   if (!indexerProject) {
-    throw new Error(
+    const base =
       "Roslyn C# indexer not available. Either install the global tool " +
-      "(`dotnet tool install -g arcbridge-dotnet-indexer`) or run from the ArcBridge monorepo.",
-    );
+      "(`dotnet tool install -g arcbridge-dotnet-indexer`) or run from the ArcBridge monorepo.";
+    if (globalToolError) {
+      const msg = globalToolError instanceof Error ? globalToolError.message : String(globalToolError);
+      throw new Error(`${base} Global tool was found but failed: ${msg}`, { cause: globalToolError });
+    }
+    throw new Error(base);
   }
 
   try {
