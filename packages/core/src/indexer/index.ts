@@ -104,17 +104,24 @@ export function resolveCSharpBackend(projectRoot: string): CSharpBackend {
     return setting;
   }
 
-  // Auto: check if .NET SDK is available (required by indexDotnetProjectRoslyn
-  // which shells out to `dotnet run --project <indexer>`)
+  // Auto: check for global tool first, then .NET SDK
   try {
-    execFileSync("dotnet", ["--version"], {
+    execFileSync("arcbridge-dotnet-indexer", ["--help"], {
       encoding: "utf-8",
       timeout: 5000,
     });
     return "roslyn";
   } catch {
-    // .NET SDK not available — use tree-sitter
-    return "tree-sitter";
+    // Global tool not found — check for .NET SDK (monorepo source fallback)
+    try {
+      execFileSync("dotnet", ["--version"], {
+        encoding: "utf-8",
+        timeout: 5000,
+      });
+      return "roslyn";
+    } catch {
+      return "tree-sitter";
+    }
   }
 }
 

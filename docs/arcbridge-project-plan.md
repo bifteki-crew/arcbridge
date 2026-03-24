@@ -1189,7 +1189,7 @@ The auto-generation aspect is critical: these aren't diagrams someone draws and 
 
 **What's implemented:**
 - **Tree-sitter C# indexer** (`packages/core/src/indexer/csharp/`) — default backend, ships with npm, no .NET SDK or C compiler required. Uses `web-tree-sitter` (WASM) with a vendored C# grammar file. Async one-time init, then synchronous parsing. Extracts symbols, dependencies (name-based resolution), and routes (controller + minimal API).
-- **Roslyn-based C# indexer** (`packages/dotnet-indexer/`) — opt-in advanced backend, requires .NET SDK. Provides deeper semantic analysis (cross-file type resolution, overload resolution, assembly-level filtering). Currently runs via `dotnet run --project` from the monorepo source. Also packaged as a .NET global tool (`arcbridge-dotnet-indexer`) for standalone use; global tool auto-detection is planned.
+- **Roslyn-based C# indexer** (`packages/dotnet-indexer/`) — opt-in advanced backend, requires .NET SDK. Provides deeper semantic analysis (cross-file type resolution, overload resolution, assembly-level filtering). Auto-detected: prefers global tool (`dotnet tool install -g arcbridge-dotnet-indexer`) if on PATH, falls back to `dotnet run --project` from monorepo source.
 - **Backend auto-detection** — configurable via `indexing.csharp_indexer: "auto" | "roslyn" | "tree-sitter"`. Auto mode checks for `dotnet` CLI on PATH; falls back to tree-sitter.
 - ASP.NET route detection — both controller-based ([HttpGet], [Route], [Authorize]) and minimal APIs (MapGet, MapGroup, .RequireAuthorization())
 - Multi-project .sln support — solution parsing, auto-detection
@@ -1228,7 +1228,7 @@ Roslyn (`Microsoft.CodeAnalysis`) is the C#/.NET equivalent of the TypeScript co
 4. Outputs JSON to stdout (symbols, dependencies, routes, file hashes)
 5. Node.js parses the JSON and writes to SQLite using the existing `db-writer.ts`
 
-Both backends produce the same abstract symbol model, same ID format (`filePath::qualifiedName#kind`), and identical content hashes (SHA-256, first 16 hex chars). Content hashing compatibility is verified by cross-language tests. The Roslyn backend currently runs from monorepo source via `dotnet run --project`. It is also published as a .NET global tool (`dotnet tool install -g arcbridge-dotnet-indexer`) for standalone use; wiring ArcBridge to auto-detect and invoke the global tool is planned.
+Both backends produce the same abstract symbol model, same ID format (`filePath::qualifiedName#kind`), and identical content hashes (SHA-256, first 16 hex chars). Content hashing compatibility is verified by cross-language tests. The Roslyn backend auto-detects the global tool (`dotnet tool install -g arcbridge-dotnet-indexer`) if installed, otherwise falls back to `dotnet run --project` from monorepo source.
 
 **Simplification option:** If the tree-sitter C# backend proves not worth maintaining, it can be cleanly removed: drop `web-tree-sitter` dependency, drop `wasm/` directory, delete `packages/core/src/indexer/csharp/`, and revert `indexProject()` back to synchronous. The async signature exists solely because of the WASM parser init. Roslyn would remain as the only C# backend, requiring .NET SDK. This is a low-risk revert since all the tree-sitter code is isolated in its own directory with no tendrils into the TypeScript indexer.
 
@@ -1315,7 +1315,7 @@ The agent roles stay the same, but their context and checks expand:
 |---|---|---|
 | Tree-sitter C# indexer (default) | **Done** | Ships with npm, no .NET SDK needed. Symbol extraction, name-based dependency tracking, route analysis. 33 dedicated tests. |
 | Roslyn indexer (opt-in advanced) | **Done** | Deeper semantic analysis. Packaged as .NET global tool (`arcbridge-dotnet-indexer`). |
-| Backend auto-detection | **Done** | Config-driven (`indexing.csharp_indexer`). Auto mode: checks for `dotnet` CLI → Roslyn (from source), else tree-sitter. Global tool auto-detection planned. |
+| Backend auto-detection | **Done** | Config-driven (`indexing.csharp_indexer`). Auto mode: global tool on PATH → Roslyn, else `dotnet` CLI → Roslyn (from source), else tree-sitter. |
 | ASP.NET route analysis (Layer 2/3) | **Done** | Controller routes + minimal APIs (MapGet/MapGroup/RequireAuthorization). Both backends. |
 | .NET quality scenarios | **Done** | Startup time, GC pressure, async-all-the-way, CORS, health checks, structured logging, DI validation. |
 | dotnet-webapi template | **Done** | Config, building blocks, phases, tasks, arc42 docs. |
