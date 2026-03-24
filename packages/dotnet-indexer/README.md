@@ -29,14 +29,18 @@ ArcBridge ships with a built-in tree-sitter WASM indexer that works without .NET
 | Generic type tracking | No | Yes |
 | Assembly-level filtering | No | Yes |
 
-## Configuration
+## Current status
 
-Once installed, ArcBridge auto-detects the tool and uses it. Or set explicitly in `.arcbridge/config.yaml`:
+The global tool is available for standalone/manual use. ArcBridge currently invokes the Roslyn indexer via `dotnet run --project` from the monorepo source — global tool auto-detection is planned but not yet implemented.
+
+To use the Roslyn backend today, ensure you're running from an ArcBridge checkout that includes this project, and set it explicitly in `.arcbridge/config.yaml`:
 
 ```yaml
 indexing:
   csharp_indexer: roslyn  # or "auto" (default) or "tree-sitter"
 ```
+
+In auto mode, ArcBridge checks for the `dotnet` CLI on PATH. If found, it uses the Roslyn backend (from source). If not, it falls back to the built-in tree-sitter WASM backend.
 
 ## License
 

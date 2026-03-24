@@ -49,8 +49,8 @@ export const ArcBridgeConfigSchema = z.object({
         .enum(["auto", "roslyn", "tree-sitter"])
         .default("auto")
         .describe(
-          "C# indexer backend: 'auto' uses Roslyn if available, otherwise tree-sitter. " +
-          "'tree-sitter' works without .NET SDK. 'roslyn' requires .NET SDK + global tool.",
+          "C# indexer backend: 'auto' checks for dotnet CLI — uses Roslyn if found, otherwise tree-sitter. " +
+          "'tree-sitter' works without .NET SDK. 'roslyn' requires .NET SDK.",
         ),
     })
     .default({}),
