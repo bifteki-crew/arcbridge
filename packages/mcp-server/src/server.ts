@@ -1,4 +1,8 @@
+import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json");
 import { createContext } from "./context.js";
 import { registerInitProject } from "./tools/init-project.js";
 import { registerGetProjectStatus } from "./tools/get-project-status.js";
@@ -30,7 +34,7 @@ import { registerRunRoleCheck } from "./tools/run-role-check.js";
 export function createArcBridgeServer(): McpServer {
   const server = new McpServer({
     name: "arcbridge",
-    version: "0.1.0",
+    version,
   });
 
   const ctx = createContext();
