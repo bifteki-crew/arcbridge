@@ -4,6 +4,9 @@
   "description": "CLI for ArcBridge — architectural awareness for AI coding agents",
   "license": "MIT",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/bifteki-crew/arcbridge.git",
