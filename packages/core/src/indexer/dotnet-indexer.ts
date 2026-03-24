@@ -151,16 +151,22 @@ export function discoverDotnetServices(projectRoot: string): DotnetProjectInfo[]
 
 /**
  * Check if the arcbridge-dotnet-indexer global tool is available on PATH.
+ * Distinguishes "command not found" (ENOENT) from "command exists but failed".
  */
 function hasGlobalTool(): boolean {
   try {
-    execFileSync("arcbridge-dotnet-indexer", ["--help"], {
+    execFileSync("arcbridge-dotnet-indexer", [], {
       encoding: "utf-8",
       timeout: 5000,
     });
     return true;
-  } catch {
-    return false;
+  } catch (err) {
+    // ENOENT = executable not found on PATH
+    if ((err as NodeJS.ErrnoException)?.code === "ENOENT") {
+      return false;
+    }
+    // Any other error means the tool exists but exited non-zero (e.g., missing args)
+    return true;
   }
 }
 
@@ -183,6 +189,13 @@ function resolveIndexerProject(): string | null {
   }
 
   return null;
+}
+
+/**
+ * Check if the monorepo indexer project is available (for development/source fallback).
+ */
+export function hasIndexerProject(): boolean {
+  return resolveIndexerProject() !== null;
 }
 
 const EXEC_OPTIONS = {

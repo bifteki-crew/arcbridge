@@ -16,7 +16,7 @@ import {
   writeSymbols,
   writeDependencies,
 } from "./db-writer.js";
-import { indexDotnetProjectRoslyn, findDotnetProject } from "./dotnet-indexer.js";
+import { indexDotnetProjectRoslyn, findDotnetProject, hasIndexerProject } from "./dotnet-indexer.js";
 import { indexCSharpTreeSitter } from "./csharp/indexer.js";
 import { indexPackageDependencies } from "./package-deps.js";
 import { loadConfig } from "../config/loader.js";
@@ -104,25 +104,36 @@ export function resolveCSharpBackend(projectRoot: string): CSharpBackend {
     return setting;
   }
 
-  // Auto: check for global tool first, then .NET SDK
+  // Auto: check for global tool first
   try {
-    execFileSync("arcbridge-dotnet-indexer", ["--help"], {
+    execFileSync("arcbridge-dotnet-indexer", [], {
       encoding: "utf-8",
       timeout: 5000,
     });
     return "roslyn";
-  } catch {
-    // Global tool not found — check for .NET SDK (monorepo source fallback)
-    try {
-      execFileSync("dotnet", ["--version"], {
-        encoding: "utf-8",
-        timeout: 5000,
-      });
+  } catch (err) {
+    // Tool exists but exited non-zero (e.g., missing args) — still available
+    if ((err as NodeJS.ErrnoException)?.code !== "ENOENT") {
       return "roslyn";
-    } catch {
-      return "tree-sitter";
     }
   }
+
+  // Global tool not found — check if dotnet CLI + monorepo indexer project are available
+  try {
+    execFileSync("dotnet", ["--version"], {
+      encoding: "utf-8",
+      timeout: 5000,
+    });
+    // dotnet exists, but only use Roslyn if the monorepo indexer project is present
+    // (otherwise it'll fail at runtime from an installed npm package)
+    if (hasIndexerProject()) {
+      return "roslyn";
+    }
+  } catch {
+    // .NET SDK not available
+  }
+
+  return "tree-sitter";
 }
 
 function indexTypeScriptProject(

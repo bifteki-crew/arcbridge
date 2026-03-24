@@ -1190,7 +1190,7 @@ The auto-generation aspect is critical: these aren't diagrams someone draws and 
 **What's implemented:**
 - **Tree-sitter C# indexer** (`packages/core/src/indexer/csharp/`) — default backend, ships with npm, no .NET SDK or C compiler required. Uses `web-tree-sitter` (WASM) with a vendored C# grammar file. Async one-time init, then synchronous parsing. Extracts symbols, dependencies (name-based resolution), and routes (controller + minimal API).
 - **Roslyn-based C# indexer** (`packages/dotnet-indexer/`) — opt-in advanced backend, requires .NET SDK. Provides deeper semantic analysis (cross-file type resolution, overload resolution, assembly-level filtering). Auto-detected: prefers global tool (`dotnet tool install -g arcbridge-dotnet-indexer`) if on PATH, falls back to `dotnet run --project` from monorepo source.
-- **Backend auto-detection** — configurable via `indexing.csharp_indexer: "auto" | "roslyn" | "tree-sitter"`. Auto mode checks for `dotnet` CLI on PATH; falls back to tree-sitter.
+- **Backend auto-detection** — configurable via `indexing.csharp_indexer: "auto" | "roslyn" | "tree-sitter"`. Auto mode: global tool on PATH → Roslyn, else `dotnet` CLI + monorepo indexer project → Roslyn from source, else tree-sitter.
 - ASP.NET route detection — both controller-based ([HttpGet], [Route], [Authorize]) and minimal APIs (MapGet, MapGroup, .RequireAuthorization())
 - Multi-project .sln support — solution parsing, auto-detection
 - .NET-specific quality scenarios — startup time, GC pressure, async-all-the-way, CORS, health checks, structured logging, DI validation
