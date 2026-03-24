@@ -9,9 +9,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const version = process.argv[2];
-if (!version || !/^\d+\.\d+\.\d+/.test(version)) {
+if (!version || !/^\d+\.\d+\.\d+(-[\w.]+)?(\+[\w.]+)?$/.test(version)) {
   console.error("Usage: node scripts/bump-version.js <version>");
   console.error("Example: node scripts/bump-version.js 0.2.0");
+  console.error("         node scripts/bump-version.js 0.2.0-beta.1");
+  console.error("         node scripts/bump-version.js 0.2.0+build.123");
   process.exit(1);
 }
 
