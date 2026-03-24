@@ -31,12 +31,27 @@ for (const pkg of packages) {
 // .NET tool
 const csproj = resolve(root, "packages/dotnet-indexer/ArcBridge.DotnetIndexer.csproj");
 const xml = readFileSync(csproj, "utf-8");
+const versionPrefixPattern = /<VersionPrefix>([^<]*)<\/VersionPrefix>/g;
+const matches = xml.match(versionPrefixPattern);
+
+if (!matches || matches.length === 0) {
+  console.error("Error: <VersionPrefix> tag not found in ArcBridge.DotnetIndexer.csproj.");
+  process.exit(1);
+}
+
+if (matches.length !== 1) {
+  console.error("Error: Multiple <VersionPrefix> tags found in ArcBridge.DotnetIndexer.csproj.");
+  process.exit(1);
+}
+
+const singleMatch = xml.match(/<VersionPrefix>([^<]*)<\/VersionPrefix>/);
+const oldVersionPrefix = singleMatch[1];
 const updated = xml.replace(
-  /<VersionPrefix>.*<\/VersionPrefix>/,
+  singleMatch[0],
   `<VersionPrefix>${version}</VersionPrefix>`,
 );
+
 writeFileSync(csproj, updated);
-const oldMatch = xml.match(/<VersionPrefix>(.*)<\/VersionPrefix>/);
-console.log(`packages/dotnet-indexer/.csproj: ${oldMatch?.[1]} → ${version}`);
+console.log(`packages/dotnet-indexer/.csproj: ${oldVersionPrefix} → ${version}`);
 
 console.log(`\nDone. Don't forget to update CHANGELOG.md and commit.`);
