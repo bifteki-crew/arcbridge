@@ -151,22 +151,16 @@ export function discoverDotnetServices(projectRoot: string): DotnetProjectInfo[]
 
 /**
  * Check if the arcbridge-dotnet-indexer global tool is available on PATH.
- * Distinguishes "command not found" (ENOENT) from "command exists but failed".
+ * Uses which/where for a lightweight check (avoids spawning the tool and
+ * paying MSBuild/Roslyn startup cost just for presence detection).
  */
 export function hasGlobalTool(): boolean {
+  const locator = process.platform === "win32" ? "where" : "which";
   try {
-    execFileSync("arcbridge-dotnet-indexer", [], {
-      encoding: "utf-8",
-      timeout: 5000,
-    });
+    execFileSync(locator, ["arcbridge-dotnet-indexer"], { stdio: "ignore" });
     return true;
-  } catch (err) {
-    // ENOENT = executable not found on PATH
-    if ((err as NodeJS.ErrnoException)?.code === "ENOENT") {
-      return false;
-    }
-    // Any other error means the tool exists but exited non-zero (e.g., missing args)
-    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -214,9 +208,11 @@ function runDotnetIndexer(
 ): string {
   const args = [dotnetProject, "--existing-hashes", hashesJson];
 
-  // 1. Try the global tool (installed via `dotnet tool install -g arcbridge-dotnet-indexer`)
+  // 1. Try the global tool unless ARCBRIDGE_PREFER_SOURCE is set
+  //    (useful for development/testing to ensure monorepo source is exercised)
+  const preferSource = process.env.ARCBRIDGE_PREFER_SOURCE === "1";
   let globalToolError: unknown = null;
-  if (hasGlobalTool()) {
+  if (!preferSource && hasGlobalTool()) {
     try {
       return execFileSync("arcbridge-dotnet-indexer", args, { ...EXEC_OPTIONS, cwd });
     } catch (err) {
