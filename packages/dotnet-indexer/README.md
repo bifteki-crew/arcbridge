@@ -40,7 +40,7 @@ indexing:
 
 In auto mode, ArcBridge checks (in order):
 1. `arcbridge-dotnet-indexer` global tool on PATH → Roslyn
-2. `dotnet` CLI available → Roslyn (from monorepo source, for development)
+2. `dotnet` CLI available + monorepo indexer project present → Roslyn (from source, for development)
 3. Neither → tree-sitter WASM (built-in, no .NET required)
 
 ## License

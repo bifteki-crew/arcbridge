@@ -153,7 +153,7 @@ export function discoverDotnetServices(projectRoot: string): DotnetProjectInfo[]
  * Check if the arcbridge-dotnet-indexer global tool is available on PATH.
  * Distinguishes "command not found" (ENOENT) from "command exists but failed".
  */
-function hasGlobalTool(): boolean {
+export function hasGlobalTool(): boolean {
   try {
     execFileSync("arcbridge-dotnet-indexer", [], {
       encoding: "utf-8",

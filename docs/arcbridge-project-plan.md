@@ -1315,7 +1315,7 @@ The agent roles stay the same, but their context and checks expand:
 |---|---|---|
 | Tree-sitter C# indexer (default) | **Done** | Ships with npm, no .NET SDK needed. Symbol extraction, name-based dependency tracking, route analysis. 33 dedicated tests. |
 | Roslyn indexer (opt-in advanced) | **Done** | Deeper semantic analysis. Packaged as .NET global tool (`arcbridge-dotnet-indexer`). |
-| Backend auto-detection | **Done** | Config-driven (`indexing.csharp_indexer`). Auto mode: global tool on PATH → Roslyn, else `dotnet` CLI → Roslyn (from source), else tree-sitter. |
+| Backend auto-detection | **Done** | Config-driven (`indexing.csharp_indexer`). Auto mode: global tool on PATH → Roslyn, else `dotnet` CLI + monorepo indexer project → Roslyn (from source), else tree-sitter. |
 | ASP.NET route analysis (Layer 2/3) | **Done** | Controller routes + minimal APIs (MapGet/MapGroup/RequireAuthorization). Both backends. |
 | .NET quality scenarios | **Done** | Startup time, GC pressure, async-all-the-way, CORS, health checks, structured logging, DI validation. |
 | dotnet-webapi template | **Done** | Config, building blocks, phases, tasks, arc42 docs. |
