@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { resolve, join, dirname, relative, basename } from "node:path";
-import { readdirSync, readFileSync, existsSync } from "node:fs";
+import { readdirSync, readFileSync, existsSync, accessSync, constants } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type Database from "better-sqlite3";
 import type { IndexResult, ExtractedSymbol } from "./types.js";
@@ -151,17 +151,29 @@ export function discoverDotnetServices(projectRoot: string): DotnetProjectInfo[]
 
 /**
  * Check if the arcbridge-dotnet-indexer global tool is available on PATH.
- * Uses which/where for a lightweight check (avoids spawning the tool and
- * paying MSBuild/Roslyn startup cost just for presence detection).
+ * Searches PATH directories directly (no dependency on which/where, works
+ * in minimal containers where those may be missing).
  */
 export function hasGlobalTool(): boolean {
-  const locator = process.platform === "win32" ? "where" : "which";
-  try {
-    execFileSync(locator, ["arcbridge-dotnet-indexer"], { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
+  const pathEnv = process.env.PATH ?? "";
+  const dirs = pathEnv.split(process.platform === "win32" ? ";" : ":");
+  const name = "arcbridge-dotnet-indexer";
+  const extensions = process.platform === "win32"
+    ? (process.env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD").split(";")
+    : [""];
+
+  for (const dir of dirs) {
+    if (!dir) continue;
+    for (const ext of extensions) {
+      try {
+        accessSync(join(dir, `${name}${ext}`), constants.X_OK);
+        return true;
+      } catch {
+        continue;
+      }
+    }
   }
+  return false;
 }
 
 /**
