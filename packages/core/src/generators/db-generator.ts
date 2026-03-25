@@ -297,7 +297,9 @@ export function refreshFromDocs(
     // Delete in FK-safe order: dependents first, then parents
     db.prepare("DELETE FROM tasks").run();
     db.prepare("DELETE FROM phases").run();
-    db.prepare("DELETE FROM contracts").run();
+    // Null out contracts FK to building_blocks (contracts table is not yet
+    // sourced from YAML — preserve any manually created rows)
+    db.prepare("UPDATE contracts SET building_block = NULL").run();
     // Clear self-referencing parent_id before deleting building_blocks
     db.prepare("UPDATE building_blocks SET parent_id = NULL").run();
     db.prepare("DELETE FROM building_blocks").run();
