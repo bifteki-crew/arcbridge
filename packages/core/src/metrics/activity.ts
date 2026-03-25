@@ -330,7 +330,7 @@ export function exportMetrics(
 
       for (const r of rows) {
         lines.push(
-          `| ${r.recorded_at.slice(0, 19)} | ${r.tool_name} | ${r.action ?? ""} | ${r.model ?? ""} | ${r.total_tokens ?? ""} | ${r.cost_usd != null ? "$" + r.cost_usd.toFixed(4) : ""} | ${r.duration_ms != null ? r.duration_ms + "ms" : ""} |`,
+          `| ${r.recorded_at.slice(0, 19)} | ${esc(r.tool_name)} | ${esc(r.action)} | ${esc(r.model)} | ${r.total_tokens ?? ""} | ${r.cost_usd != null ? "$" + r.cost_usd.toFixed(4) : ""} | ${r.duration_ms != null ? r.duration_ms + "ms" : ""} |`,
         );
       }
 
@@ -404,4 +404,10 @@ function getLatestQualitySnapshot(
     typecheckClean: row.typecheck_clean != null ? row.typecheck_clean === 1 : null,
     capturedAt: row.recorded_at,
   };
+}
+
+/** Escape a value for use in a Markdown table cell. */
+function esc(val: string | null | undefined): string {
+  if (val == null) return "";
+  return val.replace(/\|/g, "\\|").replace(/\n/g, " ");
 }
