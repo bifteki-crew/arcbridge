@@ -11,7 +11,7 @@ export function registerReindex(
 ): void {
   server.tool(
     "arcbridge_reindex",
-    "Re-index code symbols in the project. Supports TypeScript and C# (.NET). Incrementally processes only changed files.",
+    "Re-index the project: refreshes architecture docs from arc42/YAML files, then reindexes code symbols (TypeScript & C#/.NET). This is the first step of the sync pipeline — use it to pick up manual doc edits and code changes.",
     {
       target_dir: z
         .string()
