@@ -1,6 +1,6 @@
 {
   "name": "@arcbridge/mcp-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MCP server for ArcBridge — exposes architecture tools to AI coding agents",
   "license": "MIT",
   "type": "module",
@@ -12,8 +12,17 @@
     "url": "https://github.com/bifteki-crew/arcbridge.git",
     "directory": "packages/mcp-server"
   },
-  "keywords": ["arcbridge", "mcp", "model-context-protocol", "ai-agents"],
-  "files": ["dist", "README.md", "LICENSE"],
+  "keywords": [
+    "arcbridge",
+    "mcp",
+    "model-context-protocol",
+    "ai-agents"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
