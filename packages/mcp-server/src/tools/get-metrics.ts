@@ -116,5 +116,5 @@ function capitalize(s: string): string {
 
 function mdCell(val: string | null | undefined): string {
   if (val == null) return "";
-  return val.replace(/\|/g, "\\|").replace(/\n/g, " ");
+  return val.replace(/\|/g, "\\|").replace(/\r?\n|\r/g, " ");
 }
