@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { indexProject, refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { autoRecord } from "../auto-record.js";
 
 export function registerReindex(
   server: McpServer,
@@ -10,7 +11,7 @@ export function registerReindex(
 ): void {
   server.tool(
     "arcbridge_reindex",
-    "Re-index code symbols in the project. Supports TypeScript and C# (.NET). Incrementally processes only changed files.",
+    "Re-index the project: refreshes architecture docs from arc42/YAML files, then reindexes code symbols (TypeScript & C#/.NET). This is the first step of the sync pipeline — use it to pick up manual doc edits and code changes.",
     {
       target_dir: z
         .string()
@@ -29,6 +30,7 @@ export function registerReindex(
         .describe("Project language. 'auto' detects from project files (default: 'auto')"),
     },
     async (params) => {
+      const start = Date.now();
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -56,6 +58,12 @@ export function registerReindex(
           `- **Routes analyzed:** ${result.routesAnalyzed}`,
           `- **Duration:** ${result.durationMs}ms`,
         ];
+
+        autoRecord(db, params.target_dir, {
+          toolName: "arcbridge_reindex",
+          action: `${result.symbolsIndexed} symbols, ${result.filesProcessed} files`,
+          durationMs: Date.now() - start,
+        });
 
         return textResult(lines.join("\n"));
       } catch (err) {

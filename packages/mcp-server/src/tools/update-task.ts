@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { syncTaskToYaml } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized } from "../helpers.js";
+import { autoRecord } from "../auto-record.js";
 
 interface TaskRow {
   id: string;
@@ -32,6 +33,7 @@ export function registerUpdateTask(
         .describe("Optional notes about the status change"),
     },
     async (params) => {
+      const start = Date.now();
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -105,6 +107,14 @@ export function registerUpdateTask(
           );
         }
       }
+
+      autoRecord(db, params.target_dir, {
+        toolName: "arcbridge_update_task",
+        action: `${task.id}: ${oldStatus} → ${params.status}`,
+        taskId: params.task_id,
+        phaseId: task.phase_id,
+        durationMs: Date.now() - start,
+      });
 
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],

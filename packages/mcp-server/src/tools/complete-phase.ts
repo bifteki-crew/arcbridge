@@ -14,6 +14,7 @@ import {
 } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { autoRecord } from "../auto-record.js";
 
 interface PhaseRow {
   id: string;
@@ -65,6 +66,7 @@ export function registerCompletePhase(
         .describe("Run linked tests for quality scenarios before checking the quality gate"),
     },
     async (params) => {
+      const start = Date.now();
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -333,6 +335,13 @@ export function registerCompletePhase(
           "Resolve the issues above before completing this phase.",
         );
       }
+
+      autoRecord(db, params.target_dir, {
+        toolName: "arcbridge_complete_phase",
+        action: `${phase.name}: ${allPass ? "PASSED" : "BLOCKED"}`,
+        phaseId: params.phase_id,
+        durationMs: Date.now() - start,
+      });
 
       return textResult(lines.join("\n"));
     },

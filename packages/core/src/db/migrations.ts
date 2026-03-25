@@ -6,8 +6,42 @@ interface Migration {
   up: (db: Database.Database) => void;
 }
 
-// Add future migrations here. Version 1 is the initial schema (handled by initializeSchema).
-const migrations: Migration[] = [];
+const migrations: Migration[] = [
+  {
+    version: 2,
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS agent_activity (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          tool_name TEXT NOT NULL,
+          action TEXT,
+          model TEXT,
+          agent_role TEXT,
+          task_id TEXT,
+          phase_id TEXT,
+          input_tokens INTEGER,
+          output_tokens INTEGER,
+          total_tokens INTEGER,
+          cost_usd REAL,
+          duration_ms INTEGER,
+          drift_count INTEGER,
+          drift_errors INTEGER,
+          test_pass_count INTEGER,
+          test_fail_count INTEGER,
+          lint_clean INTEGER,
+          typecheck_clean INTEGER,
+          notes TEXT,
+          metadata TEXT NOT NULL DEFAULT '{}',
+          recorded_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_activity_recorded_at ON agent_activity(recorded_at);
+        CREATE INDEX IF NOT EXISTS idx_activity_model ON agent_activity(model);
+        CREATE INDEX IF NOT EXISTS idx_activity_task ON agent_activity(task_id);
+        CREATE INDEX IF NOT EXISTS idx_activity_phase ON agent_activity(phase_id);
+      `);
+    },
+  },
+];
 
 export function migrate(db: Database.Database): void {
   const row = db

@@ -1129,7 +1129,7 @@ Developers often don't know their codebase is degrading until it's painful. ArcB
 - **Test coverage mapped to quality scenarios:** Not just "80% line coverage" globally, but "SEC-01 has 95% coverage, PERF-02 has 0%" — making gaps visible and prioritized
 - **Bundle analysis for Next.js:** Per-route bundle sizes, tree-shaking effectiveness, server/client code split ratios — tied to PERF-* quality scenarios
 - **Trend tracking:** Metrics over time (per phase, per sprint, per week) so the developer sees whether health is improving or degrading
-- **MCP tools:** `get_health_report`, `get_building_block_metrics`, `get_metric_trends`
+- **MCP tools (implemented):** `record_activity`, `get_metrics`, `export_metrics` — agent activity tracking with model/token/cost/quality data. Auto-recording on key tools via `metrics.auto_record` config. Future: `get_health_report`, `get_building_block_metrics`, `get_metric_trends`
 
 The Phase Manager agent incorporates these metrics into phase gate checks: "Phase 2 complete, but checkout-flow complexity is trending up — consider a refactoring task in Phase 3."
 

@@ -88,7 +88,7 @@ It's like giving the agent a senior developer's mental model of the project on d
 
 ## The Full Tool Set
 
-ArcBridge exposes 26 MCP tools organized by concern:
+ArcBridge exposes 29 MCP tools organized by concern:
 
 - **Architecture** — query building blocks, quality scenarios, and ADRs
 - **Code Intelligence** — search symbols, trace dependencies, analyze components and routes

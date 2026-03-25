@@ -32,6 +32,7 @@ export function configTemplate(input: InitProjectInput): ArcBridgeConfig {
     drift: {
       ignore_paths: [],
     },
+    metrics: { auto_record: false },
     sync: {
       auto_detect_drift: true,
       drift_severity_threshold: "warning",

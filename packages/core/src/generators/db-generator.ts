@@ -294,9 +294,14 @@ export function refreshFromDocs(
 
   // Wrap entire delete + repopulate + restore in a transaction for atomicity
   const refresh = db.transaction(() => {
-    // Delete in FK-safe order: tasks → phases → building_blocks, then scenarios and ADRs
+    // Delete in FK-safe order: dependents first, then parents
     db.prepare("DELETE FROM tasks").run();
     db.prepare("DELETE FROM phases").run();
+    // Null out contracts FK to building_blocks (contracts table is not yet
+    // sourced from YAML — preserve any manually created rows)
+    db.prepare("UPDATE contracts SET building_block = NULL").run();
+    // Clear self-referencing parent_id before deleting building_blocks
+    db.prepare("UPDATE building_blocks SET parent_id = NULL").run();
     db.prepare("DELETE FROM building_blocks").run();
     db.prepare("DELETE FROM quality_scenarios").run();
     db.prepare("DELETE FROM adrs").run();
