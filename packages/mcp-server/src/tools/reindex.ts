@@ -30,6 +30,7 @@ export function registerReindex(
         .describe("Project language. 'auto' detects from project files (default: 'auto')"),
     },
     async (params) => {
+      const start = Date.now();
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -61,7 +62,7 @@ export function registerReindex(
         autoRecord(db, params.target_dir, {
           toolName: "arcbridge_reindex",
           action: `${result.symbolsIndexed} symbols, ${result.filesProcessed} files`,
-          durationMs: result.durationMs,
+          durationMs: Date.now() - start,
         });
 
         return textResult(lines.join("\n"));

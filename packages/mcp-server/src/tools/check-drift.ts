@@ -22,6 +22,7 @@ export function registerCheckDrift(
         .describe("Write findings to drift_log table (default: true)"),
     },
     async (params) => {
+      const start = Date.now();
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -95,6 +96,7 @@ export function registerCheckDrift(
         action: `${entries.length} issues (${errors} errors)`,
         driftCount: entries.length,
         driftErrors: errors,
+        durationMs: Date.now() - start,
       });
 
       return textResult(lines.join("\n"));

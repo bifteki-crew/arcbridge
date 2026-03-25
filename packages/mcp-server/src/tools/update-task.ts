@@ -33,6 +33,7 @@ export function registerUpdateTask(
         .describe("Optional notes about the status change"),
     },
     async (params) => {
+      const start = Date.now();
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -112,6 +113,7 @@ export function registerUpdateTask(
         action: `${task.id}: ${oldStatus} → ${params.status}`,
         taskId: params.task_id,
         phaseId: task.phase_id,
+        durationMs: Date.now() - start,
       });
 
       return {
