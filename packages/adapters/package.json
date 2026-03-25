@@ -1,6 +1,6 @@
 {
   "name": "@arcbridge/adapters",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Platform adapters for ArcBridge — Claude Code and GitHub Copilot config generators",
   "license": "MIT",
   "type": "module",
@@ -12,8 +12,17 @@
     "url": "https://github.com/bifteki-crew/arcbridge.git",
     "directory": "packages/adapters"
   },
-  "keywords": ["arcbridge", "claude", "copilot", "ai-agents"],
-  "files": ["dist", "README.md", "LICENSE"],
+  "keywords": [
+    "arcbridge",
+    "claude",
+    "copilot",
+    "ai-agents"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

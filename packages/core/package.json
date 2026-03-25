@@ -1,6 +1,6 @@
 {
   "name": "@arcbridge/core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Core library for ArcBridge — schemas, database, indexer, drift detection, and generators",
   "license": "MIT",
   "type": "module",
@@ -12,8 +12,20 @@
     "url": "https://github.com/bifteki-crew/arcbridge.git",
     "directory": "packages/core"
   },
-  "keywords": ["arcbridge", "architecture", "arc42", "mcp", "typescript", "indexer"],
-  "files": ["dist", "wasm", "README.md", "LICENSE"],
+  "keywords": [
+    "arcbridge",
+    "architecture",
+    "arc42",
+    "mcp",
+    "typescript",
+    "indexer"
+  ],
+  "files": [
+    "dist",
+    "wasm",
+    "README.md",
+    "LICENSE"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
