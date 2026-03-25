@@ -261,7 +261,7 @@ export function exportMetrics(
           quality_snapshot: result.qualitySnapshot,
           activities: rows.map((r) => ({
             ...r,
-            metadata: JSON.parse(r.metadata),
+            metadata: safeParseJson(r.metadata),
           })),
         },
         null,
@@ -404,6 +404,14 @@ function getLatestQualitySnapshot(
     typecheckClean: row.typecheck_clean != null ? row.typecheck_clean === 1 : null,
     capturedAt: row.recorded_at,
   };
+}
+
+function safeParseJson(raw: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
 }
 
 /** Escape a value for use in a Markdown table cell. */
