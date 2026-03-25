@@ -22,20 +22,28 @@ export function registerExportMetrics(
       tool_name: z.string().optional().describe("Filter by tool name"),
       since: z.string().optional().describe("ISO 8601 — activity after this time"),
       until: z.string().optional().describe("ISO 8601 — activity before this time"),
+      max_rows: z.number().int().min(1).default(100_000)
+        .describe("Maximum rows to export (default: 100,000)"),
     },
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
-      const filePath = exportMetrics(db, params.target_dir, params.format, {
-        taskId: params.task_id,
-        phaseId: params.phase_id,
-        model: params.model,
-        agentRole: params.agent_role,
-        toolName: params.tool_name,
-        since: params.since,
-        until: params.until,
-      });
+      const filePath = exportMetrics(
+        db,
+        params.target_dir,
+        params.format,
+        {
+          taskId: params.task_id,
+          phaseId: params.phase_id,
+          model: params.model,
+          agentRole: params.agent_role,
+          toolName: params.tool_name,
+          since: params.since,
+          until: params.until,
+        },
+        params.max_rows,
+      );
 
       return textResult(
         `Metrics exported to: ${filePath}\n\nYou can commit this file to preserve the activity record in git.`,

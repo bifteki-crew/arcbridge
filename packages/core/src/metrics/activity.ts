@@ -235,12 +235,12 @@ export function exportMetrics(
   projectRoot: string,
   format: ExportFormat,
   params: Omit<QueryMetricsParams, "groupBy" | "limit">,
+  maxRows: number = 100_000,
 ): string {
-  // Query all matching rows (no limit for export)
   const result = queryMetrics(db, {
     ...params,
     groupBy: "none",
-    limit: 100000,
+    limit: maxRows,
   });
 
   const rows = result.rows as ActivityRow[];
