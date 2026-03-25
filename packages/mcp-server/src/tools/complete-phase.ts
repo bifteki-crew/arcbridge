@@ -14,6 +14,7 @@ import {
 } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { autoRecord } from "../auto-record.js";
 
 interface PhaseRow {
   id: string;
@@ -333,6 +334,12 @@ export function registerCompletePhase(
           "Resolve the issues above before completing this phase.",
         );
       }
+
+      autoRecord(db, params.target_dir, {
+        toolName: "arcbridge_complete_phase",
+        action: `${phase.name}: ${allPass ? "PASSED" : "BLOCKED"}`,
+        phaseId: params.phase_id,
+      });
 
       return textResult(lines.join("\n"));
     },

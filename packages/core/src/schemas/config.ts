@@ -84,6 +84,18 @@ export const ArcBridgeConfigSchema = z.object({
     })
     .default({}),
 
+  metrics: z
+    .object({
+      auto_record: z
+        .boolean()
+        .default(false)
+        .describe(
+          "Automatically record agent activity (tool name, duration, quality snapshot) " +
+          "when key MCP tools are invoked. Token/model info is optional and caller-provided.",
+        ),
+    })
+    .default({}),
+
   sync: z
     .object({
       auto_detect_drift: z.boolean().default(true),

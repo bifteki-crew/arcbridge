@@ -250,6 +250,7 @@ describe("sync file generation", () => {
       drift: {
         ignore_paths: [],
       },
+      metrics: { auto_record: false },
       sync: {
         auto_detect_drift: true,
         drift_severity_threshold: "warning",
@@ -296,6 +297,7 @@ describe("sync file generation", () => {
       drift: {
         ignore_paths: [],
       },
+      metrics: { auto_record: false },
       sync: {
         auto_detect_drift: true,
         drift_severity_threshold: "warning",

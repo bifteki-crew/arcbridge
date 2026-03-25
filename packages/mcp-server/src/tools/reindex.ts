@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { indexProject, refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { autoRecord } from "../auto-record.js";
 
 export function registerReindex(
   server: McpServer,
@@ -56,6 +57,12 @@ export function registerReindex(
           `- **Routes analyzed:** ${result.routesAnalyzed}`,
           `- **Duration:** ${result.durationMs}ms`,
         ];
+
+        autoRecord(db, params.target_dir, {
+          toolName: "arcbridge_reindex",
+          action: `${result.symbolsIndexed} symbols, ${result.filesProcessed} files`,
+          durationMs: result.durationMs,
+        });
 
         return textResult(lines.join("\n"));
       } catch (err) {

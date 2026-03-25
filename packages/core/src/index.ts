@@ -92,6 +92,24 @@ export {
 } from "./sync/yaml-writer.js";
 export { generateSyncFiles } from "./generators/sync-generator.js";
 
+// Metrics
+export {
+  insertActivity,
+  getSessionTotals,
+  queryMetrics,
+  exportMetrics,
+} from "./metrics/activity.js";
+export type {
+  InsertActivityParams,
+  QueryMetricsParams,
+  MetricsResult,
+  SessionTotals,
+  LatestQualitySnapshot,
+  ActivityRow,
+  AggregatedRow,
+  ExportFormat,
+} from "./metrics/types.js";
+
 // Git helpers
 export {
   resolveRef,

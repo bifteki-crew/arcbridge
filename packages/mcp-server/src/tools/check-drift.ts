@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { detectDrift, writeDriftLog } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { autoRecord } from "../auto-record.js";
 
 export function registerCheckDrift(
   server: McpServer,
@@ -88,6 +89,13 @@ export function registerCheckDrift(
           "",
         );
       }
+
+      autoRecord(db, params.target_dir, {
+        toolName: "arcbridge_check_drift",
+        action: `${entries.length} issues (${errors} errors)`,
+        driftCount: entries.length,
+        driftErrors: errors,
+      });
 
       return textResult(lines.join("\n"));
     },
