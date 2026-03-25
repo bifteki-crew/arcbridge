@@ -284,7 +284,7 @@ export function exportMetrics(
             const val = r[h as keyof ActivityRow];
             if (val == null) return "";
             const str = String(val);
-            return str.includes(",") || str.includes('"')
+            return str.includes(",") || str.includes('"') || str.includes("\n") || str.includes("\r")
               ? `"${str.replace(/"/g, '""')}"`
               : str;
           })
@@ -369,7 +369,7 @@ function getLatestQualitySnapshot(
         recorded_at
       FROM agent_activity
       ${where ? where + " AND" : "WHERE"}
-        (drift_count IS NOT NULL OR test_pass_count IS NOT NULL OR lint_clean IS NOT NULL)
+        (drift_count IS NOT NULL OR test_pass_count IS NOT NULL OR lint_clean IS NOT NULL OR typecheck_clean IS NOT NULL)
       ORDER BY recorded_at DESC
       LIMIT 1`,
     )

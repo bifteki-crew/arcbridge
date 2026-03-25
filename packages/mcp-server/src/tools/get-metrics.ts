@@ -58,7 +58,7 @@ export function registerGetMetrics(
 
         for (const r of rows) {
           lines.push(
-            `| ${r.groupKey} | ${r.activityCount} | ${r.sumTokens?.toLocaleString() ?? "-"} | ${r.avgTokens?.toLocaleString() ?? "-"} | ${r.sumCost != null ? "$" + r.sumCost.toFixed(4) : "-"} | ${r.avgDuration != null ? Math.round(r.avgDuration) + "ms" : "-"} |`,
+            `| ${mdCell(r.groupKey)} | ${r.activityCount} | ${r.sumTokens?.toLocaleString() ?? "-"} | ${r.avgTokens?.toLocaleString() ?? "-"} | ${r.sumCost != null ? "$" + r.sumCost.toFixed(4) : "-"} | ${r.avgDuration != null ? Math.round(r.avgDuration) + "ms" : "-"} |`,
           );
         }
       } else {
@@ -72,7 +72,7 @@ export function registerGetMetrics(
 
         for (const r of rows) {
           lines.push(
-            `| ${r.recorded_at.slice(0, 19)} | ${r.tool_name} | ${r.action ?? ""} | ${r.model ?? ""} | ${r.total_tokens?.toLocaleString() ?? ""} | ${r.cost_usd != null ? "$" + r.cost_usd.toFixed(4) : ""} | ${r.duration_ms != null ? r.duration_ms.toLocaleString() + "ms" : ""} |`,
+            `| ${r.recorded_at.slice(0, 19)} | ${mdCell(r.tool_name)} | ${mdCell(r.action)} | ${mdCell(r.model)} | ${r.total_tokens?.toLocaleString() ?? ""} | ${r.cost_usd != null ? "$" + r.cost_usd.toFixed(4) : ""} | ${r.duration_ms != null ? r.duration_ms.toLocaleString() + "ms" : ""} |`,
           );
         }
       }
@@ -112,4 +112,9 @@ export function registerGetMetrics(
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function mdCell(val: string | null | undefined): string {
+  if (val == null) return "";
+  return val.replace(/\|/g, "\\|").replace(/\n/g, " ");
 }

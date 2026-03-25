@@ -1,6 +1,22 @@
 import type Database from "better-sqlite3";
 import { loadConfig, insertActivity } from "@arcbridge/core";
 
+// Cache config per project root to avoid reading YAML on every tool call
+const configCache = new Map<string, { autoRecord: boolean; loadedAt: number }>();
+const CACHE_TTL_MS = 30_000; // 30 seconds
+
+function isAutoRecordEnabled(projectRoot: string): boolean {
+  const cached = configCache.get(projectRoot);
+  if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) {
+    return cached.autoRecord;
+  }
+
+  const { config } = loadConfig(projectRoot);
+  const autoRecord = config?.metrics?.auto_record ?? false;
+  configCache.set(projectRoot, { autoRecord, loadedAt: Date.now() });
+  return autoRecord;
+}
+
 /**
  * Auto-record agent activity if metrics.auto_record is enabled in config.
  * Call at the end of key MCP tool handlers. No-op if disabled or config missing.
@@ -23,8 +39,7 @@ export function autoRecord(
   },
 ): void {
   try {
-    const { config } = loadConfig(projectRoot);
-    if (!config?.metrics?.auto_record) return;
+    if (!isAutoRecordEnabled(projectRoot)) return;
 
     insertActivity(db, {
       toolName: params.toolName,
