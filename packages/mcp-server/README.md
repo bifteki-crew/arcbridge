@@ -1,6 +1,6 @@
 # @arcbridge/mcp-server
 
-MCP server for ArcBridge — exposes 26 architecture tools to AI coding agents via the [Model Context Protocol](https://modelcontextprotocol.io).
+MCP server for ArcBridge — exposes 29 architecture tools to AI coding agents via the [Model Context Protocol](https://modelcontextprotocol.io).
 
 ## Install
 
@@ -87,6 +87,14 @@ Restart your AI agent (Claude Code, etc.) and approve the MCP server when prompt
 | `arcbridge_activate_role` | Load agent role with tools and pre-loaded context |
 | `arcbridge_verify_scenarios` | Run linked tests for quality scenarios |
 | `arcbridge_run_role_check` | Run a role's quality checks against code |
+
+### Metrics
+
+| Tool | Description |
+|------|-------------|
+| `arcbridge_record_activity` | Record agent activity — model, tokens, cost, duration, quality snapshot |
+| `arcbridge_get_metrics` | Query and aggregate activity by model, task, phase, tool, or day |
+| `arcbridge_export_metrics` | Export metrics to JSON, CSV, or Markdown for git commits |
 
 ## How It Works
 

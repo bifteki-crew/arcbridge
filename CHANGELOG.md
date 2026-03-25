@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.2 (unreleased)
+
+### New Features
+
+- **Agent activity metrics** — 3 new MCP tools (29 total):
+  - `record_activity` — log model, tokens, cost, duration, quality snapshot
+  - `get_metrics` — query/aggregate by model, task, phase, tool, day
+  - `export_metrics` — export to JSON, CSV, or Markdown for git commits
+- **Auto-recording** — key tools (`update_task`, `complete_phase`, `reindex`, `check_drift`) auto-record activity when `metrics.auto_record: true` in config
+- **`agent_activity` DB table** — schema version 2 with migration for existing installations
+
+### Fixes
+
+- **FK constraint errors in `refreshFromDocs`** — added missing `DELETE FROM contracts` and clear self-referencing `parent_id` before deleting building blocks
+- **Misleading `reindex` tool description** — clarified that it syncs architecture docs AND code symbols (not just code)
+- **CSV/Markdown export escaping** — properly handles pipe characters and newlines in table cells
+
+### Stats
+
+- 29 MCP tools, 346 tests passing, 0 lint errors, 0 type errors
+
 ## 0.1.1 (2026-03-24)
 
 ### Changes
@@ -82,7 +103,7 @@ First release of ArcBridge — an MCP server and CLI that gives AI coding agents
 
 ### Developer Experience
 
-- 325 tests passing
+- 292 tests passing
 - End-to-end agent workflow tests for both TypeScript and C#
 - Cross-language content hash verification test
 - Shared `detect-layout.ts` helper for consistent path resolution across templates
