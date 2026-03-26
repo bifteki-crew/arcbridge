@@ -11,7 +11,7 @@ import {
   refreshFromDocs,
   type InitProjectInput,
 } from "@arcbridge/core";
-import type Database from "better-sqlite3";
+import type { Database } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 
 const TEST_INPUT: InitProjectInput = {
@@ -23,7 +23,7 @@ const TEST_INPUT: InitProjectInput = {
 };
 
 let tempDir: string;
-let db: Database.Database;
+let db: Database;
 let _ctx: ServerContext;
 
 beforeEach(() => {

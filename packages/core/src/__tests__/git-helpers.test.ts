@@ -8,9 +8,9 @@ import {
   getHeadSha,
   setSyncCommit,
 } from "../git/helpers.js";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
 
-let db: Database.Database;
+let db: Database;
 
 beforeEach(() => {
   db = openMemoryDatabase();

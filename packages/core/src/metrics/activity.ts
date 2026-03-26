@@ -1,6 +1,6 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
 import type {
   InsertActivityParams,
   QueryMetricsParams,
@@ -13,7 +13,7 @@ import type {
 } from "./types.js";
 
 export function insertActivity(
-  db: Database.Database,
+  db: Database,
   params: InsertActivityParams,
 ): number {
   const totalTokens =
@@ -67,7 +67,7 @@ export function insertActivity(
 }
 
 export function getSessionTotals(
-  db: Database.Database,
+  db: Database,
   since?: string,
   model?: string,
 ): SessionTotals {
@@ -107,7 +107,7 @@ export function getSessionTotals(
 }
 
 export function queryMetrics(
-  db: Database.Database,
+  db: Database,
   params: QueryMetricsParams,
 ): MetricsResult {
   const conditions: string[] = [];
@@ -231,7 +231,7 @@ export function queryMetrics(
 }
 
 export function exportMetrics(
-  db: Database.Database,
+  db: Database,
   projectRoot: string,
   format: ExportFormat,
   params: Omit<QueryMetricsParams, "groupBy" | "limit">,
@@ -356,7 +356,7 @@ function getGroupColumn(groupBy: string): string {
 }
 
 function getLatestQualitySnapshot(
-  db: Database.Database,
+  db: Database,
   where: string,
   values: unknown[],
 ): LatestQualitySnapshot {

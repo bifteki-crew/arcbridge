@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
+import { transaction } from "../db/connection.js";
 
 export interface PackageDependency {
   name: string;
@@ -13,7 +14,7 @@ export interface PackageDependency {
  * and write discovered dependencies to the package_dependencies table.
  */
 export function indexPackageDependencies(
-  db: Database.Database,
+  db: Database,
   projectRoot: string,
   service: string = "main",
 ): number {
@@ -40,13 +41,12 @@ export function indexPackageDependencies(
     "INSERT OR IGNORE INTO package_dependencies (name, version, source, service) VALUES (?, ?, ?, ?)",
   );
 
-  const run = db.transaction(() => {
+  transaction(db, () => {
     for (const dep of deps) {
       insert.run(dep.name, dep.version, dep.source, service);
     }
   });
 
-  run();
   return deps.length;
 }
 

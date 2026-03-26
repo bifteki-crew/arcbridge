@@ -1,6 +1,7 @@
 import ts from "typescript";
 import { relative } from "node:path";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
+import { transaction } from "../db/connection.js";
 import { containsJsx } from "./react-utils.js";
 
 export interface ComponentInfo {
@@ -139,7 +140,7 @@ export function analyzeComponents(
   sourceFiles: readonly ts.SourceFile[],
   checker: ts.TypeChecker,
   projectRoot: string,
-  db: Database.Database,
+  db: Database,
 ): number {
   const components: ComponentInfo[] = [];
 
@@ -225,7 +226,7 @@ export function analyzeComponents(
 }
 
 function writeComponents(
-  db: Database.Database,
+  db: Database,
   components: ComponentInfo[],
 ): void {
   if (components.length === 0) return;
@@ -245,7 +246,7 @@ function writeComponents(
     (db.prepare("SELECT id FROM symbols").all() as { id: string }[]).map((r) => r.id),
   );
 
-  const run = db.transaction(() => {
+  transaction(db, () => {
     for (const c of components) {
       if (!existingIds.has(c.symbolId)) continue;
 
@@ -261,5 +262,4 @@ function writeComponents(
     }
   });
 
-  run();
 }

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import {
@@ -13,7 +13,7 @@ import {
 } from "../metrics/activity.js";
 
 describe("agent activity metrics", () => {
-  let db: Database.Database;
+  let db: Database;
 
   beforeEach(() => {
     db = openMemoryDatabase();

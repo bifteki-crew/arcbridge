@@ -1,4 +1,5 @@
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
+import { transaction } from "../db/connection.js";
 
 export type DriftKind =
   | "undocumented_module"
@@ -75,7 +76,7 @@ const FRAMEWORK_IGNORES: Record<string, string[]> = {
  * checks cross-block dependencies, and validates ADR references.
  */
 export function detectDrift(
-  db: Database.Database,
+  db: Database,
   options?: DriftOptions,
 ): DriftEntry[] {
   const entries: DriftEntry[] = [];
@@ -101,7 +102,7 @@ export function detectDrift(
  * Clears existing unresolved entries and inserts fresh ones.
  */
 export function writeDriftLog(
-  db: Database.Database,
+  db: Database,
   entries: DriftEntry[],
 ): void {
   // Clear unresolved entries (keep resolved ones for history)
@@ -116,13 +117,12 @@ export function writeDriftLog(
 
   const now = new Date().toISOString();
 
-  const run = db.transaction(() => {
+  transaction(db, () => {
     for (const e of entries) {
       insert.run(now, e.kind, e.severity, e.description, e.affectedBlock, e.affectedFile);
     }
   });
 
-  run();
 }
 
 // --- Detection functions ---
@@ -131,7 +131,7 @@ export function writeDriftLog(
  * Find source files that have indexed symbols but don't match any building block's code_paths.
  */
 function detectUndocumentedModules(
-  db: Database.Database,
+  db: Database,
   entries: DriftEntry[],
   ignorePaths: string[] = [],
 ): void {
@@ -179,7 +179,7 @@ function detectUndocumentedModules(
  * Find building blocks whose code_paths reference directories/files with no indexed symbols.
  */
 function detectMissingModules(
-  db: Database.Database,
+  db: Database,
   entries: DriftEntry[],
 ): void {
   const blocks = db
@@ -215,7 +215,7 @@ function detectMissingModules(
  * but block A doesn't declare block B in its interfaces.
  */
 function detectDependencyViolations(
-  db: Database.Database,
+  db: Database,
   entries: DriftEntry[],
 ): void {
   const blocks = db
@@ -314,7 +314,7 @@ function detectDependencyViolations(
  * Find quality scenarios with linked_tests that don't match any indexed file paths.
  */
 function detectUnlinkedTests(
-  db: Database.Database,
+  db: Database,
   entries: DriftEntry[],
 ): void {
   const scenarios = db
@@ -359,7 +359,7 @@ function detectUnlinkedTests(
  * Find ADRs whose affected_files reference paths with no indexed symbols.
  */
 function detectStaleAdrs(
-  db: Database.Database,
+  db: Database,
   entries: DriftEntry[],
 ): void {
   const adrs = db
@@ -395,7 +395,7 @@ function detectStaleAdrs(
  * Only flags non-trivial packages (skips common tooling/framework deps).
  */
 function detectNewDependencies(
-  db: Database.Database,
+  db: Database,
   entries: DriftEntry[],
 ): void {
   const packages = db

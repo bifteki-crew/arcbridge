@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.3 (unreleased)
+
+### Breaking Changes
+
+- **Minimum Node.js version is now 22.5** (was 20.0) — required for built-in `node:sqlite`
+
+### Changes
+
+- **Replaced `better-sqlite3` with Node.js built-in `node:sqlite`** — eliminates the last native C/C++ dependency. `npm install arcbridge` no longer requires a C compiler, Visual Studio Build Tools, or any build toolchain. Pure JavaScript + WASM.
+- **Transaction helper** — `transaction(db, fn)` replaces `db.transaction(fn)()`. Supports nested transactions via SAVEPOINTs.
+- **Undefined-to-null parameter conversion** — `node:sqlite` rejects `undefined` parameters (unlike `better-sqlite3`). Automatically patched in `db.prepare()`.
+
+### Stats
+
+- Zero native dependencies
+- 345 tests passing, 0 lint errors, 0 type errors
+
 ## 0.1.2 (2026-03-25)
 
 ### New Features

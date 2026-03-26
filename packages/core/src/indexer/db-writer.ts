@@ -1,9 +1,10 @@
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
+import { transaction } from "../db/connection.js";
 import type { ExtractedSymbol } from "./types.js";
 import type { ExtractedDependency } from "./dependency-extractor.js";
 
 export function getExistingHashes(
-  db: Database.Database,
+  db: Database,
   service: string,
 ): Map<string, string> {
   const rows = db
@@ -20,7 +21,7 @@ export function getExistingHashes(
 }
 
 export function removeSymbolsForFiles(
-  db: Database.Database,
+  db: Database,
   filePaths: string[],
 ): void {
   if (filePaths.length === 0) return;
@@ -40,7 +41,7 @@ export function removeSymbolsForFiles(
     "DELETE FROM components WHERE symbol_id IN (SELECT id FROM symbols WHERE file_path = ?)",
   );
 
-  const run = db.transaction(() => {
+  transaction(db, () => {
     for (const fp of filePaths) {
       deleteDepsSource.run(fp);
       deleteDepsTarget.run(fp);
@@ -49,11 +50,10 @@ export function removeSymbolsForFiles(
     }
   });
 
-  run();
 }
 
 export function writeSymbols(
-  db: Database.Database,
+  db: Database,
   symbols: ExtractedSymbol[],
   service: string,
   language: string = "typescript",
@@ -78,7 +78,7 @@ export function writeSymbols(
 
   const now = new Date().toISOString();
 
-  const run = db.transaction(() => {
+  transaction(db, () => {
     for (const s of symbols) {
       insert.run(
         s.id,
@@ -103,11 +103,10 @@ export function writeSymbols(
     }
   });
 
-  run();
 }
 
 export function writeDependencies(
-  db: Database.Database,
+  db: Database,
   dependencies: ExtractedDependency[],
 ): void {
   if (dependencies.length === 0) return;
@@ -117,11 +116,10 @@ export function writeDependencies(
     VALUES (?, ?, ?)
   `);
 
-  const run = db.transaction(() => {
+  transaction(db, () => {
     for (const dep of dependencies) {
       insert.run(dep.sourceSymbolId, dep.targetSymbolId, dep.kind);
     }
   });
 
-  run();
 }

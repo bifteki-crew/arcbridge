@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type Database from "better-sqlite3";
+import type { Database } from "@arcbridge/core";
 import {
   loadRole,
   loadRoles,
@@ -142,7 +142,7 @@ export function registerRunRoleCheck(
 // ---------------------------------------------------------------------------
 
 function getChangedFilesForScope(
-  db: Database.Database,
+  db: Database,
   projectRoot: string,
   scope: (typeof SCOPE_VALUES)[number],
 ): ChangedFile[] | null {
@@ -178,7 +178,7 @@ function getBuiltInRoleDef(roleId: string): RoleDef | null {
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-function appendDriftSection(db: Database.Database, lines: string[]): void {
+function appendDriftSection(db: Database, lines: string[]): void {
   const entries = detectDrift(db);
 
   lines.push("## Drift Check", "");
@@ -219,7 +219,7 @@ function appendDriftSection(db: Database.Database, lines: string[]): void {
 }
 
 function appendQualityScenarios(
-  db: Database.Database,
+  db: Database,
   lines: string[],
   categoryFilter?: string[],
 ): void {
@@ -289,7 +289,7 @@ function appendChangedFilesList(
 }
 
 function appendBuildingBlocks(
-  db: Database.Database,
+  db: Database,
   lines: string[],
 ): void {
   const blocks = db
@@ -310,7 +310,7 @@ function appendBuildingBlocks(
 }
 
 function mapFilesToBlocks(
-  db: Database.Database,
+  db: Database,
   changedFiles: ChangedFile[],
 ): { mapped: Map<string, string[]>; unmapped: string[] } {
   const blocks = db
@@ -361,7 +361,7 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string): Map<string, T[]> {
 // ---------------------------------------------------------------------------
 
 function runSecurityReviewerCheck(
-  db: Database.Database,
+  db: Database,
   lines: string[],
   changedFiles: ChangedFile[] | null,
 ): void {
@@ -419,7 +419,7 @@ function runSecurityReviewerCheck(
 }
 
 function runQualityGuardianCheck(
-  db: Database.Database,
+  db: Database,
   lines: string[],
 ): void {
   // All quality scenarios (no filter)
@@ -449,7 +449,7 @@ function runQualityGuardianCheck(
 }
 
 function runArchitectCheck(
-  db: Database.Database,
+  db: Database,
   lines: string[],
 ): void {
   // Building blocks overview
@@ -518,7 +518,7 @@ function runArchitectCheck(
 }
 
 function runPhaseManagerCheck(
-  db: Database.Database,
+  db: Database,
   projectRoot: string,
   lines: string[],
 ): void {
@@ -607,7 +607,7 @@ function runPhaseManagerCheck(
 }
 
 function runCodeReviewerCheck(
-  db: Database.Database,
+  db: Database,
   lines: string[],
   changedFiles: ChangedFile[] | null,
 ): void {
@@ -667,7 +667,7 @@ function runCodeReviewerCheck(
 }
 
 function runCustomRoleCheck(
-  db: Database.Database,
+  db: Database,
   lines: string[],
   roleDef: RoleDef,
 ): void {

@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
+import { transaction } from "../db/connection.js";
 
 export interface ExtractedRoute {
   id: string;
@@ -29,7 +30,7 @@ const TS_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js"];
  */
 export function analyzeRoutes(
   projectRoot: string,
-  db: Database.Database,
+  db: Database,
   service: string = "main",
 ): number {
   const appDir = join(projectRoot, "app");
@@ -188,7 +189,7 @@ function extractHttpMethods(filePath: string): string[] {
 }
 
 function writeRoutes(
-  db: Database.Database,
+  db: Database,
   routes: ExtractedRoute[],
 ): void {
   if (routes.length === 0) return;
@@ -202,7 +203,7 @@ function writeRoutes(
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
-  const run = db.transaction(() => {
+  transaction(db, () => {
     for (const r of routes) {
       insert.run(
         r.id,
@@ -216,5 +217,4 @@ function writeRoutes(
     }
   });
 
-  run();
 }

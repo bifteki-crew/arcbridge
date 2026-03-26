@@ -1,13 +1,13 @@
 import { join } from "node:path";
 import { existsSync } from "node:fs";
-import type Database from "better-sqlite3";
+import type { Database } from "@arcbridge/core";
 import { openDatabase, migrate } from "@arcbridge/core";
 import type { ServerContext } from "./context.js";
 
 export function ensureDb(
   ctx: ServerContext,
   targetDir: string,
-): Database.Database | null {
+): Database | null {
   if (ctx.db) return ctx.db;
 
   const dbPath = join(targetDir, ".arcbridge", "index.db");

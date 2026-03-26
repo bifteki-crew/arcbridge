@@ -7,7 +7,7 @@ import {
   setSyncCommit,
   type ChangedFile,
 } from "@arcbridge/core";
-import type Database from "better-sqlite3";
+import type { Database } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath } from "../helpers.js";
 
@@ -122,7 +122,7 @@ interface Proposal {
 }
 
 function generateProposals(
-  db: Database.Database,
+  db: Database,
   blocks: BlockRow[],
   changedFiles: ChangedFile[],
   _projectRoot: string,
@@ -263,7 +263,7 @@ function generateProposals(
  * Find building blocks that consume a symbol from a different block.
  */
 function findCrossBlockConsumers(
-  db: Database.Database,
+  db: Database,
   symbolId: string,
   sourceBlockId: string,
   blocks: BlockRow[],

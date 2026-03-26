@@ -5,9 +5,9 @@ import { tmpdir } from "node:os";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import { verifyScenarios } from "../testing/runner.js";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
 
-let db: Database.Database;
+let db: Database;
 let tempDir: string;
 
 beforeEach(() => {

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execFileSync } from "node:child_process";
 import { resolve, join } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import { indexProject, detectProjectLanguage, discoverDotnetServices } from "../indexer/index.js";
@@ -53,7 +53,7 @@ const isReady = (() => {
 const describeIfDotnet = isReady ? describe : describe.skip;
 
 describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
-  let db: Database.Database;
+  let db: Database;
 
   beforeAll(async () => {
     db = openMemoryDatabase();

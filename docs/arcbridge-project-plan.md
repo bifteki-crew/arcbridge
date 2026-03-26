@@ -1113,6 +1113,27 @@ get_practice_review: {
 
 ---
 
+### Priority: Eliminate Native Dependencies
+
+**Goal:** Make `npm install arcbridge` work on any machine without C/C++ build tools.
+
+**Current state:** `better-sqlite3` is the last native dependency. It requires Visual Studio Build Tools on Windows, Xcode CLI tools on macOS, and `build-essential` on Linux. This is the #1 installation failure point — especially on corporate Windows machines where dev tools aren't installed.
+
+**The tree-sitter problem was already solved:** Native `tree-sitter` bindings were replaced with `web-tree-sitter` (WASM) in v0.1.1.
+
+**Migration path for SQLite:** Replace `better-sqlite3` with Node.js built-in `node:sqlite` (`DatabaseSync`). This is technically feasible — the API covers ~90% of what's needed. Two gaps require small polyfills:
+
+1. **`db.transaction(fn)`** (13 call sites) — replace with BEGIN/COMMIT/ROLLBACK wrapper helper
+2. **`db.pragma()`** (4 call sites) — replace with `db.exec("PRAGMA ...")`
+
+Plus ~30 type import changes (`Database.Database` → `DatabaseSync`).
+
+**Blocker:** `node:sqlite` is experimental (since Node 22.5). The API could change between releases and prints an `ExperimentalWarning` on every use. Migration should happen once the module drops the experimental flag — likely Node 24 LTS or Node 26.
+
+**Minimum Node version impact:** Would require bumping `engines.node` from `>=20` to `>=22.5`. This is acceptable — Node 20 LTS enters maintenance in October 2026.
+
+**When this is done:** `npm install arcbridge` will have zero native dependencies. Pure JavaScript + WASM. Works everywhere Node.js runs, including locked-down corporate machines, lightweight containers, and CI environments without build tools.
+
 ### Future Phases: Expanding the Practice
 
 These phases extend ArcBridge from a planning/architecture tool into a comprehensive development practice platform. They're listed here to show the trajectory and ensure earlier phases don't preclude them architecturally.

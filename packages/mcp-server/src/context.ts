@@ -1,7 +1,7 @@
-import type Database from "better-sqlite3";
+import type { Database } from "@arcbridge/core";
 
 export interface ServerContext {
-  db: Database.Database | null;
+  db: Database | null;
   projectRoot: string | null;
 }
 

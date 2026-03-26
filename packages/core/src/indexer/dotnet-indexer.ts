@@ -2,7 +2,8 @@ import { execFileSync } from "node:child_process";
 import { resolve, join, dirname, relative, basename } from "node:path";
 import { readdirSync, readFileSync, existsSync, accessSync, constants } from "node:fs";
 import { fileURLToPath } from "node:url";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
+import { transaction } from "../db/connection.js";
 import type { IndexResult, ExtractedSymbol } from "./types.js";
 import type { ExtractedDependency } from "./dependency-extractor.js";
 import {
@@ -271,7 +272,7 @@ function runDotnetIndexer(
  * Parses the JSON output and writes symbols/dependencies/routes to SQLite.
  */
 export function indexDotnetProjectRoslyn(
-  db: Database.Database,
+  db: Database,
   options: DotnetIndexerOptions,
 ): IndexResult {
   const start = Date.now();
@@ -361,7 +362,7 @@ export function indexDotnetProjectRoslyn(
       VALUES (?, ?, ?, ?, ?, ?)
     `);
 
-    const runRoutes = db.transaction(() => {
+    transaction(db, () => {
       for (const route of output.routes) {
         insertRoute.run(
           route.id,
@@ -374,7 +375,6 @@ export function indexDotnetProjectRoslyn(
       }
     });
 
-    runRoutes();
   }
 
   return {

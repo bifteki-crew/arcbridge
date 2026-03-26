@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type Database from "better-sqlite3";
+import type { Database } from "../../db/connection.js";
+import { transaction } from "../../db/connection.js";
 import { globbySync } from "globby";
 import type { IndexResult, ExtractedSymbol } from "../types.js";
 import type { ExtractedDependency } from "../dependency-extractor.js";
@@ -30,7 +31,7 @@ export interface CSharpTreeSitterOptions {
  * Mirrors the TypeScript indexer flow: discover → hash → parse → extract → write.
  */
 export async function indexCSharpTreeSitter(
-  db: Database.Database,
+  db: Database,
   options: CSharpTreeSitterOptions,
 ): Promise<IndexResult> {
   const start = Date.now();
@@ -136,7 +137,7 @@ export async function indexCSharpTreeSitter(
       VALUES (?, ?, ?, ?, ?, ?)
     `);
 
-    const runRoutes = db.transaction(() => {
+    transaction(db, () => {
       for (const route of allRoutes) {
         insertRoute.run(
           route.id,
@@ -149,7 +150,6 @@ export async function indexCSharpTreeSitter(
       }
     });
 
-    runRoutes();
   }
 
   return {

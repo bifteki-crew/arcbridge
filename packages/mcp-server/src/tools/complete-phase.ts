@@ -267,7 +267,8 @@ export function registerCompletePhase(
           .get(phase.phase_number + 1) as { id: string; name: string } | undefined;
 
         // Transition atomically
-        const transition = db.transaction(() => {
+        db.exec("BEGIN");
+        try {
           db.prepare(
             "UPDATE phases SET status = 'complete', completed_at = ?, gate_status = ? WHERE id = ?",
           ).run(now, gateStatus, phase.id);
@@ -277,8 +278,11 @@ export function registerCompletePhase(
               "UPDATE phases SET status = 'in-progress', started_at = ? WHERE id = ?",
             ).run(now, nextPhase.id);
           }
-        });
-        transition();
+          db.exec("COMMIT");
+        } catch (err) {
+          db.exec("ROLLBACK");
+          throw err;
+        }
 
         // Write back to YAML
         const projectRoot = ctx.projectRoot ?? params.target_dir;

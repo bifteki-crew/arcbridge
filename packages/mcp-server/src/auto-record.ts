@@ -1,4 +1,4 @@
-import type Database from "better-sqlite3";
+import type { Database } from "@arcbridge/core";
 import { loadConfig, insertActivity } from "@arcbridge/core";
 
 // Cache config per project root to avoid reading YAML on every tool call
@@ -22,7 +22,7 @@ function isAutoRecordEnabled(projectRoot: string): boolean {
  * Call at the end of key MCP tool handlers. No-op if disabled or config missing.
  */
 export function autoRecord(
-  db: Database.Database,
+  db: Database,
   projectRoot: string,
   params: {
     toolName: string;

@@ -39,7 +39,7 @@ export {
 } from "./schemas/agent-roles.js";
 
 // Database
-export { openDatabase, openMemoryDatabase } from "./db/connection.js";
+export { openDatabase, openMemoryDatabase, transaction, type Database } from "./db/connection.js";
 export { initializeSchema, CURRENT_SCHEMA_VERSION } from "./db/schema.js";
 export { migrate } from "./db/migrations.js";
 

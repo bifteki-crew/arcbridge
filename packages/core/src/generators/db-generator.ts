@@ -2,7 +2,8 @@ import { join } from "node:path";
 import { existsSync, readFileSync, readdirSync, appendFileSync } from "node:fs";
 import { parse } from "yaml";
 import matter from "gray-matter";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
+import { transaction } from "../db/connection.js";
 import { openDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import type { InitProjectInput } from "../templates/types.js";
@@ -12,12 +13,12 @@ import { PhasesFileSchema, TaskFileSchema } from "../schemas/phases.js";
 import { AdrFrontmatterSchema } from "../schemas/adrs.js";
 
 export interface GenerateDatabaseResult {
-  db: Database.Database;
+  db: Database;
   warnings: string[];
 }
 
 function populateBuildingBlocks(
-  db: Database.Database,
+  db: Database,
   targetDir: string,
 ): string[] {
   const warnings: string[] = [];
@@ -69,7 +70,7 @@ function populateBuildingBlocks(
 }
 
 function populateQualityScenarios(
-  db: Database.Database,
+  db: Database,
   targetDir: string,
 ): string[] {
   const warnings: string[] = [];
@@ -121,7 +122,7 @@ function populateQualityScenarios(
 }
 
 function populatePhases(
-  db: Database.Database,
+  db: Database,
   targetDir: string,
 ): string[] {
   const warnings: string[] = [];
@@ -208,7 +209,7 @@ function populatePhases(
 }
 
 function populateAdrs(
-  db: Database.Database,
+  db: Database,
   targetDir: string,
 ): string[] {
   const warnings: string[] = [];
@@ -265,7 +266,7 @@ function populateAdrs(
  * Uses INSERT OR REPLACE to pick up changes made since initial generation.
  */
 export function refreshFromDocs(
-  db: Database.Database,
+  db: Database,
   targetDir: string,
 ): string[] {
   const warnings: string[] = [];
@@ -293,7 +294,7 @@ export function refreshFromDocs(
   );
 
   // Wrap entire delete + repopulate + restore in a transaction for atomicity
-  const refresh = db.transaction(() => {
+  const refresh = () => transaction(db, () => {
     // Delete in FK-safe order: dependents first, then parents
     db.prepare("DELETE FROM tasks").run();
     db.prepare("DELETE FROM phases").run();
@@ -367,12 +368,12 @@ export function generateDatabase(
   upsert.run("last_full_index", new Date().toISOString());
 
   // Populate from generated files
-  db.transaction(() => {
+  transaction(db, () => {
     allWarnings.push(...populateBuildingBlocks(db, targetDir));
     allWarnings.push(...populateQualityScenarios(db, targetDir));
     allWarnings.push(...populatePhases(db, targetDir));
     allWarnings.push(...populateAdrs(db, targetDir));
-  })();
+  });
 
   // Ensure index.db and WAL files are in .gitignore
   ensureGitignore(targetDir);

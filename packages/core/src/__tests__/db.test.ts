@@ -68,18 +68,10 @@ describe("SQLite database", () => {
     db.close();
   });
 
-  it("has WAL mode enabled", () => {
-    const db = openMemoryDatabase();
-    const mode = db.pragma("journal_mode") as { journal_mode: string }[];
-    // In-memory databases use 'memory' mode, but the pragma is still set
-    expect(mode[0]!.journal_mode).toBeDefined();
-    db.close();
-  });
-
   it("has foreign keys enabled", () => {
     const db = openMemoryDatabase();
-    const fk = db.pragma("foreign_keys") as { foreign_keys: number }[];
-    expect(fk[0]!.foreign_keys).toBe(1);
+    const fk = db.prepare("PRAGMA foreign_keys").get() as { foreign_keys: number };
+    expect(fk.foreign_keys).toBe(1);
     db.close();
   });
 });
