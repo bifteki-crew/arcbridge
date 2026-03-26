@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { openMemoryDatabase } from "../db/connection.js";
+import { openMemoryDatabase, transaction } from "../db/connection.js";
 import { initializeSchema, CURRENT_SCHEMA_VERSION } from "../db/schema.js";
 import { migrate } from "../db/migrations.js";
 
@@ -73,5 +73,104 @@ describe("SQLite database", () => {
     const fk = db.prepare("PRAGMA foreign_keys").get() as { foreign_keys: number };
     expect(fk.foreign_keys).toBe(1);
     db.close();
+  });
+
+  describe("transaction()", () => {
+    it("commits on success", () => {
+      const db = openMemoryDatabase();
+      db.exec("CREATE TABLE t (id INTEGER PRIMARY KEY, val TEXT)");
+
+      transaction(db, () => {
+        db.prepare("INSERT INTO t (val) VALUES (?)").run("a");
+        db.prepare("INSERT INTO t (val) VALUES (?)").run("b");
+      });
+
+      const rows = db.prepare("SELECT * FROM t").all() as { val: string }[];
+      expect(rows.length).toBe(2);
+      db.close();
+    });
+
+    it("rolls back on error", () => {
+      const db = openMemoryDatabase();
+      db.exec("CREATE TABLE t (id INTEGER PRIMARY KEY, val TEXT)");
+
+      try {
+        transaction(db, () => {
+          db.prepare("INSERT INTO t (val) VALUES (?)").run("a");
+          throw new Error("intentional");
+        });
+      } catch {
+        // expected
+      }
+
+      const rows = db.prepare("SELECT * FROM t").all() as { val: string }[];
+      expect(rows.length).toBe(0);
+      db.close();
+    });
+
+    it("supports nested transactions via SAVEPOINTs", () => {
+      const db = openMemoryDatabase();
+      db.exec("CREATE TABLE t (id INTEGER PRIMARY KEY, val TEXT)");
+
+      transaction(db, () => {
+        db.prepare("INSERT INTO t (val) VALUES (?)").run("outer");
+
+        transaction(db, () => {
+          db.prepare("INSERT INTO t (val) VALUES (?)").run("inner");
+        });
+      });
+
+      const rows = db.prepare("SELECT * FROM t").all() as { val: string }[];
+      expect(rows.length).toBe(2);
+      expect(rows.map((r) => r.val)).toContain("outer");
+      expect(rows.map((r) => r.val)).toContain("inner");
+      db.close();
+    });
+
+    it("rolls back inner transaction without affecting outer", () => {
+      const db = openMemoryDatabase();
+      db.exec("CREATE TABLE t (id INTEGER PRIMARY KEY, val TEXT)");
+
+      transaction(db, () => {
+        db.prepare("INSERT INTO t (val) VALUES (?)").run("outer");
+
+        try {
+          transaction(db, () => {
+            db.prepare("INSERT INTO t (val) VALUES (?)").run("inner");
+            throw new Error("inner fails");
+          });
+        } catch {
+          // inner rolled back
+        }
+      });
+
+      const rows = db.prepare("SELECT * FROM t").all() as { val: string }[];
+      expect(rows.length).toBe(1);
+      expect(rows[0].val).toBe("outer");
+      db.close();
+    });
+
+    it("rolls back everything when outer fails after inner succeeds", () => {
+      const db = openMemoryDatabase();
+      db.exec("CREATE TABLE t (id INTEGER PRIMARY KEY, val TEXT)");
+
+      try {
+        transaction(db, () => {
+          db.prepare("INSERT INTO t (val) VALUES (?)").run("outer");
+
+          transaction(db, () => {
+            db.prepare("INSERT INTO t (val) VALUES (?)").run("inner");
+          });
+
+          throw new Error("outer fails after inner");
+        });
+      } catch {
+        // expected
+      }
+
+      const rows = db.prepare("SELECT * FROM t").all() as { val: string }[];
+      expect(rows.length).toBe(0);
+      db.close();
+    });
   });
 });

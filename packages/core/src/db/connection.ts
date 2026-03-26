@@ -1,11 +1,16 @@
 import { DatabaseSync } from "node:sqlite";
 
-// Suppress the ExperimentalWarning for node:sqlite
+// Suppress the ExperimentalWarning specifically for node:sqlite
 {
   const origEmit = process.emit;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (process as any).emit = function (event: string, ...args: any[]) {
-    if (event === "warning" && args[0]?.name === "ExperimentalWarning") {
+    if (
+      event === "warning" &&
+      args[0]?.name === "ExperimentalWarning" &&
+      typeof args[0]?.message === "string" &&
+      args[0].message.includes("SQLite")
+    ) {
       return false;
     }
     return origEmit.apply(process, [event, ...args] as Parameters<typeof origEmit>);
@@ -93,7 +98,10 @@ export function transaction<T>(db: Database, fn: () => T): T {
     db.exec(`RELEASE ${name}`);
     return result;
   } catch (err) {
-    try { db.exec(`ROLLBACK TO ${name}`); } catch { /* ignore rollback errors */ }
+    try {
+      db.exec(`ROLLBACK TO ${name}`);
+      db.exec(`RELEASE ${name}`);
+    } catch { /* ignore rollback errors */ }
     throw err;
   } finally {
     txDepth.set(db, depth);
