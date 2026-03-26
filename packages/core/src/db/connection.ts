@@ -1,7 +1,18 @@
 import { DatabaseSync } from "node:sqlite";
 
-// Suppress the ExperimentalWarning specifically for node:sqlite
-{
+/** Re-export DatabaseSync as Database for use across the codebase. */
+export type Database = DatabaseSync;
+
+/**
+ * Suppress the ExperimentalWarning for node:sqlite.
+ * Uses process.emit override (the only way to prevent Node from printing
+ * the warning — process.on('warning') listeners fire after printing).
+ * Installed lazily on first database open, not at import time.
+ */
+let warningSuppressed = false;
+function suppressSqliteWarning(): void {
+  if (warningSuppressed) return;
+  warningSuppressed = true;
   const origEmit = process.emit;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (process as any).emit = function (event: string, ...args: any[]) {
@@ -17,9 +28,6 @@ import { DatabaseSync } from "node:sqlite";
   };
 }
 
-/** Re-export DatabaseSync as Database for use across the codebase. */
-export type Database = DatabaseSync;
-
 /**
  * Convert undefined values to null for node:sqlite compatibility.
  * better-sqlite3 accepted undefined and converted to null silently;
@@ -30,6 +38,7 @@ function sanitizeParams(params: unknown[]): unknown[] {
 }
 
 export function openDatabase(dbPath: string): Database {
+  suppressSqliteWarning();
   const db = new DatabaseSync(dbPath);
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA foreign_keys = ON");
@@ -38,6 +47,7 @@ export function openDatabase(dbPath: string): Database {
 }
 
 export function openMemoryDatabase(): Database {
+  suppressSqliteWarning();
   const db = new DatabaseSync(":memory:");
   db.exec("PRAGMA foreign_keys = ON");
   patchPrepare(db);
@@ -63,13 +73,24 @@ function patchPrepare(db: Database): void {
   };
 }
 
+function assertSync(result: unknown): void {
+  if (result != null && typeof (result as { then?: unknown }).then === "function") {
+    throw new Error(
+      "transaction() received an async function. Use a synchronous function — " +
+      "node:sqlite is synchronous and the transaction would commit before the async work completes.",
+    );
+  }
+}
+
 // Track nesting depth for safe nested transactions via SAVEPOINT
 const txDepth = new WeakMap<Database, number>();
 
 /**
- * Wrap a function in a SQLite transaction (BEGIN/COMMIT/ROLLBACK).
+ * Wrap a synchronous function in a SQLite transaction (BEGIN/COMMIT/ROLLBACK).
  * Supports nesting via SAVEPOINTs — inner calls create savepoints
  * instead of starting a new transaction.
+ *
+ * fn must be synchronous — passing an async function will throw.
  */
 export function transaction<T>(db: Database, fn: () => T): T {
   const depth = txDepth.get(db) ?? 0;
@@ -80,6 +101,7 @@ export function transaction<T>(db: Database, fn: () => T): T {
     db.exec("BEGIN");
     try {
       const result = fn();
+      assertSync(result);
       db.exec("COMMIT");
       return result;
     } catch (err) {
@@ -95,6 +117,7 @@ export function transaction<T>(db: Database, fn: () => T): T {
   db.exec(`SAVEPOINT ${name}`);
   try {
     const result = fn();
+    assertSync(result);
     db.exec(`RELEASE ${name}`);
     return result;
   } catch (err) {

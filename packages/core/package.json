@@ -48,5 +48,8 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.14"
+  },
+  "engines": {
+    "node": ">=22.5.0"
   }
 }
