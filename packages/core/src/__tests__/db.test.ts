@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { openMemoryDatabase, transaction } from "../db/connection.js";
+import { mkdtempSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { openDatabase, openMemoryDatabase, transaction } from "../db/connection.js";
 import { initializeSchema, CURRENT_SCHEMA_VERSION } from "../db/schema.js";
 import { migrate } from "../db/migrations.js";
 
@@ -66,6 +69,16 @@ describe("SQLite database", () => {
       .get() as { value: string };
     expect(Number(row.value)).toBe(CURRENT_SCHEMA_VERSION);
     db.close();
+  });
+
+  it("has WAL mode enabled for file-backed databases", () => {
+    const dir = mkdtempSync(join(tmpdir(), "arcbridge-db-test-"));
+    const dbPath = join(dir, "test.db");
+    const db = openDatabase(dbPath);
+    const mode = db.prepare("PRAGMA journal_mode").get() as { journal_mode: string };
+    expect(mode.journal_mode).toBe("wal");
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
   });
 
   it("has foreign keys enabled", () => {
