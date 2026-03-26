@@ -5,14 +5,14 @@ export type Database = DatabaseSync;
 
 /**
  * Suppress the ExperimentalWarning for node:sqlite.
- * Uses process.emit override (the only way to prevent Node from printing
- * the warning — process.on('warning') listeners fire after printing).
+ * Opt-out: set ARCBRIDGE_SHOW_WARNINGS=1 to see all warnings.
  * Installed lazily on first database open, not at import time.
  */
 let warningSuppressed = false;
 function suppressSqliteWarning(): void {
   if (warningSuppressed) return;
   warningSuppressed = true;
+  if (process.env.ARCBRIDGE_SHOW_WARNINGS === "1") return;
   const origEmit = process.emit;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (process as any).emit = function (event: string, ...args: any[]) {
