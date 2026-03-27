@@ -46,8 +46,8 @@ function patchPrepare(db: Database): void {
   };
 }
 
-function assertSync(result: unknown): void {
-  if (result != null && typeof (result as { then?: unknown }).then === "function") {
+function rejectAsync(fn: () => unknown): void {
+  if (fn.constructor.name === "AsyncFunction") {
     throw new Error(
       "transaction() received an async function. Use a synchronous function — " +
       "node:sqlite is synchronous and the transaction would commit before the async work completes.",
@@ -66,6 +66,7 @@ const txDepth = new WeakMap<Database, number>();
  * fn must be synchronous — passing an async function will throw.
  */
 export function transaction<T>(db: Database, fn: () => T): T {
+  rejectAsync(fn);
   const depth = txDepth.get(db) ?? 0;
 
   if (depth === 0) {
@@ -74,7 +75,6 @@ export function transaction<T>(db: Database, fn: () => T): T {
     txDepth.set(db, 1);
     try {
       const result = fn();
-      assertSync(result);
       db.exec("COMMIT");
       return result;
     } catch (err) {
@@ -91,7 +91,6 @@ export function transaction<T>(db: Database, fn: () => T): T {
   txDepth.set(db, depth + 1);
   try {
     const result = fn();
-    assertSync(result);
     db.exec(`RELEASE ${name}`);
     return result;
   } catch (err) {
