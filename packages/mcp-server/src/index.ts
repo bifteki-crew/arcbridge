@@ -1,3 +1,4 @@
+import "./suppress-warnings.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createArcBridgeServer } from "./server.js";
 

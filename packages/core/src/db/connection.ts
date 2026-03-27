@@ -4,31 +4,6 @@ import { DatabaseSync } from "node:sqlite";
 export type Database = DatabaseSync;
 
 /**
- * Suppress the ExperimentalWarning for node:sqlite.
- * Opt-out: set ARCBRIDGE_SHOW_WARNINGS=1 to see all warnings.
- * Installed lazily on first database open, not at import time.
- */
-let warningSuppressed = false;
-function suppressSqliteWarning(): void {
-  if (warningSuppressed) return;
-  warningSuppressed = true;
-  if (process.env.ARCBRIDGE_SHOW_WARNINGS === "1") return;
-  const origEmit = process.emit;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (process as any).emit = function (event: string, ...args: any[]) {
-    if (
-      event === "warning" &&
-      args[0]?.name === "ExperimentalWarning" &&
-      typeof args[0]?.message === "string" &&
-      args[0].message.includes("SQLite")
-    ) {
-      return false;
-    }
-    return origEmit.apply(process, [event, ...args] as Parameters<typeof origEmit>);
-  };
-}
-
-/**
  * Convert undefined values to null for node:sqlite compatibility.
  * better-sqlite3 accepted undefined and converted to null silently;
  * node:sqlite throws "Provided value cannot be bound to SQLite parameter".
@@ -38,7 +13,6 @@ function sanitizeParams(params: unknown[]): unknown[] {
 }
 
 export function openDatabase(dbPath: string): Database {
-  suppressSqliteWarning();
   const db = new DatabaseSync(dbPath);
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA foreign_keys = ON");
@@ -47,7 +21,6 @@ export function openDatabase(dbPath: string): Database {
 }
 
 export function openMemoryDatabase(): Database {
-  suppressSqliteWarning();
   const db = new DatabaseSync(":memory:");
   db.exec("PRAGMA foreign_keys = ON");
   patchPrepare(db);
