@@ -13,7 +13,7 @@ const origEmit = process.emit;
     typeof args[0]?.message === "string" &&
     args[0].message.includes("SQLite")
   ) {
-    return false;
+    return true;
   }
   return origEmit.apply(process, [event, ...args] as Parameters<typeof origEmit>);
 };
