@@ -66,7 +66,7 @@ function reactViteAdr(input: InitProjectInput, date: string): AdrResult {
       status: "accepted",
       date,
       affected_blocks: ["app-shell"],
-      affected_files: [`${srcPrefix}/`],
+      affected_files: [srcPrefix || "src/"],
       quality_scenarios: [],
     },
     body: `# ADR-001: Use React with Vite
@@ -102,7 +102,7 @@ function apiServiceAdr(input: InitProjectInput, date: string): AdrResult {
       status: "accepted",
       date,
       affected_blocks: ["app-shell"],
-      affected_files: [`${srcPrefix}/`],
+      affected_files: [srcPrefix || "src/"],
       quality_scenarios: [],
     },
     body: `# ADR-001: Use Node.js API Service

@@ -97,9 +97,13 @@ export function getChangedFiles(
   for (const change of getUncommittedChanges(projectRoot)) {
     const existing = byPath.get(change.path);
     if (!existing) {
+      // New file not in committed diff
+      byPath.set(change.path, change);
+    } else if (change.status === "deleted") {
+      // Uncommitted delete overrides any committed status
       byPath.set(change.path, change);
     }
-    // Keep committed "added"/"deleted" status — more significant than
+    // Otherwise keep committed "added"/"deleted" — more significant than
     // uncommitted "modified" for drift detection and practice reviews
   }
 

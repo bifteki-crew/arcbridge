@@ -58,6 +58,7 @@ export function registerInitProject(
       const dbExists = existsSync(join(targetDir, ".arcbridge", "index.db"));
       const configExists = existsSync(join(targetDir, ".arcbridge", "config.yaml"));
 
+      // Fully initialized — both config and DB exist
       if (dbExists && configExists) {
         return {
           content: [
@@ -69,10 +70,23 @@ export function registerInitProject(
         };
       }
 
+      // DB exists but config is missing/corrupt — treat as initialized
+      // (other tools use DB as the canonical marker)
+      if (dbExists && !configExists) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `ArcBridge database exists in ${targetDir} but config.yaml is missing. Delete \`.arcbridge/\` to reinitialize, or restore config.yaml.`,
+            },
+          ],
+        };
+      }
+
       // Partial init recovery: config exists but DB is missing (interrupted init)
       // Only regenerate the database, don't overwrite user's arc42 docs/plans
       if (configExists && !dbExists) {
-        const { config: existingConfig } = loadConfig(targetDir);
+        const { config: existingConfig, error: configError } = loadConfig(targetDir);
         if (existingConfig) {
           const recoverInput: InitProjectInput = {
             name: existingConfig.project_name,
@@ -93,6 +107,10 @@ export function registerInitProject(
               },
             ],
           };
+        }
+        // Config exists but is invalid — warn and proceed with fresh init
+        if (configError) {
+          // Fall through to full init — existing files will be overwritten
         }
       }
 
