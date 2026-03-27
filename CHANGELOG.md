@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.1.4 (2026-03-27)
+
+### Fixes (from cross-team agent orchestrator test)
+
+- **Init catch-22 resolved** — `init_project` no longer blocks when config.yaml exists but DB is missing. Partial inits auto-recover the database from existing config.
+- **Vite+React indexer fixed** — handles tsconfig with `references` (standard Vite layout). Falls back to `tsconfig.app.json` when root tsconfig delegates via project references.
+- **FK constraint on building block edits** — `refreshFromDocs` disables FK checks during repopulation and nullifies orphaned task→block references. Manual arc42 edits no longer corrupt the database.
+- **Practice review works without git commits** — `getChangedFiles` now merges committed diffs AND uncommitted changes (staged + unstaged). Code review role is functional for in-progress work.
+- **Git status path parsing fixed** — pre-existing bug where `.trim()` stripped leading space from porcelain status column, truncating filenames.
+
+### Improvements
+
+- **Phase IDs shown in tool output** — `get_phase_plan` and `create_task` now display phase IDs so agents can use them directly.
+- **Tasks for Phase 2-3** — react-vite and nextjs templates now include example tasks for later phases. Phase 0-1 tasks are concrete; Phase 2+ are examples to replace with project-specific tasks.
+- **Framework deps excluded from ADR warnings** — react, react-dom, next, vite, tailwindcss, express, etc. no longer trigger "undocumented dependency" drift.
+- **Template-specific ADRs** — react-vite gets "Use React with Vite" ADR, api-service gets "Use Node.js API Service" ADR (previously all non-dotnet templates got "Use Next.js App Router").
+- **Planning guidance in roles** — architect and phase-manager roles emphasize proper task planning across all phases before implementation.
+- **Init output includes next steps** — guides agents to review phases, plan tasks, and activate architect role.
+- **Template descriptions** — `init_project` template parameter now describes each template type.
+
+### Stats
+
+- 355 tests passing, 0 lint errors, 0 type errors
+
 ## 0.1.3 (2026-03-27)
 
 ### Breaking Changes
