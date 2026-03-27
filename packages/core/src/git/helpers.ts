@@ -128,7 +128,7 @@ export function getUncommittedChanges(projectRoot: string): ChangedFile[] {
     // Don't trim() the full output — leading spaces in XY column are significant
     return lines.map((line) => {
       const statusCode = line.slice(0, 2).trim();
-      const path = line.slice(3).trimEnd();
+      const path = line.slice(3).replace(/\r$/, "");
       const status = statusCode === "D" ? "deleted" : statusCode === "A" ? "added" : "modified";
       return { status, path };
     });

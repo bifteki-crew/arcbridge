@@ -49,7 +49,8 @@ export function createTsProgram(options: IndexerOptions): ProgramResult {
         : join(refFullPath, "tsconfig.json");
       if (ts.sys.fileExists(refConfigPath)) {
         const refConfig = ts.readConfigFile(refConfigPath, ts.sys.readFile);
-        if (!refConfig.error && (refConfig.config.include || refConfig.config.files)) {
+        const rc = refConfig.config;
+        if (!refConfig.error && ((rc.include?.length > 0) || (rc.files?.length > 0))) {
           configFile = refConfig;
           resolvedConfigPath = refConfigPath;
           break;
