@@ -4,7 +4,7 @@
 
 ### Breaking Changes
 
-- **Minimum Node.js version is now 22.5** (was 20.0) — required for built-in `node:sqlite`
+- **Minimum Node.js version is now 22.16** (was 20.0) — required for built-in `node:sqlite`
 
 ### Changes
 

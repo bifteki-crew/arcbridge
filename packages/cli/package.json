@@ -44,6 +44,6 @@
     "@arcbridge/adapters": "workspace:*"
   },
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=22.16.0"
   }
 }
