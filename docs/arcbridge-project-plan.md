@@ -1128,11 +1128,11 @@ get_practice_review: {
 
 Plus ~30 type import changes (`Database.Database` → `DatabaseSync`).
 
-**Blocker:** `node:sqlite` is experimental (since Node 22.5). The API could change between releases and prints an `ExperimentalWarning` on every use. Migration should happen once the module drops the experimental flag — likely Node 24 LTS or Node 26.
+**Decision & risk:** `node:sqlite` is experimental (since Node 22.5) and emits an `ExperimentalWarning` on use. This project has migrated now, suppresses the warning in CLI/MCP entry points, and tracks upstream API changes across Node releases. The API surface used (prepare/run/get/all/exec) is basic and has been stable since introduction.
 
-**Minimum Node version impact:** Would require bumping `engines.node` from `>=20` to `>=22.5`. This is acceptable — Node 20 LTS enters maintenance in October 2026.
+**Minimum Node version impact:** This migration bumped `engines.node` from `>=20` to `>=22.5`. Node 20 LTS enters maintenance in October 2026.
 
-**When this is done:** `npm install arcbridge` will have zero native dependencies. Pure JavaScript + WASM. Works everywhere Node.js runs, including locked-down corporate machines, lightweight containers, and CI environments without build tools.
+**Result:** `npm install arcbridge` has zero native dependencies. Pure JavaScript + WASM. Works everywhere Node.js runs, including locked-down corporate machines, lightweight containers, and CI environments without build tools.
 
 ### Future Phases: Expanding the Practice
 
