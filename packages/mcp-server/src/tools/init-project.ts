@@ -60,13 +60,12 @@ export function registerInitProject(
 
       // Fully initialized — both config and DB exist
       if (dbExists && configExists) {
+        const { error: validationError } = loadConfig(targetDir);
+        const msg = validationError
+          ? `ArcBridge is initialized in ${targetDir} but config has issues: ${validationError}. Use \`arcbridge_get_project_status\` to see the current state, or delete \`.arcbridge/\` to reinitialize.`
+          : `ArcBridge is already initialized in ${targetDir}. Use \`arcbridge_get_project_status\` to see the current state, or delete \`.arcbridge/\` to reinitialize.`;
         return {
-          content: [
-            {
-              type: "text" as const,
-              text: `ArcBridge is already initialized in ${targetDir}. Use \`arcbridge_get_project_status\` to see the current state, or delete \`.arcbridge/\` to reinitialize.`,
-            },
-          ],
+          content: [{ type: "text" as const, text: msg }],
         };
       }
 
@@ -108,10 +107,8 @@ export function registerInitProject(
             ],
           };
         }
-        // Config exists but is invalid — warn and proceed with fresh init
-        if (configError) {
-          // Fall through to full init — existing files will be overwritten
-        }
+        // Config exists but is invalid — proceed with fresh init
+        // The full init below will overwrite existing .arcbridge/ files
       }
 
       const input: InitProjectInput = {
