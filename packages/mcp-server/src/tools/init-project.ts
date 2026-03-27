@@ -69,7 +69,7 @@ export function registerInitProject(
         };
       }
 
-      // DB exists but config is missing/corrupt — treat as initialized
+      // DB exists but config.yaml is missing — treat as initialized
       // (other tools use DB as the canonical marker)
       if (dbExists && !configExists) {
         return {
