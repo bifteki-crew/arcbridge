@@ -47,13 +47,15 @@ export function registerInitProject(
     async (params) => {
       const targetDir = params.target_dir;
 
-      // Check if already initialized
-      if (existsSync(join(targetDir, ".arcbridge", "config.yaml"))) {
+      // Check if already initialized (DB is the canonical marker, not just config)
+      const dbExists = existsSync(join(targetDir, ".arcbridge", "index.db"));
+      const configExists = existsSync(join(targetDir, ".arcbridge", "config.yaml"));
+      if (dbExists && configExists) {
         return {
           content: [
             {
               type: "text" as const,
-              text: `ArcBridge is already initialized in ${targetDir}. Use arcbridge_get_project_status to see the current state.`,
+              text: `ArcBridge is already initialized in ${targetDir}. Use \`arcbridge_get_project_status\` to see the current state, or delete \`.arcbridge/\` to reinitialize.`,
             },
           ],
         };

@@ -56,12 +56,16 @@ export function resolveRef(
 }
 
 /**
- * Get list of changed files between a ref and HEAD.
+ * Get list of changed files between a ref and HEAD, including uncommitted changes.
+ * Merges committed diffs with staged+unstaged working tree changes so that
+ * practice reviews and drift checks see all work, not just committed code.
  */
 export function getChangedFiles(
   projectRoot: string,
   ref: string,
 ): ChangedFile[] {
+  const byPath = new Map<string, ChangedFile>();
+
   try {
     // Verify the ref is valid before diffing — catches HEAD~1 on single-commit repos
     execFileSync("git", ["rev-parse", "--verify", ref], {
@@ -71,24 +75,30 @@ export function getChangedFiles(
       stdio: ["pipe", "pipe", "pipe"],
     });
 
+    // Committed changes since ref
     const output = execFileSync(
       "git",
       ["diff", "--name-status", "--no-renames", ref, "HEAD"],
       { cwd: projectRoot, encoding: "utf-8", timeout: 10000 },
     ).trim();
 
-    if (!output) return [];
-
-    return output.split("\n").map((line) => {
-      const [statusCode, ...pathParts] = line.split("\t");
-      const path = pathParts.join("\t");
-      const status = parseStatusCode(statusCode ?? "M");
-      return { status, path };
-    });
+    if (output) {
+      for (const line of output.split("\n")) {
+        const [statusCode, ...pathParts] = line.split("\t");
+        const path = pathParts.join("\t");
+        byPath.set(path, { status: parseStatusCode(statusCode ?? "M"), path });
+      }
+    }
   } catch {
-    // Also try unstaged changes if ref comparison fails
-    return getUncommittedChanges(projectRoot);
+    // ref invalid — fall through to uncommitted only
   }
+
+  // Always include uncommitted changes (staged + unstaged)
+  for (const change of getUncommittedChanges(projectRoot)) {
+    byPath.set(change.path, change); // overwrites committed if both exist
+  }
+
+  return Array.from(byPath.values());
 }
 
 /**

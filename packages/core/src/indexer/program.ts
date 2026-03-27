@@ -22,7 +22,7 @@ export function createTsProgram(options: IndexerOptions): ProgramResult {
     );
   }
 
-  const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
+  let configFile = ts.readConfigFile(configPath, ts.sys.readFile);
   if (configFile.error) {
     const message = ts.flattenDiagnosticMessageText(
       configFile.error.messageText,
@@ -31,12 +31,32 @@ export function createTsProgram(options: IndexerOptions): ProgramResult {
     throw new Error(`Failed to read tsconfig.json: ${message}`);
   }
 
+  // Handle tsconfig with "references" but no "include" (common in Vite projects).
+  // The root tsconfig.json delegates to tsconfig.app.json / tsconfig.node.json.
+  // Without resolving references, parseJsonConfigFileContent returns 0 files.
+  let resolvedConfigPath = configPath;
+  const config = configFile.config;
+  if (config.references && !config.include && !config.files) {
+    // Try common referenced config names
+    for (const candidate of ["tsconfig.app.json", "tsconfig.src.json"]) {
+      const refPath = ts.findConfigFile(projectRoot, ts.sys.fileExists, candidate);
+      if (refPath) {
+        const refConfig = ts.readConfigFile(refPath, ts.sys.readFile);
+        if (!refConfig.error) {
+          configFile = refConfig;
+          resolvedConfigPath = refPath;
+          break;
+        }
+      }
+    }
+  }
+
   const parsed = ts.parseJsonConfigFileContent(
     configFile.config,
     ts.sys,
     join(projectRoot),
     { noEmit: true },
-    configPath,
+    resolvedConfigPath,
   );
 
   const program = ts.createProgram({

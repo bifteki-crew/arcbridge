@@ -307,11 +307,30 @@ export function refreshFromDocs(
     db.prepare("DELETE FROM quality_scenarios").run();
     db.prepare("DELETE FROM adrs").run();
 
-    // Re-populate from files
+    // Temporarily disable FK checks during repopulation
+    // (task YAML may reference building blocks that were removed from docs)
+    db.exec("PRAGMA foreign_keys = OFF");
+
+    // Re-populate from files (order matters: blocks before phases/tasks)
     warnings.push(...populateBuildingBlocks(db, targetDir));
     warnings.push(...populateQualityScenarios(db, targetDir));
     warnings.push(...populatePhases(db, targetDir));
     warnings.push(...populateAdrs(db, targetDir));
+
+    // Nullify orphaned building_block references in tasks
+    const orphaned = db.prepare(`
+      UPDATE tasks SET building_block = NULL
+      WHERE building_block IS NOT NULL
+        AND building_block NOT IN (SELECT id FROM building_blocks)
+    `).run();
+    if (orphaned.changes > 0) {
+      warnings.push(
+        `${orphaned.changes} task(s) referenced removed building blocks (references cleared)`,
+      );
+    }
+
+    // Re-enable FK checks
+    db.exec("PRAGMA foreign_keys = ON");
 
     // Restore task statuses that were previously set
     const restoreTask = db.prepare(
