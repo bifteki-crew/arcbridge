@@ -85,7 +85,7 @@ export function registerInitProject(
       // Partial init recovery: config exists but DB is missing (interrupted init)
       // Only regenerate the database, don't overwrite user's arc42 docs/plans
       if (configExists && !dbExists) {
-        const { config: existingConfig, error: configError } = loadConfig(targetDir);
+        const { config: existingConfig } = loadConfig(targetDir);
         if (existingConfig) {
           const recoverInput: InitProjectInput = {
             name: existingConfig.project_name,
