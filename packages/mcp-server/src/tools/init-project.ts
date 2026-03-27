@@ -183,6 +183,13 @@ export function registerInitProject(
             ]
           : []),
         "",
+        "## Next Steps",
+        "",
+        "1. **Review the phase plan** — run `arcbridge_get_phase_plan` to see all phases and their tasks",
+        "2. **Plan tasks for later phases** — phases 2+ may need additional tasks. Use `arcbridge_create_task` with the phase ID shown in the plan.",
+        "3. **Activate the architect role** — run `arcbridge_activate_role` with role `architect` to get full architectural context",
+        "4. **Start working** — use `arcbridge_get_current_tasks` to see what to do next",
+        "",
         "Use `arcbridge_get_project_status` to see the full project status.",
       ];
 

@@ -99,7 +99,7 @@ export function registerCreateTask(
         `Task created: **${taskId}**`,
         "",
         `**Title:** ${params.title}`,
-        `**Phase:** ${phase.name}`,
+        `**Phase:** ${phase.name} (\`${phase.id}\`)`,
         `**Status:** todo`,
       ];
 

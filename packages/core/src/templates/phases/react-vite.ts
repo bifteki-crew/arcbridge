@@ -170,6 +170,105 @@ export function phaseTasksTemplate(
         },
       ],
     },
+    "phase-2-features": {
+      schema_version: 1,
+      phase_id: "phase-2-features",
+      tasks: [
+        {
+          id: "task-2.1-core-feature",
+          title: "Implement primary feature",
+          status: "todo",
+          quality_scenarios: ["PERF-01"],
+          acceptance_criteria: [
+            "Core user flow works end-to-end",
+            "Unit and component tests written",
+            "Meets performance budgets",
+          ],
+        },
+        {
+          id: "task-2.2-state-management",
+          title: "Set up state management for complex data",
+          status: "todo",
+          quality_scenarios: ["MAINT-01"],
+          acceptance_criteria: [
+            "State management pattern established",
+            "Data fetching/caching strategy implemented",
+            "Loading and error states handled",
+          ],
+        },
+        {
+          id: "task-2.3-integration-tests",
+          title: "Write integration tests for core flows",
+          status: "todo",
+          quality_scenarios: ["MAINT-02"],
+          acceptance_criteria: [
+            "Happy path tested for each core feature",
+            "Error scenarios tested",
+            "Test coverage meets threshold",
+          ],
+        },
+        {
+          id: "task-2.4-document-decisions",
+          title: "Document Phase 2 architectural decisions",
+          status: "todo",
+          quality_scenarios: [],
+          acceptance_criteria: [
+            "ADRs for state management and data fetching choices",
+            "Building blocks updated with new code paths",
+          ],
+        },
+      ],
+    },
+    "phase-3-polish": {
+      schema_version: 1,
+      phase_id: "phase-3-polish",
+      tasks: [
+        {
+          id: "task-3.1-error-handling",
+          title: "Implement comprehensive error handling",
+          status: "todo",
+          quality_scenarios: ["SEC-01"],
+          acceptance_criteria: [
+            "Error boundaries at route level",
+            "User-friendly error messages",
+            "Error logging configured",
+          ],
+        },
+        {
+          id: "task-3.2-accessibility",
+          title: "Accessibility audit and fixes",
+          status: "todo",
+          quality_scenarios: ["A11Y-01", "A11Y-02"],
+          acceptance_criteria: [
+            "Keyboard navigation works for all interactive elements",
+            "Screen reader compatible (ARIA labels, roles)",
+            "WCAG 2.1 AA compliance verified",
+          ],
+        },
+        {
+          id: "task-3.3-performance",
+          title: "Performance optimization",
+          status: "todo",
+          quality_scenarios: ["PERF-01"],
+          acceptance_criteria: [
+            "Bundle size optimized (code splitting, tree shaking)",
+            "Lighthouse performance score >= 90",
+            "No unnecessary re-renders in hot paths",
+          ],
+        },
+        {
+          id: "task-3.4-deployment",
+          title: "Configure production build and deployment",
+          status: "todo",
+          quality_scenarios: [],
+          acceptance_criteria: [
+            "Production build configuration verified",
+            "Deployment pipeline configured",
+            "Environment variables documented",
+          ],
+        },
+      ],
+    },
   };
 
   return tasksByPhase[phaseId] ?? null;
