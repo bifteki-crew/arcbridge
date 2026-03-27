@@ -72,6 +72,7 @@ export function registerGetPhasePlan(
         lines.push(
           `## ${icon} Phase ${phase.phase_number}: ${phase.name}`,
           "",
+          `**ID:** \`${phase.id}\``,
           `**Status:** ${phase.status}`,
           `**Description:** ${phase.description}`,
         );

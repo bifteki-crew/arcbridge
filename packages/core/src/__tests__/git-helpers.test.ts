@@ -1,4 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, writeFileSync, unlinkSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { execFileSync } from "node:child_process";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import {
@@ -106,5 +110,96 @@ describe("getUncommittedChanges", () => {
   it("returns empty array for non-git directories", () => {
     const files = getUncommittedChanges("/tmp");
     expect(files).toEqual([]);
+  });
+});
+
+describe("getChangedFiles with real git repo", () => {
+  let repoDir: string;
+
+  function git(...args: string[]): string {
+    return execFileSync("git", args, {
+      cwd: repoDir,
+      encoding: "utf-8",
+      timeout: 5000,
+    }).trim();
+  }
+
+  beforeEach(() => {
+    repoDir = mkdtempSync(join(tmpdir(), "arcbridge-git-test-"));
+    git("init");
+    git("config", "user.email", "test@test.com");
+    git("config", "user.name", "Test");
+  });
+
+  afterEach(() => {
+    rmSync(repoDir, { recursive: true, force: true });
+  });
+
+  it("includes both committed and uncommitted changes", () => {
+    // Create and commit two files
+    writeFileSync(join(repoDir, "file-a.ts"), "export const a = 1;");
+    writeFileSync(join(repoDir, "file-b.ts"), "export const b = 1;");
+    git("add", ".");
+    git("commit", "-m", "initial");
+
+    // Commit a change to file-a
+    writeFileSync(join(repoDir, "file-a.ts"), "export const a = 2;");
+    git("add", "file-a.ts");
+    git("commit", "-m", "modify a");
+
+    // Modify file-b (uncommitted)
+    writeFileSync(join(repoDir, "file-b.ts"), "export const b = 2;");
+
+    const files = getChangedFiles(repoDir, "HEAD~1");
+
+    // Should see committed file-a AND uncommitted file-b
+    const paths = files.map((f) => f.path);
+    expect(paths).toContain("file-a.ts");
+    expect(paths).toContain("file-b.ts");
+  });
+
+  it("uncommitted delete overrides committed status", () => {
+    // Create two files and commit
+    writeFileSync(join(repoDir, "keep.ts"), "export const a = 1;");
+    writeFileSync(join(repoDir, "remove.ts"), "export const b = 1;");
+    git("add", ".");
+    git("commit", "-m", "initial");
+
+    // Modify keep.ts and commit
+    writeFileSync(join(repoDir, "keep.ts"), "export const a = 2;");
+    git("add", "keep.ts");
+    git("commit", "-m", "modify keep");
+
+    // Delete remove.ts (uncommitted)
+    unlinkSync(join(repoDir, "remove.ts"));
+    git("add", "remove.ts"); // stage the deletion
+
+    const files = getChangedFiles(repoDir, "HEAD~1");
+
+    const removeFile = files.find((f) => f.path === "remove.ts");
+    expect(removeFile).toBeDefined();
+    expect(removeFile!.status).toBe("deleted");
+  });
+
+  it("preserves committed 'added' status over uncommitted 'modified'", () => {
+    // Initial commit
+    writeFileSync(join(repoDir, "old.ts"), "export const x = 1;");
+    git("add", ".");
+    git("commit", "-m", "initial");
+
+    // Add a new file and commit
+    writeFileSync(join(repoDir, "new.ts"), "export const y = 1;");
+    git("add", "new.ts");
+    git("commit", "-m", "add new");
+
+    // Modify the new file (uncommitted)
+    writeFileSync(join(repoDir, "new.ts"), "export const y = 2;");
+
+    const files = getChangedFiles(repoDir, "HEAD~1");
+
+    const newFile = files.find((f) => f.path === "new.ts");
+    expect(newFile).toBeDefined();
+    // Should keep "added" from committed diff, not "modified" from uncommitted
+    expect(newFile!.status).toBe("added");
   });
 });

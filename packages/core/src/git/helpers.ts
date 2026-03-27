@@ -56,12 +56,16 @@ export function resolveRef(
 }
 
 /**
- * Get list of changed files between a ref and HEAD.
+ * Get list of changed files between a ref and HEAD, including uncommitted changes.
+ * Merges committed diffs with staged+unstaged working tree changes so that
+ * practice reviews and drift checks see all work, not just committed code.
  */
 export function getChangedFiles(
   projectRoot: string,
   ref: string,
 ): ChangedFile[] {
+  const byPath = new Map<string, ChangedFile>();
+
   try {
     // Verify the ref is valid before diffing — catches HEAD~1 on single-commit repos
     execFileSync("git", ["rev-parse", "--verify", ref], {
@@ -71,24 +75,39 @@ export function getChangedFiles(
       stdio: ["pipe", "pipe", "pipe"],
     });
 
+    // Committed changes since ref
     const output = execFileSync(
       "git",
       ["diff", "--name-status", "--no-renames", ref, "HEAD"],
       { cwd: projectRoot, encoding: "utf-8", timeout: 10000 },
     ).trim();
 
-    if (!output) return [];
-
-    return output.split("\n").map((line) => {
-      const [statusCode, ...pathParts] = line.split("\t");
-      const path = pathParts.join("\t");
-      const status = parseStatusCode(statusCode ?? "M");
-      return { status, path };
-    });
+    if (output) {
+      for (const line of output.split("\n")) {
+        const [statusCode, ...pathParts] = line.split("\t");
+        const path = pathParts.join("\t");
+        byPath.set(path, { status: parseStatusCode(statusCode ?? "M"), path });
+      }
+    }
   } catch {
-    // Also try unstaged changes if ref comparison fails
-    return getUncommittedChanges(projectRoot);
+    // ref invalid — fall through to uncommitted only
   }
+
+  // Always include uncommitted changes (staged + unstaged tracked files)
+  for (const change of getUncommittedChanges(projectRoot)) {
+    const existing = byPath.get(change.path);
+    if (!existing) {
+      // New file not in committed diff
+      byPath.set(change.path, change);
+    } else if (change.status === "deleted") {
+      // Uncommitted delete overrides any committed status
+      byPath.set(change.path, change);
+    }
+    // Otherwise keep committed "added"/"deleted" — more significant than
+    // uncommitted "modified" for drift detection and practice reviews
+  }
+
+  return Array.from(byPath.values());
 }
 
 /**
@@ -100,13 +119,16 @@ export function getUncommittedChanges(projectRoot: string): ChangedFile[] {
       "git",
       ["status", "--porcelain", "-uno"],
       { cwd: projectRoot, encoding: "utf-8", timeout: 5000 },
-    ).trim();
+    );
 
-    if (!output) return [];
+    const lines = output.split("\n").filter((l) => l.length >= 3);
+    if (lines.length === 0) return [];
 
-    return output.split("\n").map((line) => {
+    // Porcelain format: XY<space>filename (XY = 2-char status, then space, then path)
+    // Don't trim() the full output — leading spaces in XY column are significant
+    return lines.map((line) => {
       const statusCode = line.slice(0, 2).trim();
-      const path = line.slice(3);
+      const path = line.slice(3).replace(/\r$/, "");
       const status = statusCode === "D" ? "deleted" : statusCode === "A" ? "added" : "modified";
       return { status, path };
     });

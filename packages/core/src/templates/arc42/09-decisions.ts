@@ -8,11 +8,16 @@ interface AdrResult extends TemplateOutput {
 export function firstAdrTemplate(input: InitProjectInput): AdrResult {
   const now = new Date().toISOString().split("T")[0]!;
 
-  if (input.template === "dotnet-webapi") {
-    return dotnetAdr(input, now);
+  switch (input.template) {
+    case "dotnet-webapi":
+      return dotnetAdr(input, now);
+    case "react-vite":
+      return reactViteAdr(input, now);
+    case "api-service":
+      return apiServiceAdr(input, now);
+    default:
+      return nextjsAdr(input, now);
   }
-
-  return nextjsAdr(input, now);
 }
 
 function nextjsAdr(input: InitProjectInput, date: string): AdrResult {
@@ -46,6 +51,77 @@ Use Next.js with the App Router (introduced in Next.js 13+) as the application f
 - **Positive:** Built-in API routes for backend logic
 - **Negative:** App Router has a learning curve compared to Pages Router
 - **Negative:** Some libraries may not yet fully support Server Components
+`,
+  };
+}
+
+function reactViteAdr(input: InitProjectInput, date: string): AdrResult {
+  const { srcPrefix } = detectProjectLayout(input.projectRoot, input.template);
+
+  return {
+    filename: "001-react-vite.md",
+    frontmatter: {
+      id: "001-react-vite",
+      title: "Use React with Vite",
+      status: "accepted",
+      date,
+      affected_blocks: ["app-shell"],
+      affected_files: [srcPrefix || "./"],
+      quality_scenarios: [],
+    },
+    body: `# ADR-001: Use React with Vite
+
+## Context
+
+${input.name} needs a fast, modern frontend framework for building a single-page application (SPA) with TypeScript.
+
+## Decision
+
+Use React with Vite as the build tool and development server.
+
+## Consequences
+
+- **Positive:** Extremely fast dev server with hot module replacement (HMR)
+- **Positive:** Optimized production builds with tree shaking and code splitting
+- **Positive:** Simple configuration, no SSR complexity
+- **Positive:** Large React ecosystem of libraries and components
+- **Negative:** Client-side only — no built-in server-side rendering (add later if needed)
+- **Negative:** Requires separate backend service for API endpoints
+`,
+  };
+}
+
+function apiServiceAdr(input: InitProjectInput, date: string): AdrResult {
+  const { srcPrefix } = detectProjectLayout(input.projectRoot, input.template);
+
+  return {
+    filename: "001-api-service.md",
+    frontmatter: {
+      id: "001-api-service",
+      title: "Use Node.js API Service",
+      status: "accepted",
+      date,
+      affected_blocks: ["app-shell"],
+      affected_files: [srcPrefix || "./"],
+      quality_scenarios: [],
+    },
+    body: `# ADR-001: Use Node.js API Service
+
+## Context
+
+${input.name} needs a backend API service with TypeScript support, good performance, and a simple architecture.
+
+## Decision
+
+Use a Node.js HTTP framework (Express, Fastify, or Hono) as the API service foundation.
+
+## Consequences
+
+- **Positive:** TypeScript-first with full type safety
+- **Positive:** Rich middleware ecosystem for auth, validation, logging
+- **Positive:** Easy to deploy to containers, serverless, or traditional hosts
+- **Negative:** Single-threaded — CPU-intensive operations need worker threads or external services
+- **Negative:** No built-in ORM — need to choose data access strategy
 `,
   };
 }

@@ -158,6 +158,116 @@ export function phaseTasksTemplate(
         },
       ],
     },
+    "phase-2-features": {
+      schema_version: 1,
+      phase_id: "phase-2-features",
+      tasks: [
+        {
+          id: "task-2.1-core-pages",
+          title: "Implement core application pages",
+          status: "todo",
+          quality_scenarios: ["PERF-01"],
+          acceptance_criteria: [
+            "Core pages created with proper data fetching",
+            "Server/client components properly separated",
+            "Loading and error states handled",
+          ],
+        },
+        {
+          id: "task-2.2-api-routes",
+          title: "Implement API routes",
+          status: "todo",
+          quality_scenarios: ["SEC-01", "PERF-02"],
+          acceptance_criteria: [
+            "API routes created for core operations",
+            "Input validation on all endpoints",
+            "Error responses standardized",
+          ],
+        },
+        {
+          id: "task-2.3-data-layer",
+          title: "Set up data access layer",
+          status: "todo",
+          quality_scenarios: ["MAINT-01"],
+          acceptance_criteria: [
+            "Data fetching patterns established",
+            "Caching strategy implemented",
+            "Type-safe data access",
+          ],
+        },
+        {
+          id: "task-2.4-integration-tests",
+          title: "Write integration tests for core flows",
+          status: "todo",
+          quality_scenarios: ["MAINT-02"],
+          acceptance_criteria: [
+            "Happy path tested for each core feature",
+            "API route tests written",
+            "Test coverage meets threshold",
+          ],
+        },
+        {
+          id: "task-2.5-document-decisions",
+          title: "Document Phase 2 architectural decisions",
+          status: "todo",
+          quality_scenarios: [],
+          acceptance_criteria: [
+            "ADRs for data fetching and API design choices",
+            "Building blocks updated with new code paths",
+          ],
+        },
+      ],
+    },
+    "phase-3-polish": {
+      schema_version: 1,
+      phase_id: "phase-3-polish",
+      tasks: [
+        {
+          id: "task-3.1-error-handling",
+          title: "Implement comprehensive error handling",
+          status: "todo",
+          quality_scenarios: ["SEC-01"],
+          acceptance_criteria: [
+            "Error boundaries at route level",
+            "Custom error.tsx and not-found.tsx pages",
+            "API error responses standardized",
+          ],
+        },
+        {
+          id: "task-3.2-accessibility",
+          title: "Accessibility audit and fixes",
+          status: "todo",
+          quality_scenarios: ["A11Y-01", "A11Y-02"],
+          acceptance_criteria: [
+            "Keyboard navigation works for all interactive elements",
+            "Screen reader compatible (ARIA labels, roles)",
+            "WCAG 2.1 AA compliance verified",
+          ],
+        },
+        {
+          id: "task-3.3-performance",
+          title: "Performance optimization",
+          status: "todo",
+          quality_scenarios: ["PERF-01"],
+          acceptance_criteria: [
+            "Bundle size optimized (dynamic imports, tree shaking)",
+            "Core Web Vitals meet thresholds (LCP < 2.5s)",
+            "Server-side rendering verified for SEO pages",
+          ],
+        },
+        {
+          id: "task-3.4-deployment",
+          title: "Configure production deployment",
+          status: "todo",
+          quality_scenarios: [],
+          acceptance_criteria: [
+            "Production build configuration verified",
+            "Environment variables documented",
+            "Deployment to Vercel/hosting configured",
+          ],
+        },
+      ],
+    },
   };
 
   return tasksByPhase[phaseId] ?? null;

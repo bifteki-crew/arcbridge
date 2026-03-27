@@ -416,12 +416,20 @@ function detectNewDependencies(
 
   // Common packages that don't need ADRs (all lowercase for case-insensitive matching)
   const trivialPackages = new Set([
-    // npm
+    // npm — frameworks (core deps that don't need ADRs)
+    "react", "react-dom", "next", "vite", "@vitejs/plugin-react",
+    "express", "fastify", "hono", "koa",
+    // npm — dev tooling
     "typescript", "eslint", "prettier", "vitest", "jest",
-    "@types/node", "@types/react", "tsup", "tsx",
-    // nuget
+    "@types/node", "@types/react", "@types/react-dom",
+    "tsup", "tsx", "ts-node", "nodemon",
+    "@eslint/js", "typescript-eslint",
+    // npm — build/bundler
+    "esbuild", "rollup", "webpack", "postcss", "tailwindcss", "autoprefixer",
+    // nuget — test
     "microsoft.net.test.sdk", "xunit", "xunit.runner.visualstudio",
     "nunit", "nunit3testadapter", "coverlet.collector",
+    // nuget — framework
     "microsoft.aspnetcore.openapi", "swashbuckle.aspnetcore",
   ]);
 

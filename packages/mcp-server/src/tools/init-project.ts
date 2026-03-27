@@ -10,6 +10,7 @@ import {
   generateDatabase,
   generateSyncFiles,
   indexProject,
+  loadConfig,
   type InitProjectInput,
 } from "@arcbridge/core";
 import { getAdapter } from "@arcbridge/adapters";
@@ -27,7 +28,13 @@ export function registerInitProject(
       template: z
         .enum(["nextjs-app-router", "react-vite", "api-service", "dotnet-webapi"])
         .default("nextjs-app-router")
-        .describe("Project template"),
+        .describe(
+          "Project template: " +
+          "nextjs-app-router (Next.js with App Router, SSR/SSG), " +
+          "react-vite (React SPA with Vite, client-only), " +
+          "api-service (Node.js API with Express/Fastify/Hono), " +
+          "dotnet-webapi (ASP.NET Core Web API, C#)",
+        ),
       features: z
         .array(z.enum(["auth", "database", "api"]))
         .default([])
@@ -48,15 +55,60 @@ export function registerInitProject(
       const targetDir = params.target_dir;
 
       // Check if already initialized
-      if (existsSync(join(targetDir, ".arcbridge", "config.yaml"))) {
+      const dbExists = existsSync(join(targetDir, ".arcbridge", "index.db"));
+      const configExists = existsSync(join(targetDir, ".arcbridge", "config.yaml"));
+
+      // Fully initialized — both config and DB exist
+      if (dbExists && configExists) {
+        const { error: validationError } = loadConfig(targetDir);
+        const msg = validationError
+          ? `ArcBridge is initialized in ${targetDir} but config has issues: ${validationError}. Use \`arcbridge_get_project_status\` to see the current state, or delete \`.arcbridge/\` to reinitialize.`
+          : `ArcBridge is already initialized in ${targetDir}. Use \`arcbridge_get_project_status\` to see the current state, or delete \`.arcbridge/\` to reinitialize.`;
+        return {
+          content: [{ type: "text" as const, text: msg }],
+        };
+      }
+
+      // DB exists but config.yaml is missing — treat as initialized
+      // (other tools use DB as the canonical marker)
+      if (dbExists && !configExists) {
         return {
           content: [
             {
               type: "text" as const,
-              text: `ArcBridge is already initialized in ${targetDir}. Use arcbridge_get_project_status to see the current state.`,
+              text: `ArcBridge database exists in ${targetDir} but config.yaml is missing. Delete \`.arcbridge/\` to reinitialize, or restore config.yaml.`,
             },
           ],
         };
+      }
+
+      // Partial init recovery: config exists but DB is missing (interrupted init)
+      // Only regenerate the database, don't overwrite user's arc42 docs/plans
+      if (configExists && !dbExists) {
+        const { config: existingConfig } = loadConfig(targetDir);
+        if (existingConfig) {
+          const recoverInput: InitProjectInput = {
+            name: existingConfig.project_name,
+            template: existingConfig.project_type,
+            features: [],
+            quality_priorities: existingConfig.quality_priorities,
+            platforms: existingConfig.platforms,
+            projectRoot: targetDir,
+          };
+          const { db: recoveredDb } = generateDatabase(targetDir, recoverInput);
+          ctx.db = recoveredDb;
+          ctx.projectRoot = targetDir;
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `ArcBridge database recovered from existing config in ${targetDir}. Your arc42 docs and plans were preserved.\n\nUse \`arcbridge_get_project_status\` to see the current state.`,
+              },
+            ],
+          };
+        }
+        // Config exists but is invalid — proceed with fresh init
+        // The full init below will overwrite existing .arcbridge/ files
       }
 
       const input: InitProjectInput = {
@@ -182,6 +234,13 @@ export function registerInitProject(
               ...allWarnings.map((w) => `- ${w}`),
             ]
           : []),
+        "",
+        "## Next Steps",
+        "",
+        "1. **Review the phase plan** — run `arcbridge_get_phase_plan` to see all phases and their tasks",
+        "2. **Replace example tasks in Phase 2+** — Phase 0-1 tasks are ready to use, but Phase 2+ tasks are examples only. Replace them with real tasks from the project's requirements.",
+        "3. **Activate the architect role** — run `arcbridge_activate_role` with role `architect` to get full architectural context",
+        "4. **Start working** — use `arcbridge_get_current_tasks` to see what to do next",
         "",
         "Use `arcbridge_get_project_status` to see the full project status.",
       ];

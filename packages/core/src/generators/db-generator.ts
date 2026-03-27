@@ -293,6 +293,10 @@ export function refreshFromDocs(
     existingScenarios.map((s) => [s.id, s.status]),
   );
 
+  // Disable FK checks BEFORE the transaction — PRAGMA foreign_keys has no
+  // effect inside a transaction (SQLite silently ignores it)
+  db.exec("PRAGMA foreign_keys = OFF");
+
   // Wrap entire delete + repopulate + restore in a transaction for atomicity
   const refresh = () => transaction(db, () => {
     // Delete in FK-safe order: dependents first, then parents
@@ -307,11 +311,24 @@ export function refreshFromDocs(
     db.prepare("DELETE FROM quality_scenarios").run();
     db.prepare("DELETE FROM adrs").run();
 
-    // Re-populate from files
+    // Re-populate from files (order matters: blocks before phases/tasks)
+    // FK checks are OFF so task YAML can reference blocks that were removed
     warnings.push(...populateBuildingBlocks(db, targetDir));
     warnings.push(...populateQualityScenarios(db, targetDir));
     warnings.push(...populatePhases(db, targetDir));
     warnings.push(...populateAdrs(db, targetDir));
+
+    // Nullify orphaned building_block references in tasks
+    const orphaned = db.prepare(`
+      UPDATE tasks SET building_block = NULL
+      WHERE building_block IS NOT NULL
+        AND building_block NOT IN (SELECT id FROM building_blocks)
+    `).run();
+    if (orphaned.changes > 0) {
+      warnings.push(
+        `${orphaned.changes} task(s) referenced removed building blocks (references cleared)`,
+      );
+    }
 
     // Restore task statuses that were previously set
     const restoreTask = db.prepare(
@@ -344,7 +361,12 @@ export function refreshFromDocs(
     }
   });
 
-  refresh();
+  try {
+    refresh();
+  } finally {
+    // Re-enable FK checks after transaction completes (must be outside transaction)
+    db.exec("PRAGMA foreign_keys = ON");
+  }
 
   return warnings;
 }
