@@ -27,7 +27,13 @@ export function registerInitProject(
       template: z
         .enum(["nextjs-app-router", "react-vite", "api-service", "dotnet-webapi"])
         .default("nextjs-app-router")
-        .describe("Project template"),
+        .describe(
+          "Project template: " +
+          "nextjs-app-router (Next.js with App Router, SSR/SSG), " +
+          "react-vite (React SPA with Vite, client-only), " +
+          "api-service (Node.js API with Express/Fastify/Hono), " +
+          "dotnet-webapi (ASP.NET Core Web API, C#)",
+        ),
       features: z
         .array(z.enum(["auth", "database", "api"]))
         .default([])
