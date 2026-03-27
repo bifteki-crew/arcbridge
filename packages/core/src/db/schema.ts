@@ -1,4 +1,4 @@
-import type Database from "better-sqlite3";
+import type { Database } from "./connection.js";
 
 export const CURRENT_SCHEMA_VERSION = 2;
 
@@ -199,7 +199,7 @@ CREATE INDEX IF NOT EXISTS idx_activity_task ON agent_activity(task_id);
 CREATE INDEX IF NOT EXISTS idx_activity_phase ON agent_activity(phase_id);
 `;
 
-export function initializeSchema(db: Database.Database): void {
+export function initializeSchema(db: Database): void {
   db.exec(SCHEMA_SQL);
 
   const existing = db

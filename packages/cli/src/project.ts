@@ -1,9 +1,9 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { openDatabase, migrate } from "@arcbridge/core";
-import type Database from "better-sqlite3";
+import type { Database } from "@arcbridge/core";
 
-export function openProjectDb(projectDir: string): Database.Database {
+export function openProjectDb(projectDir: string): Database {
   const dbPath = join(projectDir, ".arcbridge", "index.db");
   if (!existsSync(dbPath)) {
     throw new Error(

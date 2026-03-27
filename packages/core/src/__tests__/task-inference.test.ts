@@ -5,12 +5,12 @@ import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import { indexProject } from "../indexer/index.js";
 import { inferTaskStatuses, applyInferences } from "../sync/task-inference.js";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
 
 const TS_FIXTURE = join(__dirname, "fixtures", "ts-project");
 const DUMMY_ROOT = tmpdir();
 
-let db: Database.Database;
+let db: Database;
 
 beforeEach(async () => {
   db = openMemoryDatabase();

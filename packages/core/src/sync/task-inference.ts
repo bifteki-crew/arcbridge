@@ -1,4 +1,5 @@
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
+import { transaction } from "../db/connection.js";
 import { syncTaskToYaml } from "./yaml-writer.js";
 
 export interface TaskInferenceResult {
@@ -27,7 +28,7 @@ interface BlockRow {
  * Checks if building block code exists, acceptance criteria symbols are present, etc.
  */
 export function inferTaskStatuses(
-  db: Database.Database,
+  db: Database,
   phaseId: string,
 ): TaskInferenceResult[] {
   const results: TaskInferenceResult[] = [];
@@ -52,7 +53,7 @@ export function inferTaskStatuses(
  * Apply inferred statuses to the database and optionally write back to YAML.
  */
 export function applyInferences(
-  db: Database.Database,
+  db: Database,
   inferences: TaskInferenceResult[],
   projectRoot: string,
 ): void {
@@ -62,13 +63,12 @@ export function applyInferences(
 
   const now = new Date().toISOString();
 
-  const run = db.transaction(() => {
+  transaction(db, () => {
     for (const inf of inferences) {
       update.run(inf.inferredStatus, inf.inferredStatus, now, inf.taskId);
     }
   });
 
-  run();
 
   // Write back to YAML
   for (const inf of inferences) {
@@ -88,7 +88,7 @@ export function applyInferences(
 }
 
 function inferSingleTask(
-  db: Database.Database,
+  db: Database,
   task: TaskRow,
 ): TaskInferenceResult | null {
   // Check 1: Does the building block have indexed code?

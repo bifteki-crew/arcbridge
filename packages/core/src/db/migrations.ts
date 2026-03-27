@@ -1,9 +1,10 @@
-import type Database from "better-sqlite3";
+import type { Database } from "./connection.js";
+import { transaction } from "./connection.js";
 import { CURRENT_SCHEMA_VERSION } from "./schema.js";
 
 interface Migration {
   version: number;
-  up: (db: Database.Database) => void;
+  up: (db: Database) => void;
 }
 
 const migrations: Migration[] = [
@@ -43,7 +44,7 @@ const migrations: Migration[] = [
   },
 ];
 
-export function migrate(db: Database.Database): void {
+export function migrate(db: Database): void {
   const row = db
     .prepare("SELECT value FROM arcbridge_meta WHERE key = 'schema_version'")
     .get() as { value: string } | undefined;
@@ -59,11 +60,11 @@ export function migrate(db: Database.Database): void {
     .sort((a, b) => a.version - b.version);
 
   for (const migration of pending) {
-    db.transaction(() => {
+    transaction(db, () => {
       migration.up(db);
       db.prepare(
         "UPDATE arcbridge_meta SET value = ? WHERE key = 'schema_version'",
       ).run(String(migration.version));
-    })();
+    });
   }
 }

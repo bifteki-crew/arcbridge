@@ -151,7 +151,7 @@ export function registerGetDependencyGraph(
 }
 
 function getFileImportGraph(
-  db: import("better-sqlite3").Database,
+  db: import("@arcbridge/core").Database,
   modulePath: string,
   _direction: string,
 ) {

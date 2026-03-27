@@ -2,7 +2,7 @@ import { relative, join } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import YAML from "yaml";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
 import type { IndexerOptions, IndexResult } from "./types.js";
 import { createTsProgram } from "./program.js";
 import { extractSymbols } from "./symbol-extractor.js";
@@ -46,7 +46,7 @@ export function detectProjectLanguage(projectRoot: string): "typescript" | "csha
  * Dispatches to the TypeScript or .NET indexer accordingly.
  */
 export async function indexProject(
-  db: Database.Database,
+  db: Database,
   options: IndexerOptions,
 ): Promise<IndexResult> {
   const language = options.language ?? "auto";
@@ -126,7 +126,7 @@ export function resolveCSharpBackend(projectRoot: string): CSharpBackend {
 }
 
 function indexTypeScriptProject(
-  db: Database.Database,
+  db: Database,
   options: IndexerOptions,
 ): IndexResult {
   const start = Date.now();

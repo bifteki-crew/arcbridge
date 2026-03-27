@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { resolve, join } from "node:path";
 import { readFileSync } from "node:fs";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import { ensureCSharpParser, parseCSharp } from "../indexer/csharp/parser.js";
@@ -435,7 +435,7 @@ public class Dog : Animal { }
   });
 
   describe("full integration", () => {
-    let db: Database.Database;
+    let db: Database;
 
     beforeAll(async () => {
       db = openMemoryDatabase();

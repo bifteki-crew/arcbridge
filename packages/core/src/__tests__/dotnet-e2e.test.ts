@@ -7,7 +7,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { existsSync } from "node:fs";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import { indexProject } from "../indexer/index.js";
@@ -50,7 +50,7 @@ const isReady = (() => {
 const describeIfDotnet = isReady ? describe : describe.skip;
 
 describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => {
-  let db: Database.Database;
+  let db: Database;
 
   beforeAll(async () => {
     db = openMemoryDatabase();

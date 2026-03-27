@@ -6,7 +6,7 @@ import {
   detectDrift,
   type ChangedFile,
 } from "@arcbridge/core";
-import type Database from "better-sqlite3";
+import type { Database } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath } from "../helpers.js";
 
@@ -135,7 +135,7 @@ interface Finding {
 // --- Dimension 1: Architecture ---
 
 function reviewArchitecture(
-  db: Database.Database,
+  db: Database,
   changedFiles: ChangedFile[],
   findings: Finding[],
 ): void {
@@ -229,7 +229,7 @@ function reviewArchitecture(
 // --- Dimension 2: Security ---
 
 function reviewSecurity(
-  db: Database.Database,
+  db: Database,
   changedFiles: ChangedFile[],
   findings: Finding[],
 ): void {
@@ -321,7 +321,7 @@ function reviewSecurity(
 // --- Dimension 3: Testing ---
 
 function reviewTesting(
-  db: Database.Database,
+  db: Database,
   changedFiles: ChangedFile[],
   findings: Finding[],
 ): void {
@@ -396,7 +396,7 @@ function reviewTesting(
 // --- Dimension 4: Documentation ---
 
 function reviewDocumentation(
-  db: Database.Database,
+  db: Database,
   changedFiles: ChangedFile[],
   findings: Finding[],
 ): void {
@@ -443,7 +443,7 @@ function reviewDocumentation(
 // --- Dimension 5: Complexity ---
 
 function reviewComplexity(
-  db: Database.Database,
+  db: Database,
   changedFiles: ChangedFile[],
   findings: Finding[],
 ): void {

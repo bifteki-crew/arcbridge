@@ -39,7 +39,6 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "better-sqlite3": "^11.0.0",
     "globby": "^14.0.0",
     "gray-matter": "^4.0.3",
     "web-tree-sitter": "^0.26.7",
@@ -48,7 +47,9 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
     "@types/react": "^19.2.14"
+  },
+  "engines": {
+    "node": ">=22.16.0"
   }
 }

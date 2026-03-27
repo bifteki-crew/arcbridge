@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
 
 export interface ChangedFile {
   status: "added" | "modified" | "deleted" | "renamed";
@@ -23,7 +23,7 @@ export interface GitRef {
 export function resolveRef(
   projectRoot: string,
   since: string,
-  db?: Database.Database,
+  db?: Database,
 ): GitRef {
   switch (since) {
     case "last-commit":
@@ -134,7 +134,7 @@ export function getHeadSha(projectRoot: string): string | null {
  * Store the current sync point in arcbridge_meta.
  */
 export function setSyncCommit(
-  db: Database.Database,
+  db: Database,
   key: "last_sync_commit" | "phase_sync_commit",
   sha: string,
 ): void {

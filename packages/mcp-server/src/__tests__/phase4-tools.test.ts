@@ -10,7 +10,7 @@ import {
   generateSyncFiles,
   type ArcBridgeConfig,
 } from "@arcbridge/core";
-import type Database from "better-sqlite3";
+import type { Database } from "@arcbridge/core";
 
 const TS_FIXTURE = join(
   __dirname,
@@ -24,7 +24,7 @@ const TS_FIXTURE = join(
   "ts-project",
 );
 
-let db: Database.Database;
+let db: Database;
 
 beforeEach(async () => {
   db = openMemoryDatabase();

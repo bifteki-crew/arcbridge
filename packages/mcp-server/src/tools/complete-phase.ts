@@ -11,6 +11,7 @@ import {
   loadConfig,
   refreshFromDocs,
   syncPhaseToYaml,
+  transaction,
 } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
@@ -267,7 +268,7 @@ export function registerCompletePhase(
           .get(phase.phase_number + 1) as { id: string; name: string } | undefined;
 
         // Transition atomically
-        const transition = db.transaction(() => {
+        transaction(db, () => {
           db.prepare(
             "UPDATE phases SET status = 'complete', completed_at = ?, gate_status = ? WHERE id = ?",
           ).run(now, gateStatus, phase.id);
@@ -278,7 +279,6 @@ export function registerCompletePhase(
             ).run(now, nextPhase.id);
           }
         });
-        transition();
 
         // Write back to YAML
         const projectRoot = ctx.projectRoot ?? params.target_dir;

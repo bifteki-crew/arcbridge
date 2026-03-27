@@ -3,11 +3,11 @@ import { join } from "node:path";
 import { indexProject } from "../indexer/index.js";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
-import type Database from "better-sqlite3";
+import type { Database } from "../db/connection.js";
 
 const FIXTURE_DIR = join(__dirname, "fixtures", "react-project");
 
-let db: Database.Database;
+let db: Database;
 
 beforeEach(async () => {
   db = openMemoryDatabase();

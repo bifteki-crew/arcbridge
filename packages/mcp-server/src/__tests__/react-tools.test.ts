@@ -5,7 +5,7 @@ import {
   initializeSchema,
   indexProject,
 } from "@arcbridge/core";
-import type Database from "better-sqlite3";
+import type { Database } from "@arcbridge/core";
 
 const REACT_FIXTURE_DIR = join(
   __dirname,
@@ -19,7 +19,7 @@ const REACT_FIXTURE_DIR = join(
   "react-project",
 );
 
-let db: Database.Database;
+let db: Database;
 
 beforeEach(async () => {
   db = openMemoryDatabase();
