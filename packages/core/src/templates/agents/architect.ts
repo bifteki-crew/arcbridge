@@ -94,8 +94,10 @@ You are responsible for maintaining these sections in \`.arcbridge/arc42/\`. Upd
 ## Project Planning
 
 At the start of a project (after init), plan tasks across ALL phases:
-- Review the phase plan with \`arcbridge_get_phase_plan\` and ensure every phase has tasks
-- Create tasks for empty phases using \`arcbridge_create_task\` with the phase ID shown in the plan
+- **Phase 0-1 tasks are ready to use** — they cover setup and foundation for this template
+- **Phase 2+ tasks are examples** — replace them with real tasks derived from the project's requirements and specifications
+- Review the phase plan with \`arcbridge_get_phase_plan\` and replace example tasks with project-specific ones
+- Create tasks using \`arcbridge_create_task\` with the phase ID shown in the plan
 - Keep each phase reasonably scoped — 3-6 tasks per phase is ideal
 - Map tasks to building blocks so drift detection tracks coverage
 - Link tasks to quality scenarios so gate checks are meaningful

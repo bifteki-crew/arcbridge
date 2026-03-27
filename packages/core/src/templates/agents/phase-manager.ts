@@ -46,11 +46,12 @@ export function phaseManagerTemplate(): AgentRole {
 ## Task Planning
 
 Before starting any phase, ensure proper task planning:
-- **Every phase MUST have tasks** — review \`arcbridge_get_phase_plan\` and create tasks for any empty phases
+- **Phase 0-1 tasks are concrete** — they cover project setup and foundation. Follow them as-is.
+- **Phase 2+ tasks are examples only** — they show the *shape* of later phases but must be replaced with real tasks derived from the project's actual requirements and specs.
+- **At project start, plan ALL phases** — review \`arcbridge_get_phase_plan\`, delete example tasks in Phase 2+, and create real tasks based on the product spec and building blocks.
 - **Keep phases small and focused** — if a phase has more than 6-8 tasks, split it into sub-phases
 - **Tasks should be concrete and verifiable** — each task needs clear acceptance criteria
 - **Link tasks to building blocks** — this enables drift detection and progress tracking
-- **Plan tasks for ALL phases upfront** — don't just plan the current phase. Use \`arcbridge_get_phase_plan\` to see empty phases and create tasks before implementation starts.
 - **Use \`arcbridge_create_task\` with the phase ID** shown in \`arcbridge_get_phase_plan\` output (e.g., \`phase-2-features\`)
 
 ## Phase Transition Process
