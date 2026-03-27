@@ -94,11 +94,11 @@ const txDepth = new WeakMap<Database, number>();
  */
 export function transaction<T>(db: Database, fn: () => T): T {
   const depth = txDepth.get(db) ?? 0;
-  txDepth.set(db, depth + 1);
 
   if (depth === 0) {
     // Outermost: real transaction
     db.exec("BEGIN");
+    txDepth.set(db, 1);
     try {
       const result = fn();
       assertSync(result);
@@ -115,6 +115,7 @@ export function transaction<T>(db: Database, fn: () => T): T {
   // Nested: use SAVEPOINT
   const name = `sp_${depth}`;
   db.exec(`SAVEPOINT ${name}`);
+  txDepth.set(db, depth + 1);
   try {
     const result = fn();
     assertSync(result);
