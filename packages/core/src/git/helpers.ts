@@ -93,9 +93,14 @@ export function getChangedFiles(
     // ref invalid — fall through to uncommitted only
   }
 
-  // Always include uncommitted changes (staged + unstaged)
+  // Always include uncommitted changes (staged + unstaged tracked files)
   for (const change of getUncommittedChanges(projectRoot)) {
-    byPath.set(change.path, change); // overwrites committed if both exist
+    const existing = byPath.get(change.path);
+    if (!existing) {
+      byPath.set(change.path, change);
+    }
+    // Keep committed "added"/"deleted" status — more significant than
+    // uncommitted "modified" for drift detection and practice reviews
   }
 
   return Array.from(byPath.values());

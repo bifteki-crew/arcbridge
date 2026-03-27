@@ -10,6 +10,7 @@ import {
   generateDatabase,
   generateSyncFiles,
   indexProject,
+  loadConfig,
   type InitProjectInput,
 } from "@arcbridge/core";
 import { getAdapter } from "@arcbridge/adapters";
@@ -53,9 +54,10 @@ export function registerInitProject(
     async (params) => {
       const targetDir = params.target_dir;
 
-      // Check if already initialized (DB is the canonical marker, not just config)
+      // Check if already initialized
       const dbExists = existsSync(join(targetDir, ".arcbridge", "index.db"));
       const configExists = existsSync(join(targetDir, ".arcbridge", "config.yaml"));
+
       if (dbExists && configExists) {
         return {
           content: [
@@ -65,6 +67,33 @@ export function registerInitProject(
             },
           ],
         };
+      }
+
+      // Partial init recovery: config exists but DB is missing (interrupted init)
+      // Only regenerate the database, don't overwrite user's arc42 docs/plans
+      if (configExists && !dbExists) {
+        const { config: existingConfig } = loadConfig(targetDir);
+        if (existingConfig) {
+          const recoverInput: InitProjectInput = {
+            name: existingConfig.project_name,
+            template: existingConfig.project_type,
+            features: [],
+            quality_priorities: existingConfig.quality_priorities,
+            platforms: existingConfig.platforms,
+            projectRoot: targetDir,
+          };
+          const { db: recoveredDb } = generateDatabase(targetDir, recoverInput);
+          ctx.db = recoveredDb;
+          ctx.projectRoot = targetDir;
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `ArcBridge database recovered from existing config in ${targetDir}. Your arc42 docs and plans were preserved.\n\nUse \`arcbridge_get_project_status\` to see the current state.`,
+              },
+            ],
+          };
+        }
       }
 
       const input: InitProjectInput = {

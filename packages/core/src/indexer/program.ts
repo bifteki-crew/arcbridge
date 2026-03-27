@@ -1,5 +1,5 @@
 import ts from "typescript";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 import type { IndexerOptions } from "./types.js";
 
 export interface ProgramResult {
@@ -37,15 +37,36 @@ export function createTsProgram(options: IndexerOptions): ProgramResult {
   let resolvedConfigPath = configPath;
   const config = configFile.config;
   if (config.references && !config.include && !config.files) {
-    // Try common referenced config names
-    for (const candidate of ["tsconfig.app.json", "tsconfig.src.json"]) {
-      const refPath = ts.findConfigFile(projectRoot, ts.sys.fileExists, candidate);
-      if (refPath) {
-        const refConfig = ts.readConfigFile(refPath, ts.sys.readFile);
-        if (!refConfig.error) {
+    // First try declared references (e.g., [{ "path": "./tsconfig.app.json" }])
+    for (const ref of config.references) {
+      const refRelPath = typeof ref === "string" ? ref : ref.path;
+      if (!refRelPath) continue;
+      const refFullPath = join(dirname(configPath), refRelPath);
+      // Reference might point to a directory (containing tsconfig.json) or a file
+      const refConfigPath = refFullPath.endsWith(".json")
+        ? refFullPath
+        : join(refFullPath, "tsconfig.json");
+      if (ts.sys.fileExists(refConfigPath)) {
+        const refConfig = ts.readConfigFile(refConfigPath, ts.sys.readFile);
+        if (!refConfig.error && (refConfig.config.include || refConfig.config.files)) {
           configFile = refConfig;
-          resolvedConfigPath = refPath;
+          resolvedConfigPath = refConfigPath;
           break;
+        }
+      }
+    }
+
+    // Fallback: try common names if references didn't resolve
+    if (resolvedConfigPath === configPath) {
+      for (const candidate of ["tsconfig.app.json", "tsconfig.src.json"]) {
+        const refPath = ts.findConfigFile(projectRoot, ts.sys.fileExists, candidate);
+        if (refPath) {
+          const refConfig = ts.readConfigFile(refPath, ts.sys.readFile);
+          if (!refConfig.error) {
+            configFile = refConfig;
+            resolvedConfigPath = refPath;
+            break;
+          }
         }
       }
     }
