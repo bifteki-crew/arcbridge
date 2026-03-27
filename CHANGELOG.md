@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.3 (unreleased)
+## 0.1.3 (2026-03-27)
 
 ### Breaking Changes
 
@@ -15,7 +15,7 @@
 ### Stats
 
 - Zero native dependencies
-- 345 tests passing, 0 lint errors, 0 type errors
+- 351 tests passing, 0 lint errors, 0 type errors
 
 ## 0.1.2 (2026-03-25)
 
