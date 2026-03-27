@@ -4,6 +4,30 @@ import { DatabaseSync } from "node:sqlite";
 export type Database = DatabaseSync;
 
 /**
+ * Suppress the node:sqlite ExperimentalWarning for this process.
+ * Call once at the top of entry points (CLI, MCP server).
+ * This is opt-in — @arcbridge/core does not suppress warnings automatically.
+ */
+let suppressed = false;
+export function suppressSqliteWarning(): void {
+  if (suppressed) return;
+  suppressed = true;
+  const origEmit = process.emit;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (process as any).emit = function (event: string, ...args: any[]) {
+    if (
+      event === "warning" &&
+      args[0]?.name === "ExperimentalWarning" &&
+      typeof args[0]?.message === "string" &&
+      args[0].message.includes("SQLite")
+    ) {
+      return true;
+    }
+    return origEmit.apply(process, [event, ...args] as Parameters<typeof origEmit>);
+  };
+}
+
+/**
  * Convert undefined values to null for node:sqlite compatibility.
  * better-sqlite3 accepted undefined and converted to null silently;
  * node:sqlite throws "Provided value cannot be bound to SQLite parameter".
