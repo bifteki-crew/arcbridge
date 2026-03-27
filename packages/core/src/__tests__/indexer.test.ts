@@ -428,3 +428,28 @@ describe("agent workflow simulation (TypeScript)", () => {
     expect(modelSymbols.some((s) => s.name === "authenticate")).toBe(false);
   });
 });
+
+describe("Vite project with tsconfig references", () => {
+  const VITE_FIXTURE = join(__dirname, "fixtures", "vite-project");
+
+  it("indexes files despite root tsconfig having only references", async () => {
+    const viteDb = openMemoryDatabase();
+    initializeSchema(viteDb);
+
+    const result = await indexProject(viteDb, { projectRoot: VITE_FIXTURE });
+
+    expect(result.symbolsIndexed).toBeGreaterThan(0);
+    expect(result.filesProcessed).toBeGreaterThan(0);
+
+    // Should find symbols from src/
+    const symbols = viteDb
+      .prepare("SELECT name, kind FROM symbols")
+      .all() as { name: string; kind: string }[];
+
+    expect(symbols.some((s) => s.name === "App")).toBe(true);
+    expect(symbols.some((s) => s.name === "formatDate")).toBe(true);
+    expect(symbols.some((s) => s.name === "APP_NAME")).toBe(true);
+
+    viteDb.close();
+  });
+});

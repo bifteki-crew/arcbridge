@@ -36,7 +36,8 @@ export function createTsProgram(options: IndexerOptions): ProgramResult {
   // Without resolving references, parseJsonConfigFileContent returns 0 files.
   let resolvedConfigPath = configPath;
   const config = configFile.config;
-  if (config.references && !config.include && !config.files) {
+  const hasOwnFiles = (config.include && config.include.length > 0) || (config.files && config.files.length > 0);
+  if (config.references && !hasOwnFiles) {
     // First try declared references (e.g., [{ "path": "./tsconfig.app.json" }])
     for (const ref of config.references) {
       const refRelPath = typeof ref === "string" ? ref : ref.path;

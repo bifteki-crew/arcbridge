@@ -119,13 +119,16 @@ export function getUncommittedChanges(projectRoot: string): ChangedFile[] {
       "git",
       ["status", "--porcelain", "-uno"],
       { cwd: projectRoot, encoding: "utf-8", timeout: 5000 },
-    ).trim();
+    );
 
-    if (!output) return [];
+    const lines = output.split("\n").filter((l) => l.length >= 3);
+    if (lines.length === 0) return [];
 
-    return output.split("\n").map((line) => {
+    // Porcelain format: XY<space>filename (XY = 2-char status, then space, then path)
+    // Don't trim() the full output — leading spaces in XY column are significant
+    return lines.map((line) => {
       const statusCode = line.slice(0, 2).trim();
-      const path = line.slice(3);
+      const path = line.slice(3).trimEnd();
       const status = statusCode === "D" ? "deleted" : statusCode === "A" ? "added" : "modified";
       return { status, path };
     });
