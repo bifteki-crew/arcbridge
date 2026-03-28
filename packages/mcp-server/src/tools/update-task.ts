@@ -87,11 +87,12 @@ export function registerUpdateTask(
         lines.push("", `**Notes:** ${params.notes}`);
       }
 
-      // If task is done, show phase progress
-      if (params.status === "done") {
+      // If task is done or cancelled, show phase progress
+      if (params.status === "done" || params.status === "cancelled") {
+        // Cancelled tasks are excluded from the total — they're out of scope
         const phaseStats = db
           .prepare(
-            "SELECT COUNT(*) as total, SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done FROM tasks WHERE phase_id = ?",
+            "SELECT SUM(CASE WHEN status != 'cancelled' THEN 1 ELSE 0 END) as total, SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done FROM tasks WHERE phase_id = ?",
           )
           .get(task.phase_id) as { total: number; done: number };
 
@@ -100,7 +101,7 @@ export function registerUpdateTask(
           `**Phase progress:** ${phaseStats.done}/${phaseStats.total} tasks complete`,
         );
 
-        if (phaseStats.done === phaseStats.total) {
+        if (phaseStats.total > 0 && phaseStats.done === phaseStats.total) {
           lines.push(
             "",
             "All tasks in this phase are complete! The phase is ready to advance.",

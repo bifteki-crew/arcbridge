@@ -35,7 +35,7 @@ export function inferTaskStatuses(
 
   const tasks = db
     .prepare(
-      "SELECT id, title, status, building_block, quality_scenarios, acceptance_criteria FROM tasks WHERE phase_id = ? AND status != 'done'",
+      "SELECT id, title, status, building_block, quality_scenarios, acceptance_criteria FROM tasks WHERE phase_id = ? AND status NOT IN ('done', 'cancelled')",
     )
     .all(phaseId) as TaskRow[];
 

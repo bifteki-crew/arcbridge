@@ -123,7 +123,8 @@ export function registerCompletePhase(
         .prepare("SELECT id, title, status FROM tasks WHERE phase_id = ?")
         .all(phase.id) as TaskRow[];
 
-      const incompleteTasks = tasks.filter((t) => t.status !== "done");
+      // Cancelled tasks are out of scope — don't block phase completion
+      const incompleteTasks = tasks.filter((t) => t.status !== "done" && t.status !== "cancelled");
       const tasksPass = incompleteTasks.length === 0;
 
       // Step 3: Check gate — drift
