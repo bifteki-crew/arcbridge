@@ -49,7 +49,7 @@ export function registerReindex(
           "# Reindex Complete",
           "",
           "## Architecture Docs",
-          `- **Refreshed from YAML:** building blocks, phases, tasks, quality scenarios, ADRs`,
+          `- **Refreshed from docs:** building blocks, phases, tasks, quality scenarios, ADRs`,
           ...(docWarnings.length > 0 ? [`- **Warnings:** ${docWarnings.join("; ")}`] : []),
           "",
           "## Code Symbols",
