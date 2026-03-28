@@ -1,4 +1,6 @@
 import { execFileSync } from "node:child_process";
+import { realpathSync } from "node:fs";
+import { relative } from "node:path";
 import type { Database } from "../db/connection.js";
 
 export interface ChangedFile {
@@ -163,6 +165,53 @@ export function setSyncCommit(
   db.prepare(
     "INSERT OR REPLACE INTO arcbridge_meta (key, value) VALUES (?, ?)",
   ).run(key, sha);
+}
+
+/**
+ * Get the git repository root directory.
+ */
+export function getRepoRoot(projectRoot: string): string | null {
+  try {
+    return execFileSync(
+      "git",
+      ["rev-parse", "--show-toplevel"],
+      { cwd: projectRoot, encoding: "utf-8", timeout: 5000 },
+    ).trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Filter changed files to only those within the project directory.
+ * In monorepo setups, getChangedFiles returns all repo changes —
+ * this scopes them to the project's subdirectory.
+ */
+export function scopeToProject(
+  changedFiles: ChangedFile[],
+  projectRoot: string,
+): ChangedFile[] {
+  const repoRoot = getRepoRoot(projectRoot);
+  if (!repoRoot) return changedFiles;
+
+  // Resolve symlinks (macOS /var → /private/var) before comparing paths
+  let projectRel: string;
+  try {
+    projectRel = relative(realpathSync(repoRoot), realpathSync(projectRoot));
+  } catch {
+    return changedFiles;
+  }
+
+  // If project IS the repo root, or path is outside repo, no filtering
+  if (!projectRel || projectRel === "." || projectRel.startsWith("..")) return changedFiles;
+
+  const prefix = projectRel.replace(/\\/g, "/");
+  return changedFiles
+    .filter((f) => f.path.startsWith(prefix + "/") || f.path === prefix)
+    .map((f) => ({
+      ...f,
+      path: f.path.startsWith(prefix + "/") ? f.path.slice(prefix.length + 1) : f.path,
+    }));
 }
 
 function parseStatusCode(code: string): ChangedFile["status"] {

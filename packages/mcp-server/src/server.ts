@@ -31,6 +31,7 @@ import { registerCompletePhase } from "./tools/complete-phase.js";
 import { registerActivateRole } from "./tools/activate-role.js";
 import { registerVerifyScenarios } from "./tools/verify-scenarios.js";
 import { registerRunRoleCheck } from "./tools/run-role-check.js";
+import { registerUpdateScenarioStatus } from "./tools/update-scenario-status.js";
 import { registerRecordActivity } from "./tools/record-activity.js";
 import { registerGetMetrics } from "./tools/get-metrics.js";
 import { registerExportMetrics } from "./tools/export-metrics.js";
@@ -80,6 +81,7 @@ export function createArcBridgeServer(): McpServer {
   registerCompletePhase(server, ctx);
   registerActivateRole(server, ctx);
   registerVerifyScenarios(server, ctx);
+  registerUpdateScenarioStatus(server, ctx);
   registerRunRoleCheck(server, ctx);
 
   // Metrics

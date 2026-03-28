@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, writeFileSync, unlinkSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, unlinkSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
@@ -9,8 +9,10 @@ import {
   resolveRef,
   getChangedFiles,
   getUncommittedChanges,
+  scopeToProject,
   getHeadSha,
   setSyncCommit,
+  type ChangedFile,
 } from "../git/helpers.js";
 import type { Database } from "../db/connection.js";
 
@@ -201,5 +203,65 @@ describe("getChangedFiles with real git repo", () => {
     expect(newFile).toBeDefined();
     // Should keep "added" from committed diff, not "modified" from uncommitted
     expect(newFile!.status).toBe("added");
+  });
+});
+
+describe("scopeToProject", () => {
+  let repoDir: string;
+
+  function git(...args: string[]): string {
+    return execFileSync("git", args, {
+      cwd: repoDir,
+      encoding: "utf-8",
+      timeout: 5000,
+    }).trim();
+  }
+
+  beforeEach(() => {
+    repoDir = mkdtempSync(join(tmpdir(), "arcbridge-scope-test-"));
+    git("init");
+    git("config", "user.email", "test@test.com");
+    git("config", "user.name", "Test");
+  });
+
+  afterEach(() => {
+    rmSync(repoDir, { recursive: true, force: true });
+  });
+
+  it("returns all files when project is repo root", () => {
+    const files: ChangedFile[] = [
+      { status: "modified", path: "src/app.ts" },
+      { status: "added", path: "README.md" },
+    ];
+
+    const result = scopeToProject(files, repoDir);
+    expect(result.length).toBe(2);
+  });
+
+  it("filters to project subdirectory in monorepo", () => {
+    const subDir = join(repoDir, "packages", "my-app");
+    mkdirSync(subDir, { recursive: true });
+
+    const files: ChangedFile[] = [
+      { status: "modified", path: "packages/my-app/src/index.ts" },
+      { status: "modified", path: "packages/other/src/index.ts" },
+      { status: "modified", path: ".gitignore" },
+    ];
+
+    const result = scopeToProject(files, subDir);
+    expect(result.length).toBe(1);
+    // Path should be stripped to project-relative
+    expect(result[0].path).toBe("src/index.ts");
+  });
+
+  it("returns all files when not in a git repo", () => {
+    const nonGitDir = mkdtempSync(join(tmpdir(), "arcbridge-no-git-"));
+    const files: ChangedFile[] = [
+      { status: "modified", path: "src/app.ts" },
+    ];
+
+    const result = scopeToProject(files, nonGitDir);
+    expect(result.length).toBe(1);
+    rmSync(nonGitDir, { recursive: true, force: true });
   });
 });

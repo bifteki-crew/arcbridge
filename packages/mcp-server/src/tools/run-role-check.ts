@@ -7,6 +7,7 @@ import {
   detectDrift,
   resolveRef,
   getChangedFiles,
+  scopeToProject,
   type ChangedFile,
 } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
@@ -151,7 +152,8 @@ function getChangedFilesForScope(
   const since = scope === "last-commit" ? "last-commit" : "last-phase";
   const ref = resolveRef(projectRoot, since, db);
   try {
-    return getChangedFiles(projectRoot, ref.sha);
+    const files = getChangedFiles(projectRoot, ref.sha);
+    return scopeToProject(files, projectRoot);
   } catch {
     return null;
   }
@@ -596,7 +598,7 @@ function runPhaseManagerCheck(
   // Changed files since last sync
   const ref = resolveRef(projectRoot, "last-sync", db);
   try {
-    const changedFiles = getChangedFiles(projectRoot, ref.sha);
+    const changedFiles = scopeToProject(getChangedFiles(projectRoot, ref.sha), projectRoot);
     if (changedFiles.length > 0) {
       lines.push(`## Changes Since Last Sync (${ref.label})`, "");
       appendChangedFilesList(lines, changedFiles);

@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   resolveRef,
   getChangedFiles,
+  scopeToProject,
   detectDrift,
   type ChangedFile,
 } from "@arcbridge/core";
@@ -46,7 +47,9 @@ export function registerGetPracticeReview(
 
       const projectRoot = ctx.projectRoot ?? params.target_dir;
       const ref = resolveRef(projectRoot, params.since, db);
-      const changedFiles = getChangedFiles(projectRoot, ref.sha);
+      const allChangedFiles = getChangedFiles(projectRoot, ref.sha);
+      // Scope to project directory (filters out parent repo files in monorepo setups)
+      const changedFiles = scopeToProject(allChangedFiles, projectRoot);
 
       if (changedFiles.length === 0) {
         return textResult(

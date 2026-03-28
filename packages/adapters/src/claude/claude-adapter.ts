@@ -143,8 +143,30 @@ export class ClaudeAdapter implements PlatformAdapter {
   platform = "claude";
 
   generateProjectConfig(targetDir: string, config: ArcBridgeConfig): void {
-    const content = generateClaudeMd(config);
-    writeFileSync(join(targetDir, "CLAUDE.md"), content, "utf-8");
+    const arcbridgeContent = generateClaudeMd(config);
+    const claudeMdPath = join(targetDir, "CLAUDE.md");
+    const marker = "<!-- arcbridge-generated -->";
+
+    if (existsSync(claudeMdPath)) {
+      const existing = readFileSync(claudeMdPath, "utf-8");
+
+      // Detect where ArcBridge content starts: marker from current version,
+      // or the generated heading from older versions (before marker was added)
+      const markerIndex = existing.indexOf(marker);
+      const legacyIndex = existing.indexOf("## ArcBridge Workflow");
+      const splitIndex = markerIndex >= 0 ? markerIndex : legacyIndex;
+
+      if (splitIndex >= 0) {
+        // Replace everything from the ArcBridge section onwards
+        const userContent = existing.slice(0, splitIndex).trimEnd();
+        writeFileSync(claudeMdPath, `${userContent}\n\n${marker}\n\n${arcbridgeContent}`, "utf-8");
+      } else {
+        // No existing ArcBridge content — append
+        writeFileSync(claudeMdPath, `${existing.trimEnd()}\n\n${marker}\n\n${arcbridgeContent}`, "utf-8");
+      }
+    } else {
+      writeFileSync(claudeMdPath, `${marker}\n\n${arcbridgeContent}`, "utf-8");
+    }
 
     // Generate .mcp.json if it doesn't already exist
     const mcpJsonPath = join(targetDir, ".mcp.json");

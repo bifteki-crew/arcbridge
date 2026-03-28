@@ -15,10 +15,12 @@ export function qualityGuardianTemplate(): AgentRole {
       "arcbridge_get_symbol",
       "arcbridge_get_component_graph",
       "arcbridge_get_boundary_analysis",
-      // Phase 3+: "arcbridge_run_role_check"
+      "arcbridge_update_scenario_status",
+      "arcbridge_verify_scenarios",
+      "arcbridge_run_role_check",
     ],
     denied_tools: [],
-    read_only: true,
+    read_only: false,
     quality_focus: [
       "performance",
       "accessibility",
