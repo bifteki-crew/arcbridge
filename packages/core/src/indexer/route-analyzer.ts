@@ -33,9 +33,13 @@ export function analyzeRoutes(
   db: Database,
   service: string = "main",
 ): number {
-  const appDir = join(projectRoot, "app");
+  // Check app/ first, then src/app/ (common Next.js convention)
+  let appDir = join(projectRoot, "app");
   if (!existsSync(appDir) || !statSync(appDir).isDirectory()) {
-    return 0;
+    appDir = join(projectRoot, "src", "app");
+    if (!existsSync(appDir) || !statSync(appDir).isDirectory()) {
+      return 0;
+    }
   }
 
   const routes: ExtractedRoute[] = [];
