@@ -38,12 +38,14 @@ export function registerDeleteTask(
       }
 
       // Delete from YAML first (source of truth), then DB
-      deleteTaskFromYaml(params.target_dir, task.phase_id, params.task_id);
+      const yamlResult = deleteTaskFromYaml(params.target_dir, task.phase_id, params.task_id);
       db.prepare("DELETE FROM tasks WHERE id = ?").run(params.task_id);
 
-      return textResult(
-        `Task **${task.id}** deleted: "${task.title}"`,
-      );
+      const msg = `Task **${task.id}** deleted: "${task.title}"`;
+      if (yamlResult.warning) {
+        return textResult(`${msg}\n\n**Warning:** ${yamlResult.warning}`);
+      }
+      return textResult(msg);
     },
   );
 }
