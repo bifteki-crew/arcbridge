@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.1.5 (2026-03-28)
+
+### New Features
+
+- **`arcbridge_update_scenario_status`** (31 MCP tools) — manually update quality scenario status (passing/failing/partial) and link test files. Auto-upgrades verification from manual to semi-automatic when tests are linked.
+- **CLAUDE.md merge** — `init_project` now preserves existing CLAUDE.md content, appending ArcBridge workflow section below a marker comment instead of overwriting.
+- **Template-specific guidance** — `get_guidance` returns language-appropriate advice per project type: React/Next.js patterns for frontend, C#/ASP.NET patterns for dotnet, Node.js patterns for API services.
+- **Git-scoped reviews** — `get_practice_review` and `run_role_check` now filter changed files to the project directory, fixing false positives in monorepo setups.
+
+### Improvements
+
+- **Spec parameter on init_project** — pass project requirements text directly, saved to `.arcbridge/spec.md`
+- **Default quality priorities** include `maintainability` (MAINT-01/MAINT-02 scenarios now generated)
+- **Dotnet code_paths** auto-detect `src/<ProjectName>/` convention from dotnetServices
+- **Reindex output** clearly separates "Architecture Docs" (always refreshed) from "Code Symbols"
+- **Validation errors** include field paths (`title: Required` instead of just `Required`)
+- **Route analyzer** checks `src/app/` for Next.js projects (common convention)
+- **.next/ excluded** from TypeScript indexer source files
+- **Quality-guardian role** now has `update_scenario_status`, `verify_scenarios`, `run_role_check` tools
+
+### Stats
+
+- 31 MCP tools, 371 tests passing, 0 lint errors, 0 type errors
+
 ## 0.1.4 (2026-03-27)
 
 ### Fixes (from cross-team agent orchestrator test)
