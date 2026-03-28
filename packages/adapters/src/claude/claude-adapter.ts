@@ -149,14 +149,19 @@ export class ClaudeAdapter implements PlatformAdapter {
 
     if (existsSync(claudeMdPath)) {
       const existing = readFileSync(claudeMdPath, "utf-8");
-      // If we've written before, replace the ArcBridge section; otherwise append
+
+      // Detect where ArcBridge content starts: marker from current version,
+      // or the generated heading from older versions (before marker was added)
       const markerIndex = existing.indexOf(marker);
-      if (markerIndex >= 0) {
-        // Replace everything from the marker onwards
-        const userContent = existing.slice(0, markerIndex).trimEnd();
+      const legacyIndex = existing.indexOf("## ArcBridge Workflow");
+      const splitIndex = markerIndex >= 0 ? markerIndex : legacyIndex;
+
+      if (splitIndex >= 0) {
+        // Replace everything from the ArcBridge section onwards
+        const userContent = existing.slice(0, splitIndex).trimEnd();
         writeFileSync(claudeMdPath, `${userContent}\n\n${marker}\n\n${arcbridgeContent}`, "utf-8");
       } else {
-        // First time — append ArcBridge section to existing content
+        // No existing ArcBridge content — append
         writeFileSync(claudeMdPath, `${existing.trimEnd()}\n\n${marker}\n\n${arcbridgeContent}`, "utf-8");
       }
     } else {

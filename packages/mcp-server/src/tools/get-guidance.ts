@@ -230,8 +230,9 @@ export function registerGetGuidance(
 
       // 7. Action-specific guidance (template-aware)
       const projectRoot = ctx.projectRoot ?? params.target_dir;
-      const { config: projConfig } = loadConfig(projectRoot);
-      const projectType = projConfig?.project_type ?? "nextjs-app-router";
+      const { config: projConfig, error: configError } = loadConfig(projectRoot);
+      // If config is invalid, fall back to shared guidance only (no template assumptions)
+      const projectType = configError ? "unknown" : (projConfig?.project_type ?? "nextjs-app-router");
       const actionGuidance = getActionGuidance(params.action, projectType);
       if (actionGuidance) {
         lines.push("## Guidance", "", actionGuidance, "");

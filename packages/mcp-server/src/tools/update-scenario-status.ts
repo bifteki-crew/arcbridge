@@ -60,6 +60,18 @@ export function registerUpdateScenarioStatus(
       const oldStatus = scenario.status;
       const now = new Date().toISOString();
 
+      // Validate linked_tests paths (no path traversal, must be relative)
+      if (params.linked_tests) {
+        const invalid = params.linked_tests.filter(
+          (t) => t.startsWith("/") || t.includes("..") || t.startsWith("\\"),
+        );
+        if (invalid.length > 0) {
+          return textResult(
+            `Invalid test paths (must be relative, no '..' segments):\n${invalid.map((p) => `  - ${p}`).join("\n")}`,
+          );
+        }
+      }
+
       // Update DB atomically
       transaction(db, () => {
         db.prepare("UPDATE quality_scenarios SET status = ?, last_checked = ? WHERE id = ?").run(
