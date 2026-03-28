@@ -60,7 +60,8 @@ Before starting any phase, ensure proper task planning:
 2. Review task coverage for the NEXT phase — create tasks if empty
 3. Run drift detection (\`arcbridge_check_drift\`)
 4. Propose arc42 updates if drift is detected
-5. Check quality gate requirements
-6. Mark phase complete or report blockers`,
+5. Ensure quality scenarios have \`linked_tests\` — edit \`10-quality-scenarios.yaml\` to add test file paths so \`arcbridge_verify_scenarios\` can run them
+6. Check quality gate requirements
+7. Mark phase complete or report blockers`,
   };
 }
