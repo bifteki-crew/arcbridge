@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { realpathSync } from "node:fs";
 import { relative } from "node:path";
 import type { Database } from "../db/connection.js";
 
@@ -193,10 +194,15 @@ export function scopeToProject(
   const repoRoot = getRepoRoot(projectRoot);
   if (!repoRoot) return changedFiles;
 
-  // Normalize: get project path relative to repo root
-  const projectRel = relative(repoRoot, projectRoot);
+  // Resolve symlinks (macOS /var → /private/var) before comparing paths
+  let projectRel: string;
+  try {
+    projectRel = relative(realpathSync(repoRoot), realpathSync(projectRoot));
+  } catch {
+    return changedFiles;
+  }
 
-  // If project IS the repo root, or path is outside repo (symlinks), no filtering
+  // If project IS the repo root, or path is outside repo, no filtering
   if (!projectRel || projectRel === "." || projectRel.startsWith("..")) return changedFiles;
 
   const prefix = projectRel.replace(/\\/g, "/");
@@ -204,7 +210,6 @@ export function scopeToProject(
     .filter((f) => f.path.startsWith(prefix + "/") || f.path === prefix)
     .map((f) => ({
       ...f,
-      // Optionally strip the prefix so paths are project-relative
       path: f.path.startsWith(prefix + "/") ? f.path.slice(prefix.length + 1) : f.path,
     }));
 }

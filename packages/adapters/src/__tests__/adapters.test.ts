@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
@@ -81,6 +81,47 @@ describe("ClaudeAdapter", () => {
     expect(content).toContain("nextjs-app-router");
     expect(content).toContain("security, performance");
     expect(content).toContain("arcbridge_get_project_status");
+  });
+
+  it("preserves existing CLAUDE.md content when merging", () => {
+    const claudeMdPath = join(tempDir, "CLAUDE.md");
+    writeFileSync(claudeMdPath, "# My Project\n\nCustom instructions here.\n", "utf-8");
+
+    adapter.generateProjectConfig(tempDir, TEST_CONFIG);
+
+    const content = readFileSync(claudeMdPath, "utf-8");
+    // User content preserved
+    expect(content).toContain("# My Project");
+    expect(content).toContain("Custom instructions here.");
+    // ArcBridge content appended
+    expect(content).toContain("<!-- arcbridge-generated -->");
+    expect(content).toContain("test-app");
+  });
+
+  it("replaces ArcBridge section on re-run without duplicating", () => {
+    // First run
+    adapter.generateProjectConfig(tempDir, TEST_CONFIG);
+    const first = readFileSync(join(tempDir, "CLAUDE.md"), "utf-8");
+    const markerCount1 = (first.match(/<!-- arcbridge-generated -->/g) || []).length;
+    expect(markerCount1).toBe(1);
+
+    // Second run
+    adapter.generateProjectConfig(tempDir, TEST_CONFIG);
+    const second = readFileSync(join(tempDir, "CLAUDE.md"), "utf-8");
+    const markerCount2 = (second.match(/<!-- arcbridge-generated -->/g) || []).length;
+    expect(markerCount2).toBe(1);
+  });
+
+  it("replaces legacy ArcBridge content without marker", () => {
+    const claudeMdPath = join(tempDir, "CLAUDE.md");
+    writeFileSync(claudeMdPath, "# My Project\n\n## ArcBridge Workflow\n\nOld generated content\n", "utf-8");
+
+    adapter.generateProjectConfig(tempDir, TEST_CONFIG);
+
+    const content = readFileSync(claudeMdPath, "utf-8");
+    expect(content).toContain("# My Project");
+    expect(content).not.toContain("Old generated content");
+    expect(content).toContain("<!-- arcbridge-generated -->");
   });
 
   it("generates agent files in .claude/agents/", () => {
