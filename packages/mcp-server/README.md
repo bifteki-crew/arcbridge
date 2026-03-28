@@ -1,6 +1,6 @@
 # @arcbridge/mcp-server
 
-MCP server for ArcBridge — exposes 31 architecture tools to AI coding agents via the [Model Context Protocol](https://modelcontextprotocol.io).
+MCP server for ArcBridge — exposes 32 architecture tools to AI coding agents via the [Model Context Protocol](https://modelcontextprotocol.io).
 
 ## Install
 
@@ -52,6 +52,7 @@ Restart your AI agent (Claude Code, etc.) and approve the MCP server when prompt
 | `arcbridge_update_task` | Mark tasks in-progress, done, blocked, or cancelled |
 | `arcbridge_create_task` | Add a task to any phase |
 | `arcbridge_delete_task` | Remove a task permanently (for example/template tasks) |
+| `arcbridge_create_phase` | Add a new phase to the project plan |
 
 ### Code Intelligence
 

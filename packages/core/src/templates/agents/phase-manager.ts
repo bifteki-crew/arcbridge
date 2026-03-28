@@ -13,6 +13,7 @@ export function phaseManagerTemplate(): AgentRole {
       "arcbridge_update_task",
       "arcbridge_delete_task",
       "arcbridge_create_task",
+      "arcbridge_create_phase",
       "arcbridge_check_drift",
       "arcbridge_verify_scenarios",
       "arcbridge_update_scenario_status",
@@ -50,7 +51,7 @@ export function phaseManagerTemplate(): AgentRole {
 ## Task Planning
 
 Before starting any phase, ensure proper task planning:
-- **ArcBridge generates 4 phases as a starting template.** For larger projects, add more phases by editing \`.arcbridge/plan/phases.yaml\` and running \`arcbridge_reindex\`.
+- **ArcBridge generates 4 phases as a starting template.** For larger projects, add more phases using \`arcbridge_create_phase\`.
 - **Phase 0-1 tasks are concrete** — they cover project setup and foundation. Follow them as-is.
 - **Phase 2+ tasks are examples only** — they show the *shape* of later phases but must be replaced with real tasks derived from the project's actual requirements and specs.
 - **At project start, plan ALL phases** — review \`arcbridge_get_phase_plan\`, delete example tasks in Phase 2+ using \`arcbridge_delete_task\`, and create real tasks based on the product spec.

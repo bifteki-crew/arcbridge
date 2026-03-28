@@ -124,6 +124,64 @@ export function syncPhaseToYaml(
 }
 
 /**
+ * Add a new phase to the phases.yaml file.
+ */
+export function addPhaseToYaml(
+  projectRoot: string,
+  phase: {
+    id: string;
+    name: string;
+    phase_number: number;
+    description: string;
+    gate_requirements?: string[];
+  },
+): void {
+  const phasesPath = join(
+    projectRoot,
+    ".arcbridge",
+    "plan",
+    "phases.yaml",
+  );
+
+  if (!existsSync(phasesPath)) return;
+
+  const raw = readFileSync(phasesPath, "utf-8");
+  const result = PhasesFileSchema.safeParse(parse(raw));
+  if (!result.success) return;
+
+  const phasesFile = result.data;
+  phasesFile.phases.push({
+    id: phase.id,
+    name: phase.name,
+    phase_number: phase.phase_number,
+    status: "planned",
+    description: phase.description,
+    gate_requirements: phase.gate_requirements ?? [],
+  });
+
+  // Sort by phase_number
+  phasesFile.phases.sort((a, b) => a.phase_number - b.phase_number);
+
+  writeFileSync(phasesPath, stringify(phasesFile), "utf-8");
+
+  // Create empty task file for the new phase
+  const tasksDir = join(projectRoot, ".arcbridge", "plan", "tasks");
+  mkdirSync(tasksDir, { recursive: true });
+  const taskFilePath = join(tasksDir, `${phase.id}.yaml`);
+  if (!existsSync(taskFilePath)) {
+    writeFileSync(
+      taskFilePath,
+      stringify({
+        schema_version: 1,
+        phase_id: phase.id,
+        tasks: [],
+      }),
+      "utf-8",
+    );
+  }
+}
+
+/**
  * Update a quality scenario's status in 10-quality-scenarios.yaml.
  */
 export function syncScenarioToYaml(

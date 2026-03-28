@@ -95,7 +95,7 @@ You are responsible for maintaining these sections in \`.arcbridge/arc42/\`. Upd
 
 At the start of a project (after init), plan the full roadmap:
 - **ArcBridge generates 4 phases as a starting template** (Setup, Foundation, Features, Polish). These are a baseline — adapt them to your project's actual scope and complexity.
-- **For larger projects, add more phases** by editing \`.arcbridge/plan/phases.yaml\` and running \`arcbridge_reindex\`. Split "Core Features" into multiple phases if needed (e.g., "Phase 2: Auth & Users", "Phase 3: Core Business Logic", "Phase 4: Integrations", "Phase 5: Polish").
+- **For larger projects, add more phases** using \`arcbridge_create_phase\`. Split "Core Features" into multiple phases if needed (e.g., "Auth & Users", "Core Business Logic", "Integrations", "Polish").
 - **Phase 0-1 tasks are ready to use** — they cover setup and foundation for this template
 - **Phase 2+ tasks are examples** — replace them with real tasks derived from the project's requirements and specifications
 - Review the phase plan with \`arcbridge_get_phase_plan\` and replace example tasks with project-specific ones
