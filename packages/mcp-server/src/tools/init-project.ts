@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   generateConfig,
@@ -41,7 +41,7 @@ export function registerInitProject(
         .describe("Features to scaffold"),
       quality_priorities: z
         .array(z.string())
-        .default(["security", "performance", "accessibility"])
+        .default(["security", "performance", "accessibility", "maintainability"])
         .describe("Quality priorities in order"),
       platforms: z
         .array(z.string())
@@ -50,6 +50,14 @@ export function registerInitProject(
       target_dir: z
         .string()
         .describe("Absolute path to the target project directory"),
+      spec: z
+        .string()
+        .optional()
+        .describe(
+          "Project specification or requirements text. Saved to .arcbridge/spec.md " +
+          "and referenced by agents for context. Can be a description, user stories, " +
+          "or any text that defines what the project should do.",
+        ),
     },
     async (params) => {
       const targetDir = params.target_dir;
@@ -152,7 +160,16 @@ export function registerInitProject(
         }
       }
 
-      // 8. Index TypeScript symbols (if tsconfig exists)
+      // 8. Save spec file if provided
+      if (params.spec) {
+        writeFileSync(
+          join(targetDir, ".arcbridge", "spec.md"),
+          params.spec,
+          "utf-8",
+        );
+      }
+
+      // 9. Index TypeScript symbols (if tsconfig exists)
       let indexResult: {
         symbolsIndexed: number;
         dependenciesIndexed: number;
@@ -193,6 +210,7 @@ export function registerInitProject(
         `**Template:** ${input.template}`,
         `**Features:** ${input.features.length > 0 ? input.features.join(", ") : "none"}`,
         `**Platforms:** ${params.platforms.join(", ")}`,
+        ...(params.spec ? [`**Spec:** saved to .arcbridge/spec.md`] : []),
         "",
         "## Created",
         "",

@@ -40,7 +40,7 @@ function populateBuildingBlocks(
 
   if (!result.success) {
     warnings.push(
-      `Invalid building blocks frontmatter: ${result.error.issues.map((i) => i.message).join(", ")}`,
+      `Invalid building blocks frontmatter: ${result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ")}`,
     );
     return warnings;
   }
@@ -92,7 +92,7 @@ function populateQualityScenarios(
 
   if (!result.success) {
     warnings.push(
-      `Invalid quality scenarios: ${result.error.issues.map((i) => i.message).join(", ")}`,
+      `Invalid quality scenarios: ${result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ")}`,
     );
     return warnings;
   }
@@ -139,7 +139,7 @@ function populatePhases(
 
   if (!result.success) {
     warnings.push(
-      `Invalid phases file: ${result.error.issues.map((i) => i.message).join(", ")}`,
+      `Invalid phases file: ${result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ")}`,
     );
     return warnings;
   }
@@ -185,7 +185,7 @@ function populatePhases(
 
     if (!taskResult.success) {
       warnings.push(
-        `Invalid task file for ${phase.id}: ${taskResult.error.issues.map((i) => i.message).join(", ")}`,
+        `Invalid task file for ${phase.id}: ${taskResult.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ")}`,
       );
       continue;
     }
@@ -238,7 +238,7 @@ function populateAdrs(
 
     if (!result.success) {
       warnings.push(
-        `Invalid ADR ${file}: ${result.error.issues.map((i) => i.message).join(", ")}`,
+        `Invalid ADR ${file}: ${result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ")}`,
       );
       continue;
     }
