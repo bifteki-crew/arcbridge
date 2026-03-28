@@ -62,10 +62,11 @@ export function registerUpdateScenarioStatus(
 
       // Validate linked_tests paths (no path traversal, must be relative)
       if (params.linked_tests) {
-        const { isAbsolute } = await import("node:path");
-        const invalid = params.linked_tests.filter(
-          (t) => isAbsolute(t) || t.includes(".."),
-        );
+        const { isAbsolute, normalize } = await import("node:path");
+        const invalid = params.linked_tests.filter((t) => {
+          const norm = normalize(t);
+          return isAbsolute(norm) || norm.startsWith("..");
+        });
         if (invalid.length > 0) {
           return textResult(
             `Invalid test paths (must be relative, no '..' segments):\n${invalid.map((p) => `  - ${p}`).join("\n")}`,
@@ -95,7 +96,10 @@ export function registerUpdateScenarioStatus(
       // Sync to YAML (source of truth)
       let yamlWarning: string | undefined;
       try {
-        syncScenarioToYaml(projectRoot, params.scenario_id, params.status, params.linked_tests);
+        const newVerification = (params.linked_tests && scenario.verification === "manual")
+          ? "semi-automatic"
+          : undefined;
+        syncScenarioToYaml(projectRoot, params.scenario_id, params.status, params.linked_tests, newVerification);
       } catch (err) {
         yamlWarning = `YAML sync failed: ${err instanceof Error ? err.message : String(err)}. DB updated but YAML may be out of sync.`;
       }

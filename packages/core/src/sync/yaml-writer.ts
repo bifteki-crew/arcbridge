@@ -131,6 +131,7 @@ export function syncScenarioToYaml(
   scenarioId: string,
   status: string,
   linkedTests?: string[],
+  verification?: string,
 ): void {
   const scenarioPath = join(
     projectRoot,
@@ -153,6 +154,9 @@ export function syncScenarioToYaml(
   scenario.status = status as typeof scenario.status;
   if (linkedTests) {
     scenario.linked_tests = linkedTests;
+  }
+  if (verification) {
+    scenario.verification = verification as typeof scenario.verification;
   }
 
   writeFileSync(scenarioPath, stringify(scenariosFile), "utf-8");
