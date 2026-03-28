@@ -473,6 +473,24 @@ describe("addPhaseToYaml", () => {
     expect(file.phases.length).toBe(1);
   });
 
+  it("prevents duplicate phase_number with different id", () => {
+    setupPhasesFile([
+      { id: "phase-0-setup", name: "Setup", phase_number: 0 },
+    ]);
+
+    const result = addPhaseToYaml(tempDir, {
+      id: "phase-0-different",
+      name: "Different",
+      phase_number: 0,
+      description: "Same number, different id",
+    });
+
+    expect(result.success).toBe(true);
+    const file = readPhasesFile();
+    expect(file.phases.length).toBe(1); // Not added
+    expect(file.phases[0].id).toBe("phase-0-setup"); // Original kept
+  });
+
   it("returns warning when phases.yaml missing", () => {
     const result = addPhaseToYaml(tempDir, {
       id: "phase-0",
