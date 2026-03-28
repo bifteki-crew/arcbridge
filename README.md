@@ -64,7 +64,7 @@ Then connect the MCP server to your AI agent. Create `.mcp.json` in your project
 }
 ```
 
-Restart Claude Code — approve the MCP server when prompted, and all 29 architecture tools become available.
+Restart Claude Code — approve the MCP server when prompted, and all 30 architecture tools become available.
 
 See the [walkthrough](docs/walkthrough.md) for a full step-by-step guide.
 
@@ -121,6 +121,7 @@ For local development, point your MCP config at the built output:
 | `arcbridge_get_current_tasks` | Tasks for the active phase |
 | `arcbridge_update_task` | Mark tasks in-progress, done, or blocked |
 | `arcbridge_create_task` | Add a task to any phase |
+| `arcbridge_delete_task` | Remove a task permanently (for example/template tasks) |
 
 ### Code Intelligence
 
@@ -230,7 +231,7 @@ packages/
 - **Phase 3.5** (done): Git integration — arc42 update proposals, practice reviews — 22 MCP tools
 - **Phase 4** (done): Planning & sync loop — phase gates, role activation, task inference, sync triggers — 24 MCP tools
 - **Phase 5** (done): Polish & hardening — roles loaded from files, CLI binary with sync/status/drift commands, test runner integration (`verify_scenarios`), 3 project templates (nextjs-app-router, react-vite, api-service) — 25 MCP tools
-- **Phase 5.5** (done): Release prep — `arcbridge init` CLI command, walkthrough docs, CI workflows, npm publish setup — 29 MCP tools, 346 tests
+- **Phase 5.5** (done): Release prep — `arcbridge init` CLI command, walkthrough docs, CI workflows, npm publish setup — 30 MCP tools, 346 tests
 
 See [`docs/arcbridge-project-plan.md`](docs/arcbridge-project-plan.md) for the full specification.
 

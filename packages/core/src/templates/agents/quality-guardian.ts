@@ -49,6 +49,23 @@ export function qualityGuardianTemplate(): AgentRole {
 - Every quality scenario with status "untested" needs attention
 - Performance budgets are hard limits, not guidelines
 
+## Linking Tests to Quality Scenarios
+
+Quality scenarios need \`linked_tests\` to be verifiable via \`arcbridge_verify_scenarios\`. To link tests:
+
+1. Edit \`.arcbridge/arc42/10-quality-scenarios.yaml\`
+2. Add test file paths to the \`linked_tests\` array for each scenario:
+   \`\`\`yaml
+   - id: SEC-01
+     linked_tests:
+       - "src/__tests__/auth.test.ts"
+       - "src/__tests__/middleware.test.ts"
+   \`\`\`
+3. Use glob patterns for broader matching: \`"src/**/*.security.test.ts"\`
+4. After linking, run \`arcbridge_verify_scenarios\` to execute the tests and update scenario status
+
+Without \`linked_tests\`, scenarios remain "untested" — so link tests early, ideally when creating the test file.
+
 ## Review Checklist
 
 1. **Performance:** Bundle size, LCP, API latency against defined budgets

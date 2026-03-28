@@ -12,6 +12,7 @@ export const TaskStatusSchema = z.enum([
   "in-progress",
   "done",
   "blocked",
+  "cancelled",
 ]);
 
 export const PhaseSchema = z.object({

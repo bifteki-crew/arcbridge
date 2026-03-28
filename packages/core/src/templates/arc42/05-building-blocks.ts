@@ -1,3 +1,5 @@
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import type { InitProjectInput, TemplateOutput } from "../types.js";
 import { detectProjectLayout } from "./detect-layout.js";
 
@@ -142,13 +144,36 @@ export function buildingBlocksTemplate(
     return blocks;
   }
 
-  function buildDotnetBlocks(_inp: InitProjectInput): BlockDef[] {
+  function buildDotnetBlocks(inp: InitProjectInput): BlockDef[] {
+    // Detect src/<ProjectName>/ convention (dotnet new scaffolds into src/)
+    const root = inp.projectRoot ?? ".";
+    let prefix = "";
+    try {
+      // Prefer dotnetServices from solution discovery (accurate for multi-project)
+      const primaryService = inp.dotnetServices?.find((s) => !s.path.includes("Test"));
+      if (primaryService && primaryService.path !== ".") {
+        prefix = primaryService.path.endsWith("/") ? primaryService.path : `${primaryService.path}/`;
+      } else {
+        // Fallback: scan src/ directory
+        const srcDir = join(root, "src");
+        if (existsSync(srcDir)) {
+          const entries = readdirSync(srcDir).sort();
+          const projDir = entries.find((e: string) =>
+            existsSync(join(srcDir, e, `${e}.csproj`)) || existsSync(join(srcDir, e, "Program.cs"))
+          );
+          if (projDir) prefix = `src/${projDir}/`;
+        }
+      }
+    } catch {
+      // Ignore — use root-relative paths
+    }
+
     const blocks: BlockDef[] = [
       {
         id: "api-host",
         name: "API Host",
         level: 1,
-        code_paths: ["Program.cs", "Extensions/"],
+        code_paths: [`${prefix}Program.cs`, `${prefix}Extensions/`],
         interfaces: [],
         quality_scenarios: [],
         adrs: [],
@@ -160,7 +185,7 @@ export function buildingBlocksTemplate(
         id: "controllers",
         name: "Controllers / Endpoints",
         level: 1,
-        code_paths: ["Controllers/", "Endpoints/"],
+        code_paths: [`${prefix}Controllers/`, `${prefix}Endpoints/`],
         interfaces: [],
         quality_scenarios: ["SEC-03"],
         adrs: [],
@@ -172,7 +197,7 @@ export function buildingBlocksTemplate(
         id: "domain",
         name: "Domain",
         level: 1,
-        code_paths: ["Domain/", "Models/"],
+        code_paths: [`${prefix}Domain/`, `${prefix}Models/`],
         interfaces: [],
         quality_scenarios: [],
         adrs: [],
@@ -183,7 +208,7 @@ export function buildingBlocksTemplate(
         id: "services",
         name: "Application Services",
         level: 1,
-        code_paths: ["Services/"],
+        code_paths: [`${prefix}Services/`],
         interfaces: ["controllers"],
         quality_scenarios: [],
         adrs: [],
@@ -195,7 +220,7 @@ export function buildingBlocksTemplate(
         id: "middleware",
         name: "Middleware",
         level: 1,
-        code_paths: ["Middleware/"],
+        code_paths: [`${prefix}Middleware/`],
         interfaces: [],
         quality_scenarios: ["REL-01"],
         adrs: [],
@@ -211,7 +236,7 @@ export function buildingBlocksTemplate(
       id: "auth-module",
       name: "Authentication & Authorization",
       level: 1,
-      code_paths: ["Auth/"],
+      code_paths: [`${prefix}Auth/`],
       interfaces: [],
       quality_scenarios: ["SEC-01", "SEC-02"],
       adrs: [],
@@ -224,7 +249,7 @@ export function buildingBlocksTemplate(
       id: "data-access",
       name: "Data Access",
       level: 1,
-      code_paths: ["Data/", "Repositories/", "Migrations/"],
+      code_paths: [`${prefix}Data/`, `${prefix}Repositories/`, `${prefix}Migrations/`],
       interfaces: ["domain"],
       quality_scenarios: [],
       adrs: [],

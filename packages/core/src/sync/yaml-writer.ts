@@ -153,3 +153,51 @@ export function syncScenarioToYaml(
 
   writeFileSync(scenarioPath, stringify(scenariosFile), "utf-8");
 }
+
+/**
+ * Delete a task from the YAML task file.
+ */
+export function deleteTaskFromYaml(
+  projectRoot: string,
+  phaseId: string,
+  taskId: string,
+): { success: boolean; warning?: string } {
+  try {
+    const taskPath = join(
+      projectRoot,
+      ".arcbridge",
+      "plan",
+      "tasks",
+      `${phaseId}.yaml`,
+    );
+
+    if (!existsSync(taskPath)) {
+      return { success: true }; // No file = nothing to remove
+    }
+
+    const raw = readFileSync(taskPath, "utf-8");
+    const result = TaskFileSchema.safeParse(parse(raw));
+    if (!result.success) {
+      return {
+        success: false,
+        warning: `Could not parse ${phaseId}.yaml — task may reappear after reindex`,
+      };
+    }
+
+    const taskFile = result.data;
+    const before = taskFile.tasks.length;
+    taskFile.tasks = taskFile.tasks.filter((t) => t.id !== taskId);
+
+    if (taskFile.tasks.length === before) {
+      return { success: true }; // Task wasn't in YAML (created via MCP only)
+    }
+
+    writeFileSync(taskPath, stringify(taskFile), "utf-8");
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      warning: `YAML update failed: ${err instanceof Error ? err.message : String(err)} — task may reappear after reindex`,
+    };
+  }
+}

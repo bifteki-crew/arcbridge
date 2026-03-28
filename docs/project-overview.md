@@ -147,7 +147,7 @@ Symbol-level indexing
 </div>
 </div>
 
-All queryable through **29 MCP tools** your agent already speaks.
+All queryable through **30 MCP tools** your agent already speaks.
 
 ---
 

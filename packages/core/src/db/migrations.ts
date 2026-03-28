@@ -42,6 +42,31 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 3,
+    up: (db) => {
+      // Add 'cancelled' to task status enum.
+      // SQLite CHECK constraints can't be altered — recreate the table.
+      db.exec(`
+        CREATE TABLE tasks_new (
+          id TEXT PRIMARY KEY,
+          phase_id TEXT NOT NULL REFERENCES phases(id),
+          title TEXT NOT NULL,
+          description TEXT,
+          status TEXT NOT NULL DEFAULT 'todo' CHECK(status IN ('todo','in-progress','done','blocked','cancelled')),
+          building_block TEXT REFERENCES building_blocks(id),
+          quality_scenarios TEXT NOT NULL DEFAULT '[]',
+          acceptance_criteria TEXT NOT NULL DEFAULT '[]',
+          created_at TEXT NOT NULL,
+          completed_at TEXT
+        );
+        INSERT INTO tasks_new (id, phase_id, title, description, status, building_block, quality_scenarios, acceptance_criteria, created_at, completed_at)
+          SELECT id, phase_id, title, description, status, building_block, quality_scenarios, acceptance_criteria, created_at, completed_at FROM tasks;
+        DROP TABLE tasks;
+        ALTER TABLE tasks_new RENAME TO tasks;
+      `);
+    },
+  },
 ];
 
 export function migrate(db: Database): void {

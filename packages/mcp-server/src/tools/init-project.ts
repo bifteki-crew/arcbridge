@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   generateConfig,
@@ -41,7 +41,7 @@ export function registerInitProject(
         .describe("Features to scaffold"),
       quality_priorities: z
         .array(z.string())
-        .default(["security", "performance", "accessibility"])
+        .default(["security", "performance", "accessibility", "maintainability"])
         .describe("Quality priorities in order"),
       platforms: z
         .array(z.string())
@@ -50,6 +50,14 @@ export function registerInitProject(
       target_dir: z
         .string()
         .describe("Absolute path to the target project directory"),
+      spec: z
+        .string()
+        .optional()
+        .describe(
+          "Project specification or requirements text. Saved to .arcbridge/spec.md " +
+          "and referenced by agents for context. Can be a description, user stories, " +
+          "or any text that defines what the project should do.",
+        ),
     },
     async (params) => {
       const targetDir = params.target_dir;
@@ -98,6 +106,9 @@ export function registerInitProject(
           const { db: recoveredDb } = generateDatabase(targetDir, recoverInput);
           ctx.db = recoveredDb;
           ctx.projectRoot = targetDir;
+          if (params.spec) {
+            writeFileSync(join(targetDir, ".arcbridge", "spec.md"), params.spec, "utf-8");
+          }
           return {
             content: [
               {
@@ -152,7 +163,16 @@ export function registerInitProject(
         }
       }
 
-      // 8. Index TypeScript symbols (if tsconfig exists)
+      // 8. Save spec file if provided
+      if (params.spec) {
+        writeFileSync(
+          join(targetDir, ".arcbridge", "spec.md"),
+          params.spec,
+          "utf-8",
+        );
+      }
+
+      // 9. Index TypeScript symbols (if tsconfig exists)
       let indexResult: {
         symbolsIndexed: number;
         dependenciesIndexed: number;
@@ -193,6 +213,7 @@ export function registerInitProject(
         `**Template:** ${input.template}`,
         `**Features:** ${input.features.length > 0 ? input.features.join(", ") : "none"}`,
         `**Platforms:** ${params.platforms.join(", ")}`,
+        ...(params.spec ? [`**Spec:** saved to .arcbridge/spec.md`] : []),
         "",
         "## Created",
         "",
@@ -235,12 +256,15 @@ export function registerInitProject(
             ]
           : []),
         "",
-        "## Next Steps",
+        "## Next Steps — PLAN FIRST, BUILD SECOND",
         "",
-        "1. **Review the phase plan** — run `arcbridge_get_phase_plan` to see all phases and their tasks",
-        "2. **Replace example tasks in Phase 2+** — Phase 0-1 tasks are ready to use, but Phase 2+ tasks are examples only. Replace them with real tasks from the project's requirements.",
-        "3. **Activate the architect role** — run `arcbridge_activate_role` with role `architect` to get full architectural context",
-        "4. **Start working** — use `arcbridge_get_current_tasks` to see what to do next",
+        "**Do not start implementing yet.** First plan the full project roadmap:",
+        "",
+        "1. **Activate the architect role** — run `arcbridge_activate_role` with role `architect`",
+        "2. **Review the spec** — read `.arcbridge/spec.md` (if provided) and understand the full scope",
+        "3. **Review and adapt the phase plan** — run `arcbridge_get_phase_plan`. The 4 generated phases are a starting template. For larger projects, add more phases by editing `.arcbridge/plan/phases.yaml` and running `arcbridge_reindex`.",
+        "4. **Plan real tasks for ALL phases** — Phase 0-1 tasks are ready to use. Phase 2+ tasks are examples only — replace them with real tasks from the project's requirements using `arcbridge_create_task`.",
+        "5. **Only then start building** — use `arcbridge_get_current_tasks` to see what to do next",
         "",
         "Use `arcbridge_get_project_status` to see the full project status.",
       ];

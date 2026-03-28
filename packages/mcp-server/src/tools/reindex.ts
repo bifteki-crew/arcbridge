@@ -46,9 +46,13 @@ export function registerReindex(
         });
 
         const lines = [
-          "# Indexing Complete",
+          "# Reindex Complete",
           "",
-          `- **Docs refreshed:** ${docWarnings.length === 0 ? "OK" : docWarnings.join(", ")}`,
+          "## Architecture Docs",
+          `- **Refreshed from docs:** building blocks, phases, tasks, quality scenarios, ADRs`,
+          ...(docWarnings.length > 0 ? [`- **Warnings:** ${docWarnings.join("; ")}`] : []),
+          "",
+          "## Code Symbols",
           `- **Files processed:** ${result.filesProcessed}`,
           `- **Files skipped (unchanged):** ${result.filesSkipped}`,
           `- **Files removed:** ${result.filesRemoved}`,

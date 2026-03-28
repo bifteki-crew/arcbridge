@@ -19,8 +19,13 @@ export function registerCreateTask(
       title: z.string().min(1).describe("Task title"),
       building_block: z
         .string()
+        .min(1)
         .optional()
-        .describe("Building block this task belongs to"),
+        .describe(
+          "Building block this task belongs to. Use `arcbridge_get_building_blocks` " +
+          "to see available blocks. If no suitable block exists, create one in " +
+          "`.arcbridge/arc42/05-building-blocks.md` and run `arcbridge_reindex` first.",
+        ),
       quality_scenarios: z
         .array(z.string())
         .default([])
@@ -71,6 +76,30 @@ export function registerCreateTask(
 
       const now = new Date().toISOString();
 
+      // Validate building_block exists (FK constraint would crash otherwise)
+      const blockId = params.building_block ?? null;
+      if (blockId) {
+        const block = db
+          .prepare("SELECT id FROM building_blocks WHERE id = ?")
+          .get(blockId);
+        if (!block) {
+          const available = db
+            .prepare("SELECT id, name FROM building_blocks ORDER BY id")
+            .all() as { id: string; name: string }[];
+          const blockList = available.length > 0
+            ? available.map((b) => `  - \`${b.id}\` (${b.name})`).join("\n")
+            : "  (none — run `arcbridge_reindex` to populate from arc42 docs)";
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Building block \`${blockId}\` not found.\n\n**Available blocks:**\n${blockList}\n\nIf you need a new block, add it to \`.arcbridge/arc42/05-building-blocks.md\` and run \`arcbridge_reindex\`, then retry.`,
+              },
+            ],
+          };
+        }
+      }
+
       db.prepare(
         "INSERT INTO tasks (id, phase_id, title, description, status, building_block, quality_scenarios, acceptance_criteria, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       ).run(
@@ -79,7 +108,7 @@ export function registerCreateTask(
         params.title,
         null,
         "todo",
-        params.building_block ?? null,
+        blockId,
         JSON.stringify(params.quality_scenarios),
         JSON.stringify(params.acceptance_criteria),
         now,

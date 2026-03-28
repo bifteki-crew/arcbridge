@@ -6,6 +6,7 @@ import { parse, stringify } from "yaml";
 import {
   syncTaskToYaml,
   addTaskToYaml,
+  deleteTaskFromYaml,
   syncPhaseToYaml,
   syncScenarioToYaml,
 } from "../sync/yaml-writer.js";
@@ -286,5 +287,72 @@ describe("syncScenarioToYaml", () => {
     const result = readScenariosFile();
     expect(result.scenarios[0].status).toBe("untested");
     expect(result.scenarios[1].status).toBe("failing");
+  });
+});
+
+describe("deleteTaskFromYaml", () => {
+  function setupTaskFile(tasks: Array<{ id: string; title: string }>) {
+    const tasksDir = join(tempDir, ".arcbridge", "plan", "tasks");
+    mkdirSync(tasksDir, { recursive: true });
+    const taskFile = {
+      schema_version: 1,
+      phase_id: "phase-0-setup",
+      tasks: tasks.map((t) => ({
+        ...t,
+        status: "todo",
+        quality_scenarios: [],
+        acceptance_criteria: ["test"],
+      })),
+    };
+    writeFileSync(join(tasksDir, "phase-0-setup.yaml"), stringify(taskFile), "utf-8");
+  }
+
+  function readTaskFile() {
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "plan", "tasks", "phase-0-setup.yaml"),
+      "utf-8",
+    );
+    return parse(raw);
+  }
+
+  it("removes a task from the YAML file", () => {
+    setupTaskFile([
+      { id: "task-1", title: "First" },
+      { id: "task-2", title: "Second" },
+      { id: "task-3", title: "Third" },
+    ]);
+
+    const result = deleteTaskFromYaml(tempDir, "phase-0-setup", "task-2");
+    expect(result.success).toBe(true);
+
+    const file = readTaskFile();
+    expect(file.tasks.length).toBe(2);
+    expect(file.tasks.map((t: { id: string }) => t.id)).toEqual(["task-1", "task-3"]);
+  });
+
+  it("returns success when task not in YAML (MCP-only task)", () => {
+    setupTaskFile([{ id: "task-1", title: "First" }]);
+
+    const result = deleteTaskFromYaml(tempDir, "phase-0-setup", "nonexistent");
+    expect(result.success).toBe(true);
+
+    // File unchanged
+    const file = readTaskFile();
+    expect(file.tasks.length).toBe(1);
+  });
+
+  it("returns success when YAML file does not exist", () => {
+    const result = deleteTaskFromYaml(tempDir, "phase-99-missing", "task-1");
+    expect(result.success).toBe(true);
+  });
+
+  it("returns warning on invalid YAML", () => {
+    const tasksDir = join(tempDir, ".arcbridge", "plan", "tasks");
+    mkdirSync(tasksDir, { recursive: true });
+    writeFileSync(join(tasksDir, "phase-0-setup.yaml"), "not: valid: yaml: [broken", "utf-8");
+
+    const result = deleteTaskFromYaml(tempDir, "phase-0-setup", "task-1");
+    expect(result.success).toBe(false);
+    expect(result.warning).toBeDefined();
   });
 });

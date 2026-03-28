@@ -127,6 +127,28 @@ export function registerGetCurrentTasks(
         }
       }
 
+      // Warn about future phases with no tasks
+      const emptyFuturePhases = db
+        .prepare(`
+          SELECT p.id, p.name, p.phase_number FROM phases p
+          WHERE p.status IN ('planned', 'in-progress')
+            AND p.id != ?
+            AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.phase_id = p.id)
+          ORDER BY p.phase_number
+        `)
+        .all(currentPhase.id) as { id: string; name: string; phase_number: number }[];
+
+      if (emptyFuturePhases.length > 0) {
+        lines.push(
+          "---",
+          "",
+          "**Warning:** The following phases have no tasks yet:",
+          ...emptyFuturePhases.map((p) => `- Phase ${p.phase_number}: ${p.name} (\`${p.id}\`)`),
+          "",
+          "Use `arcbridge_create_task` to plan tasks before reaching these phases.",
+        );
+      }
+
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],
       };

@@ -25,8 +25,8 @@ export function registerUpdateTask(
         .describe("Absolute path to the project directory"),
       task_id: z.string().describe("Task ID (e.g., 'task-0.1-init-nextjs')"),
       status: z
-        .enum(["in-progress", "done", "blocked"])
-        .describe("New status"),
+        .enum(["in-progress", "done", "blocked", "cancelled"])
+        .describe("New status. Use 'cancelled' for tasks that are no longer relevant."),
       notes: z
         .string()
         .optional()
@@ -62,10 +62,10 @@ export function registerUpdateTask(
           "UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?",
         ).run(params.status, now, params.task_id);
       } else {
-        db.prepare("UPDATE tasks SET status = ? WHERE id = ?").run(
-          params.status,
-          params.task_id,
-        );
+        // Clear completed_at when moving away from done (e.g., done → cancelled)
+        db.prepare(
+          "UPDATE tasks SET status = ?, completed_at = NULL WHERE id = ?",
+        ).run(params.status, params.task_id);
       }
 
       // Write back to YAML
@@ -87,11 +87,12 @@ export function registerUpdateTask(
         lines.push("", `**Notes:** ${params.notes}`);
       }
 
-      // If task is done, show phase progress
-      if (params.status === "done") {
+      // If task is done or cancelled, show phase progress
+      if (params.status === "done" || params.status === "cancelled") {
+        // Cancelled tasks are excluded from the total — they're out of scope
         const phaseStats = db
           .prepare(
-            "SELECT COUNT(*) as total, SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done FROM tasks WHERE phase_id = ?",
+            "SELECT SUM(CASE WHEN status != 'cancelled' THEN 1 ELSE 0 END) as total, SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done FROM tasks WHERE phase_id = ?",
           )
           .get(task.phase_id) as { total: number; done: number };
 
@@ -100,7 +101,7 @@ export function registerUpdateTask(
           `**Phase progress:** ${phaseStats.done}/${phaseStats.total} tasks complete`,
         );
 
-        if (phaseStats.done === phaseStats.total) {
+        if (phaseStats.total > 0 && phaseStats.done === phaseStats.total) {
           lines.push(
             "",
             "All tasks in this phase are complete! The phase is ready to advance.",

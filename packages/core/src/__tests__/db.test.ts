@@ -186,4 +186,107 @@ describe("SQLite database", () => {
       db.close();
     });
   });
+
+  describe("cancelled task status", () => {
+    it("allows inserting tasks with cancelled status", () => {
+      const db = openMemoryDatabase();
+      initializeSchema(db);
+
+      db.prepare("INSERT INTO phases (id, name, phase_number, status, description) VALUES (?, ?, ?, ?, ?)").run(
+        "phase-0", "Setup", 0, "in-progress", "Test phase",
+      );
+      db.prepare("INSERT INTO tasks (id, phase_id, title, status, quality_scenarios, acceptance_criteria, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
+        "task-1", "phase-0", "Example task", "cancelled", "[]", "[]", new Date().toISOString(),
+      );
+
+      const task = db.prepare("SELECT status FROM tasks WHERE id = ?").get("task-1") as { status: string };
+      expect(task.status).toBe("cancelled");
+      db.close();
+    });
+
+    it("cancelled tasks are excluded from incomplete count", () => {
+      const db = openMemoryDatabase();
+      initializeSchema(db);
+
+      db.prepare("INSERT INTO phases (id, name, phase_number, status, description) VALUES (?, ?, ?, ?, ?)").run(
+        "phase-0", "Setup", 0, "in-progress", "Test phase",
+      );
+
+      const now = new Date().toISOString();
+      db.prepare("INSERT INTO tasks (id, phase_id, title, status, quality_scenarios, acceptance_criteria, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
+        "task-1", "phase-0", "Done task", "done", "[]", "[]", now,
+      );
+      db.prepare("INSERT INTO tasks (id, phase_id, title, status, quality_scenarios, acceptance_criteria, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
+        "task-2", "phase-0", "Cancelled task", "cancelled", "[]", "[]", now,
+      );
+      db.prepare("INSERT INTO tasks (id, phase_id, title, status, quality_scenarios, acceptance_criteria, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
+        "task-3", "phase-0", "Todo task", "todo", "[]", "[]", now,
+      );
+
+      // Cancelled tasks should not count as incomplete
+      const incomplete = db.prepare(
+        "SELECT COUNT(*) as count FROM tasks WHERE phase_id = ? AND status NOT IN ('done', 'cancelled')",
+      ).get("phase-0") as { count: number };
+      expect(incomplete.count).toBe(1); // only task-3
+
+      // Cancelled tasks should not count in total
+      const stats = db.prepare(
+        "SELECT SUM(CASE WHEN status != 'cancelled' THEN 1 ELSE 0 END) as total, SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done FROM tasks WHERE phase_id = ?",
+      ).get("phase-0") as { total: number; done: number };
+      expect(stats.total).toBe(2); // task-1 + task-3 (not task-2)
+      expect(stats.done).toBe(1);  // task-1
+
+      db.close();
+    });
+  });
+
+  describe("task deletion", () => {
+    it("deletes task from database", () => {
+      const db = openMemoryDatabase();
+      initializeSchema(db);
+
+      db.prepare("INSERT INTO phases (id, name, phase_number, status, description) VALUES (?, ?, ?, ?, ?)").run(
+        "phase-0", "Setup", 0, "in-progress", "Test phase",
+      );
+      db.prepare("INSERT INTO tasks (id, phase_id, title, status, quality_scenarios, acceptance_criteria, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
+        "task-1", "phase-0", "Example task", "todo", "[]", "[]", new Date().toISOString(),
+      );
+
+      expect(db.prepare("SELECT COUNT(*) as n FROM tasks").get()).toEqual({ n: 1 });
+
+      db.prepare("DELETE FROM tasks WHERE id = ?").run("task-1");
+
+      expect(db.prepare("SELECT COUNT(*) as n FROM tasks").get()).toEqual({ n: 0 });
+      db.close();
+    });
+  });
+
+  describe("schema migration v3", () => {
+    it("migrates v2 schema to v3 (adds cancelled status)", () => {
+      const db = openMemoryDatabase();
+      initializeSchema(db);
+
+      // Simulate v2 by downgrading version
+      db.prepare("UPDATE arcbridge_meta SET value = '2' WHERE key = 'schema_version'").run();
+
+      // Migration should succeed
+      migrate(db);
+
+      const version = db.prepare("SELECT value FROM arcbridge_meta WHERE key = 'schema_version'").get() as { value: string };
+      expect(Number(version.value)).toBe(CURRENT_SCHEMA_VERSION);
+
+      // Should accept cancelled status after migration
+      db.prepare("INSERT INTO phases (id, name, phase_number, status, description) VALUES (?, ?, ?, ?, ?)").run(
+        "phase-0", "Setup", 0, "in-progress", "Test",
+      );
+      db.prepare("INSERT INTO tasks (id, phase_id, title, status, quality_scenarios, acceptance_criteria, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
+        "task-1", "phase-0", "Test", "cancelled", "[]", "[]", new Date().toISOString(),
+      );
+
+      const task = db.prepare("SELECT status FROM tasks WHERE id = 'task-1'").get() as { status: string };
+      expect(task.status).toBe("cancelled");
+
+      db.close();
+    });
+  });
 });

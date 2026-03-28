@@ -194,7 +194,7 @@ export async function init(
     name: projectName,
     template,
     features: [],
-    quality_priorities: ["security", "performance", "accessibility"],
+    quality_priorities: ["security", "performance", "accessibility", "maintainability"],
     platforms,
     dotnetServices: nonTestServices?.map((s) => ({ name: s.name, path: s.path })),
   };
