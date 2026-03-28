@@ -51,7 +51,7 @@ export function registerCreatePhase(
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "")
-        .slice(0, 30);
+        .slice(0, 30) || "unnamed";
       const phaseId = `phase-${phaseNumber}-${slug}`;
 
       // Insert into DB
@@ -60,7 +60,7 @@ export function registerCreatePhase(
       ).run(phaseId, params.name, phaseNumber, "planned", params.description, "{}");
 
       // Write to YAML (source of truth)
-      addPhaseToYaml(params.target_dir, {
+      const yamlResult = addPhaseToYaml(params.target_dir, {
         id: phaseId,
         name: params.name,
         phase_number: phaseNumber,
@@ -82,6 +82,10 @@ export function registerCreatePhase(
         for (const r of params.gate_requirements) {
           lines.push(`- [ ] ${r}`);
         }
+      }
+
+      if (yamlResult.warning) {
+        lines.push("", `**Warning:** ${yamlResult.warning}`);
       }
 
       lines.push(
