@@ -106,6 +106,9 @@ export function registerInitProject(
           const { db: recoveredDb } = generateDatabase(targetDir, recoverInput);
           ctx.db = recoveredDb;
           ctx.projectRoot = targetDir;
+          if (params.spec) {
+            writeFileSync(join(targetDir, ".arcbridge", "spec.md"), params.spec, "utf-8");
+          }
           return {
             content: [
               {

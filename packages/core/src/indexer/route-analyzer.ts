@@ -35,11 +35,15 @@ export function analyzeRoutes(
 ): number {
   // Check app/ first, then src/app/ (common Next.js convention)
   let appDir = join(projectRoot, "app");
-  if (!existsSync(appDir) || !statSync(appDir).isDirectory()) {
-    appDir = join(projectRoot, "src", "app");
+  try {
     if (!existsSync(appDir) || !statSync(appDir).isDirectory()) {
-      return 0;
+      appDir = join(projectRoot, "src", "app");
+      if (!existsSync(appDir) || !statSync(appDir).isDirectory()) {
+        return 0;
+      }
     }
+  } catch {
+    return 0;
   }
 
   const routes: ExtractedRoute[] = [];

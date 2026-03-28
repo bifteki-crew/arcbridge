@@ -151,7 +151,7 @@ export function buildingBlocksTemplate(
     try {
       const srcDir = join(root, "src");
       if (existsSync(srcDir)) {
-        const entries = readdirSync(srcDir);
+        const entries = readdirSync(srcDir).sort();
         const projDir = entries.find((e: string) =>
           existsSync(join(srcDir, e, `${e}.csproj`)) || existsSync(join(srcDir, e, "Program.cs"))
         );

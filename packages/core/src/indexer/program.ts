@@ -95,7 +95,7 @@ export function createTsProgram(options: IndexerOptions): ProgramResult {
       (sf) =>
         !sf.isDeclarationFile &&
         !sf.fileName.includes("node_modules") &&
-        !sf.fileName.includes(".next/"),
+        !sf.fileName.includes(".next/") && !sf.fileName.includes(".next\\"),
     );
 
   return { program, checker, sourceFiles, projectRoot };

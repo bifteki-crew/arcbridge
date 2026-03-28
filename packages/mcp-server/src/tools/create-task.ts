@@ -19,6 +19,7 @@ export function registerCreateTask(
       title: z.string().min(1).describe("Task title"),
       building_block: z
         .string()
+        .min(1)
         .optional()
         .describe(
           "Building block this task belongs to. Use `arcbridge_get_building_blocks` " +
