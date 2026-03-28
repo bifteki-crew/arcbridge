@@ -143,8 +143,25 @@ export class ClaudeAdapter implements PlatformAdapter {
   platform = "claude";
 
   generateProjectConfig(targetDir: string, config: ArcBridgeConfig): void {
-    const content = generateClaudeMd(config);
-    writeFileSync(join(targetDir, "CLAUDE.md"), content, "utf-8");
+    const arcbridgeContent = generateClaudeMd(config);
+    const claudeMdPath = join(targetDir, "CLAUDE.md");
+    const marker = "<!-- ArcBridge generated below — do not edit this section manually -->";
+
+    if (existsSync(claudeMdPath)) {
+      const existing = readFileSync(claudeMdPath, "utf-8");
+      // If we've written before, replace the ArcBridge section; otherwise append
+      const markerIndex = existing.indexOf(marker);
+      if (markerIndex >= 0) {
+        // Replace everything from the marker onwards
+        const userContent = existing.slice(0, markerIndex).trimEnd();
+        writeFileSync(claudeMdPath, `${userContent}\n\n${marker}\n\n${arcbridgeContent}`, "utf-8");
+      } else {
+        // First time — append ArcBridge section to existing content
+        writeFileSync(claudeMdPath, `${existing.trimEnd()}\n\n${marker}\n\n${arcbridgeContent}`, "utf-8");
+      }
+    } else {
+      writeFileSync(claudeMdPath, `${marker}\n\n${arcbridgeContent}`, "utf-8");
+    }
 
     // Generate .mcp.json if it doesn't already exist
     const mcpJsonPath = join(targetDir, ".mcp.json");

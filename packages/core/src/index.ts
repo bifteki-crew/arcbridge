@@ -116,6 +116,7 @@ export {
   resolveRef,
   getChangedFiles,
   getUncommittedChanges,
+  scopeToProject,
   getHeadSha,
   setSyncCommit,
   type ChangedFile,

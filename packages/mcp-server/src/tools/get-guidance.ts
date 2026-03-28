@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
+import { loadConfig } from "@arcbridge/core";
 import { ensureDb, notInitialized, textResult, safeParseJson, escapeLike, normalizeCodePath } from "../helpers.js";
 
 interface BlockRow {
@@ -227,8 +228,10 @@ export function registerGetGuidance(
         lines.push("");
       }
 
-      // 6. Action-specific guidance
-      const actionGuidance = getActionGuidance(params.action);
+      // 6. Action-specific guidance (template-aware)
+      const { config: projConfig } = loadConfig(params.target_dir);
+      const projectType = projConfig?.project_type ?? "nextjs-app-router";
+      const actionGuidance = getActionGuidance(params.action, projectType);
       if (actionGuidance) {
         lines.push("## Guidance", "", actionGuidance, "");
       }
@@ -263,23 +266,65 @@ function filterRelevantScenarios(
   return scenarios.filter((s) => relevantCategories.includes(s.category));
 }
 
-function getActionGuidance(action: string): string | null {
-  const guidance: Record<string, string> = {
-    "adding-component":
-      "- Follow existing component patterns in this directory\n- Add props interface alongside the component\n- Consider server vs. client: does this need interactivity (`'use client'`)?\n- Check accessibility: keyboard navigation, ARIA labels, screen reader support\n- **Arc42:** If this introduces a new UI pattern, document it in `08-crosscutting.md`",
-    "adding-api-route":
-      "- Ensure authentication middleware covers this route\n- Validate all input with zod or equivalent\n- Follow existing error response patterns\n- Consider rate limiting for public endpoints\n- If this introduces a new API pattern or convention, document it in an ADR\n- **Arc42:** Update `03-context.md` if this route exposes a new external integration; update `06-runtime-views.md` if it's a key workflow",
-    "adding-hook":
-      "- Follow the `use` prefix convention\n- Keep hooks focused — one responsibility per hook\n- Consider memoization for expensive computations\n- Document the hook's return type",
-    "modifying-auth":
-      "- Check all API routes still have auth coverage after changes\n- Verify no secrets leak to client components\n- Test edge cases: expired tokens, revoked sessions, role changes\n- Update security quality scenarios if behavior changes\n- Document the auth strategy and any changes in an ADR — auth decisions are critical to trace\n- **Arc42:** Update `08-crosscutting.md` with the auth pattern; update `06-runtime-views.md` with the auth flow",
-    "new-dependency":
-      "- Document the dependency rationale in an ADR\n- Check bundle size impact (client-side deps)\n- Verify the dependency doesn't introduce known CVEs\n- Ensure the dependency's license is compatible\n- **Arc42:** If this dependency introduces a new external system, update `03-context.md`",
-    "refactoring":
-      "- Ensure no cross-block boundary violations are introduced\n- Maintain existing public API contracts\n- Run tests before and after to verify behavior preservation\n- Check that no quality scenarios regress\n- If the refactoring changes architectural patterns, update or create an ADR to explain why\n- **Arc42:** Update `05-building-blocks.md` if module structure changed; update `08-crosscutting.md` if patterns changed",
-    "general":
-      "- Check `arcbridge_get_relevant_adrs` for existing decisions that may constrain this change\n- If you're choosing between approaches, document the decision in an ADR\n- **Arc42:** Consider which documentation sections may need updating (check `.arcbridge/arc42/` — especially `05-building-blocks.md` and `08-crosscutting.md`)",
-  };
+const FRONTEND_GUIDANCE: Record<string, string> = {
+  "adding-component":
+    "- Follow existing component patterns in this directory\n- Add props interface alongside the component\n- Consider server vs. client: does this need interactivity (`'use client'`)?\n- Check accessibility: keyboard navigation, ARIA labels, screen reader support\n- **Arc42:** If this introduces a new UI pattern, document it in `08-crosscutting.md`",
+  "adding-api-route":
+    "- Ensure authentication middleware covers this route\n- Validate all input with zod or equivalent\n- Follow existing error response patterns\n- Consider rate limiting for public endpoints\n- **Arc42:** Update `03-context.md` if this exposes a new external integration",
+  "adding-hook":
+    "- Follow the `use` prefix convention\n- Keep hooks focused — one responsibility per hook\n- Consider memoization for expensive computations\n- Document the hook's return type",
+  "modifying-auth":
+    "- Check all API routes still have auth coverage after changes\n- Verify no secrets leak to client components\n- Test edge cases: expired tokens, revoked sessions, role changes\n- **Arc42:** Update `08-crosscutting.md` with the auth pattern",
+  "new-dependency":
+    "- Document the dependency rationale in an ADR\n- Check bundle size impact (client-side deps)\n- Verify no known CVEs\n- **Arc42:** If this introduces a new external system, update `03-context.md`",
+};
 
-  return guidance[action] ?? null;
+const DOTNET_GUIDANCE: Record<string, string> = {
+  "adding-component":
+    "- Follow the existing service/repository pattern\n- Register the new class in DI (Program.cs or extension method)\n- Add an interface if the component needs to be mockable\n- **Arc42:** Update `05-building-blocks.md` if this is a new architectural layer",
+  "adding-api-route":
+    "- Use `[HttpGet]`, `[HttpPost]`, etc. attributes for controller routes, or `MapGet`/`MapPost` for minimal APIs\n- Apply `[Authorize]` for protected endpoints\n- Validate input with data annotations or FluentValidation\n- Follow existing error response patterns (ProblemDetails)\n- **Arc42:** Update `03-context.md` if this exposes new external integrations; update `06-runtime-views.md` for key workflows",
+  "adding-hook":
+    "- .NET equivalent: create a middleware, filter, or hosted service\n- Register in the DI container\n- Follow the single responsibility principle",
+  "modifying-auth":
+    "- Check `[Authorize]` coverage on all controllers/endpoints\n- Verify JWT validation, claims, and policy configuration\n- Test edge cases: expired tokens, revoked sessions, role changes\n- **Arc42:** Update `08-crosscutting.md` with the auth pattern",
+  "new-dependency":
+    "- Document the NuGet package rationale in an ADR\n- Check for known vulnerabilities with `dotnet list package --vulnerable`\n- Verify license compatibility\n- **Arc42:** If this introduces a new external system, update `03-context.md`",
+};
+
+const API_GUIDANCE: Record<string, string> = {
+  "adding-component":
+    "- Follow existing module/service patterns\n- Add TypeScript interfaces for public APIs\n- Register in the dependency injection or module system\n- **Arc42:** Update `05-building-blocks.md` if this is a new architectural layer",
+  "adding-api-route":
+    "- Ensure authentication middleware covers this route\n- Validate all input with zod or equivalent\n- Follow existing error response patterns\n- Consider rate limiting for public endpoints\n- **Arc42:** Update `03-context.md` if this exposes a new external integration",
+  "adding-hook":
+    "- Use middleware for cross-cutting concerns\n- Keep middleware focused — one responsibility per middleware\n- Document the middleware's purpose and order",
+  "modifying-auth":
+    "- Check all routes still have auth coverage\n- Verify token validation and session handling\n- Test edge cases: expired tokens, revoked sessions\n- **Arc42:** Update `08-crosscutting.md` with the auth pattern",
+  "new-dependency":
+    "- Document the dependency rationale in an ADR\n- Verify no known CVEs\n- Ensure license compatibility\n- **Arc42:** If this introduces a new external system, update `03-context.md`",
+};
+
+const SHARED_GUIDANCE: Record<string, string> = {
+  "refactoring":
+    "- Ensure no cross-block boundary violations are introduced\n- Maintain existing public API contracts\n- Run tests before and after to verify behavior preservation\n- If the refactoring changes architectural patterns, update or create an ADR\n- **Arc42:** Update `05-building-blocks.md` if module structure changed; update `08-crosscutting.md` if patterns changed",
+  "general":
+    "- Check `arcbridge_get_relevant_adrs` for existing decisions that may constrain this change\n- If you're choosing between approaches, document the decision in an ADR\n- **Arc42:** Consider which documentation sections may need updating (check `.arcbridge/arc42/`)",
+};
+
+function getActionGuidance(action: string, projectType: string): string | null {
+  // Shared guidance applies to all project types
+  if (SHARED_GUIDANCE[action]) return SHARED_GUIDANCE[action];
+
+  // Type-specific guidance
+  switch (projectType) {
+    case "dotnet-webapi":
+      return DOTNET_GUIDANCE[action] ?? null;
+    case "api-service":
+      return API_GUIDANCE[action] ?? null;
+    case "react-vite":
+    case "nextjs-app-router":
+    default:
+      return FRONTEND_GUIDANCE[action] ?? null;
+  }
 }
