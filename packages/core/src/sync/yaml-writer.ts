@@ -156,6 +156,18 @@ export function addPhaseToYaml(
 
     const phasesFile = result.data;
 
+    // Always ensure task file exists (even on retry when phase already in YAML)
+    const tasksDir = join(projectRoot, ".arcbridge", "plan", "tasks");
+    mkdirSync(tasksDir, { recursive: true });
+    const taskFilePath = join(tasksDir, `${phase.id}.yaml`);
+    if (!existsSync(taskFilePath)) {
+      writeFileSync(
+        taskFilePath,
+        stringify({ schema_version: 1, phase_id: phase.id, tasks: [] }),
+        "utf-8",
+      );
+    }
+
     // Guard against duplicates (retry safety)
     if (phasesFile.phases.some((p) => p.id === phase.id || p.phase_number === phase.phase_number)) {
       return { success: true }; // Already exists — idempotent
@@ -172,18 +184,6 @@ export function addPhaseToYaml(
 
     phasesFile.phases.sort((a, b) => a.phase_number - b.phase_number);
     writeFileSync(phasesPath, stringify(phasesFile), "utf-8");
-
-    // Create empty task file for the new phase
-    const tasksDir = join(projectRoot, ".arcbridge", "plan", "tasks");
-    mkdirSync(tasksDir, { recursive: true });
-    const taskFilePath = join(tasksDir, `${phase.id}.yaml`);
-    if (!existsSync(taskFilePath)) {
-      writeFileSync(
-        taskFilePath,
-        stringify({ schema_version: 1, phase_id: phase.id, tasks: [] }),
-        "utf-8",
-      );
-    }
 
     return { success: true };
   } catch (err) {
