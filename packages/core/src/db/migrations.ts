@@ -60,7 +60,8 @@ const migrations: Migration[] = [
           created_at TEXT NOT NULL,
           completed_at TEXT
         );
-        INSERT INTO tasks_new SELECT * FROM tasks;
+        INSERT INTO tasks_new (id, phase_id, title, description, status, building_block, quality_scenarios, acceptance_criteria, created_at, completed_at)
+          SELECT id, phase_id, title, description, status, building_block, quality_scenarios, acceptance_criteria, created_at, completed_at FROM tasks;
         DROP TABLE tasks;
         ALTER TABLE tasks_new RENAME TO tasks;
       `);

@@ -62,10 +62,10 @@ export function registerUpdateTask(
           "UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?",
         ).run(params.status, now, params.task_id);
       } else {
-        db.prepare("UPDATE tasks SET status = ? WHERE id = ?").run(
-          params.status,
-          params.task_id,
-        );
+        // Clear completed_at when moving away from done (e.g., done → cancelled)
+        db.prepare(
+          "UPDATE tasks SET status = ?, completed_at = NULL WHERE id = ?",
+        ).run(params.status, params.task_id);
       }
 
       // Write back to YAML

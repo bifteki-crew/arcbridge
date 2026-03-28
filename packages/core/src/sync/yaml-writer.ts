@@ -162,22 +162,26 @@ export function deleteTaskFromYaml(
   phaseId: string,
   taskId: string,
 ): void {
-  const taskPath = join(
-    projectRoot,
-    ".arcbridge",
-    "plan",
-    "tasks",
-    `${phaseId}.yaml`,
-  );
+  try {
+    const taskPath = join(
+      projectRoot,
+      ".arcbridge",
+      "plan",
+      "tasks",
+      `${phaseId}.yaml`,
+    );
 
-  if (!existsSync(taskPath)) return;
+    if (!existsSync(taskPath)) return;
 
-  const raw = readFileSync(taskPath, "utf-8");
-  const result = TaskFileSchema.safeParse(parse(raw));
-  if (!result.success) return;
+    const raw = readFileSync(taskPath, "utf-8");
+    const result = TaskFileSchema.safeParse(parse(raw));
+    if (!result.success) return;
 
-  const taskFile = result.data;
-  taskFile.tasks = taskFile.tasks.filter((t) => t.id !== taskId);
+    const taskFile = result.data;
+    taskFile.tasks = taskFile.tasks.filter((t) => t.id !== taskId);
 
-  writeFileSync(taskPath, stringify(taskFile), "utf-8");
+    writeFileSync(taskPath, stringify(taskFile), "utf-8");
+  } catch {
+    // Best-effort — invalid YAML shouldn't prevent DB deletion
+  }
 }

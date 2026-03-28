@@ -37,11 +37,9 @@ export function registerDeleteTask(
         );
       }
 
-      // Delete from DB
-      db.prepare("DELETE FROM tasks WHERE id = ?").run(params.task_id);
-
-      // Delete from YAML (source of truth)
+      // Delete from YAML first (source of truth), then DB
       deleteTaskFromYaml(params.target_dir, task.phase_id, params.task_id);
+      db.prepare("DELETE FROM tasks WHERE id = ?").run(params.task_id);
 
       return textResult(
         `Task **${task.id}** deleted: "${task.title}"`,
