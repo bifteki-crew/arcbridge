@@ -153,3 +153,31 @@ export function syncScenarioToYaml(
 
   writeFileSync(scenarioPath, stringify(scenariosFile), "utf-8");
 }
+
+/**
+ * Delete a task from the YAML task file.
+ */
+export function deleteTaskFromYaml(
+  projectRoot: string,
+  phaseId: string,
+  taskId: string,
+): void {
+  const taskPath = join(
+    projectRoot,
+    ".arcbridge",
+    "plan",
+    "tasks",
+    `${phaseId}.yaml`,
+  );
+
+  if (!existsSync(taskPath)) return;
+
+  const raw = readFileSync(taskPath, "utf-8");
+  const result = TaskFileSchema.safeParse(parse(raw));
+  if (!result.success) return;
+
+  const taskFile = result.data;
+  taskFile.tasks = taskFile.tasks.filter((t) => t.id !== taskId);
+
+  writeFileSync(taskPath, stringify(taskFile), "utf-8");
+}

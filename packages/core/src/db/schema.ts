@@ -1,6 +1,6 @@
 import type { Database } from "./connection.js";
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 const SCHEMA_SQL = `
 -- Metadata
@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   phase_id TEXT NOT NULL REFERENCES phases(id),
   title TEXT NOT NULL,
   description TEXT,
-  status TEXT NOT NULL DEFAULT 'todo' CHECK(status IN ('todo','in-progress','done','blocked')),
+  status TEXT NOT NULL DEFAULT 'todo' CHECK(status IN ('todo','in-progress','done','blocked','cancelled')),
   building_block TEXT REFERENCES building_blocks(id),
   quality_scenarios TEXT NOT NULL DEFAULT '[]',
   acceptance_criteria TEXT NOT NULL DEFAULT '[]',

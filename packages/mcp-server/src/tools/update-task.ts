@@ -25,8 +25,8 @@ export function registerUpdateTask(
         .describe("Absolute path to the project directory"),
       task_id: z.string().describe("Task ID (e.g., 'task-0.1-init-nextjs')"),
       status: z
-        .enum(["in-progress", "done", "blocked"])
-        .describe("New status"),
+        .enum(["in-progress", "done", "blocked", "cancelled"])
+        .describe("New status. Use 'cancelled' for tasks that are no longer relevant."),
       notes: z
         .string()
         .optional()
