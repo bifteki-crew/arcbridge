@@ -149,13 +149,20 @@ export function buildingBlocksTemplate(
     const root = inp.projectRoot ?? ".";
     let prefix = "";
     try {
-      const srcDir = join(root, "src");
-      if (existsSync(srcDir)) {
-        const entries = readdirSync(srcDir).sort();
-        const projDir = entries.find((e: string) =>
-          existsSync(join(srcDir, e, `${e}.csproj`)) || existsSync(join(srcDir, e, "Program.cs"))
-        );
-        if (projDir) prefix = `src/${projDir}/`;
+      // Prefer dotnetServices from solution discovery (accurate for multi-project)
+      const primaryService = inp.dotnetServices?.find((s) => !s.path.includes("Test"));
+      if (primaryService && primaryService.path !== ".") {
+        prefix = primaryService.path.endsWith("/") ? primaryService.path : `${primaryService.path}/`;
+      } else {
+        // Fallback: scan src/ directory
+        const srcDir = join(root, "src");
+        if (existsSync(srcDir)) {
+          const entries = readdirSync(srcDir).sort();
+          const projDir = entries.find((e: string) =>
+            existsSync(join(srcDir, e, `${e}.csproj`)) || existsSync(join(srcDir, e, "Program.cs"))
+          );
+          if (projDir) prefix = `src/${projDir}/`;
+        }
       }
     } catch {
       // Ignore — use root-relative paths
