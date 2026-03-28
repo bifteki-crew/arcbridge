@@ -62,8 +62,9 @@ export function registerUpdateScenarioStatus(
 
       // Validate linked_tests paths (no path traversal, must be relative)
       if (params.linked_tests) {
+        const { isAbsolute } = await import("node:path");
         const invalid = params.linked_tests.filter(
-          (t) => t.startsWith("/") || t.includes("..") || t.startsWith("\\"),
+          (t) => isAbsolute(t) || t.includes(".."),
         );
         if (invalid.length > 0) {
           return textResult(
@@ -92,7 +93,12 @@ export function registerUpdateScenarioStatus(
       });
 
       // Sync to YAML (source of truth)
-      syncScenarioToYaml(projectRoot, params.scenario_id, params.status, params.linked_tests);
+      let yamlWarning: string | undefined;
+      try {
+        syncScenarioToYaml(projectRoot, params.scenario_id, params.status, params.linked_tests);
+      } catch (err) {
+        yamlWarning = `YAML sync failed: ${err instanceof Error ? err.message : String(err)}. DB updated but YAML may be out of sync.`;
+      }
 
       const lines = [
         `Scenario **${scenario.id}** (${scenario.name}) updated: ${oldStatus} → **${params.status}**`,
@@ -107,6 +113,10 @@ export function registerUpdateScenarioStatus(
         if (scenario.verification === "manual") {
           lines.push("", "*Verification upgraded from manual to semi-automatic*");
         }
+      }
+
+      if (yamlWarning) {
+        lines.push("", `**Warning:** ${yamlWarning}`);
       }
 
       return textResult(lines.join("\n"));
