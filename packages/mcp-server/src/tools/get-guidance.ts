@@ -228,8 +228,9 @@ export function registerGetGuidance(
         lines.push("");
       }
 
-      // 6. Action-specific guidance (template-aware)
-      const { config: projConfig } = loadConfig(params.target_dir);
+      // 7. Action-specific guidance (template-aware)
+      const projectRoot = ctx.projectRoot ?? params.target_dir;
+      const { config: projConfig } = loadConfig(projectRoot);
       const projectType = projConfig?.project_type ?? "nextjs-app-router";
       const actionGuidance = getActionGuidance(params.action, projectType);
       if (actionGuidance) {

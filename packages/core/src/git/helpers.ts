@@ -196,8 +196,8 @@ export function scopeToProject(
   // Normalize: get project path relative to repo root
   const projectRel = relative(repoRoot, projectRoot);
 
-  // If project IS the repo root, no filtering needed
-  if (!projectRel || projectRel === ".") return changedFiles;
+  // If project IS the repo root, or path is outside repo (symlinks), no filtering
+  if (!projectRel || projectRel === "." || projectRel.startsWith("..")) return changedFiles;
 
   const prefix = projectRel.replace(/\\/g, "/");
   return changedFiles

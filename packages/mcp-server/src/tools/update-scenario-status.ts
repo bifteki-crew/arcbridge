@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { syncScenarioToYaml } from "@arcbridge/core";
+import { syncScenarioToYaml, transaction } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
 
@@ -30,9 +30,9 @@ export function registerUpdateScenarioStatus(
         .optional()
         .describe(
           "Test file paths to link to this scenario (e.g., ['src/__tests__/auth.test.ts']). " +
-          "Once linked, `arcbridge_verify_scenarios` can run them automatically.",
+          "Once linked, `arcbridge_verify_scenarios` can run them automatically. " +
+          "Also sets verification to 'semi-automatic' if currently 'manual'.",
         ),
-      notes: z.string().optional().describe("Optional notes about the verification"),
     },
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
@@ -58,23 +58,28 @@ export function registerUpdateScenarioStatus(
       }
 
       const oldStatus = scenario.status;
+      const now = new Date().toISOString();
 
-      // Update status in DB
-      db.prepare("UPDATE quality_scenarios SET status = ?, last_checked = ? WHERE id = ?").run(
-        params.status,
-        new Date().toISOString(),
-        params.scenario_id,
-      );
-
-      // Update linked_tests if provided
-      if (params.linked_tests) {
-        db.prepare("UPDATE quality_scenarios SET linked_tests = ? WHERE id = ?").run(
-          JSON.stringify(params.linked_tests),
-          params.scenario_id,
+      // Update DB atomically
+      transaction(db, () => {
+        db.prepare("UPDATE quality_scenarios SET status = ?, last_checked = ? WHERE id = ?").run(
+          params.status, now, params.scenario_id,
         );
-      }
 
-      // Sync status (and linked_tests if provided) to YAML
+        if (params.linked_tests) {
+          db.prepare("UPDATE quality_scenarios SET linked_tests = ? WHERE id = ?").run(
+            JSON.stringify(params.linked_tests), params.scenario_id,
+          );
+          // Auto-upgrade verification from 'manual' to 'semi-automatic' when tests are linked
+          if (scenario.verification === "manual") {
+            db.prepare("UPDATE quality_scenarios SET verification = 'semi-automatic' WHERE id = ?").run(
+              params.scenario_id,
+            );
+          }
+        }
+      });
+
+      // Sync to YAML (source of truth)
       syncScenarioToYaml(projectRoot, params.scenario_id, params.status, params.linked_tests);
 
       const lines = [
@@ -87,10 +92,9 @@ export function registerUpdateScenarioStatus(
           `**Linked tests:** ${params.linked_tests.length} file(s)`,
           ...params.linked_tests.map((t) => `  - ${t}`),
         );
-      }
-
-      if (params.notes) {
-        lines.push("", `**Notes:** ${params.notes}`);
+        if (scenario.verification === "manual") {
+          lines.push("", "*Verification upgraded from manual to semi-automatic*");
+        }
       }
 
       return textResult(lines.join("\n"));

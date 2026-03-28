@@ -145,7 +145,7 @@ export class ClaudeAdapter implements PlatformAdapter {
   generateProjectConfig(targetDir: string, config: ArcBridgeConfig): void {
     const arcbridgeContent = generateClaudeMd(config);
     const claudeMdPath = join(targetDir, "CLAUDE.md");
-    const marker = "<!-- ArcBridge generated below — do not edit this section manually -->";
+    const marker = "<!-- arcbridge-generated -->";
 
     if (existsSync(claudeMdPath)) {
       const existing = readFileSync(claudeMdPath, "utf-8");
