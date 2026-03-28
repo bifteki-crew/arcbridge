@@ -324,7 +324,8 @@ function getActionGuidance(action: string, projectType: string): string | null {
       return API_GUIDANCE[action] ?? null;
     case "react-vite":
     case "nextjs-app-router":
-    default:
       return FRONTEND_GUIDANCE[action] ?? null;
+    default:
+      return null; // Unknown project types only get shared guidance
   }
 }

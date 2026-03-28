@@ -288,6 +288,33 @@ describe("syncScenarioToYaml", () => {
     expect(result.scenarios[0].status).toBe("untested");
     expect(result.scenarios[1].status).toBe("failing");
   });
+
+  it("updates linked_tests when provided", () => {
+    writeScenariosFile([makeScenario("SEC-01", "untested")]);
+
+    syncScenarioToYaml(tempDir, "SEC-01", "passing", [
+      "src/__tests__/auth.test.ts",
+      "src/__tests__/security.test.ts",
+    ]);
+
+    const result = readScenariosFile();
+    expect(result.scenarios[0].status).toBe("passing");
+    expect(result.scenarios[0].linked_tests).toEqual([
+      "src/__tests__/auth.test.ts",
+      "src/__tests__/security.test.ts",
+    ]);
+  });
+
+  it("preserves existing linked_tests when not provided", () => {
+    const scenarios = [{ ...makeScenario("SEC-01", "untested"), linked_tests: ["existing-test.ts"] }];
+    writeScenariosFile(scenarios);
+
+    syncScenarioToYaml(tempDir, "SEC-01", "passing");
+
+    const result = readScenariosFile();
+    expect(result.scenarios[0].status).toBe("passing");
+    expect(result.scenarios[0].linked_tests).toEqual(["existing-test.ts"]);
+  });
 });
 
 describe("deleteTaskFromYaml", () => {

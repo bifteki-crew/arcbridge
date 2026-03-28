@@ -14,6 +14,8 @@ export function phaseManagerTemplate(): AgentRole {
       "arcbridge_delete_task",
       "arcbridge_create_task",
       "arcbridge_check_drift",
+      "arcbridge_verify_scenarios",
+      "arcbridge_update_scenario_status",
       "arcbridge_get_open_questions",
       "arcbridge_propose_arc42_update",
     ],

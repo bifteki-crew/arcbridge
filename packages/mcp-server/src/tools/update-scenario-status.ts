@@ -74,8 +74,8 @@ export function registerUpdateScenarioStatus(
         );
       }
 
-      // Sync status to YAML
-      syncScenarioToYaml(projectRoot, params.scenario_id, params.status);
+      // Sync status (and linked_tests if provided) to YAML
+      syncScenarioToYaml(projectRoot, params.scenario_id, params.status, params.linked_tests);
 
       const lines = [
         `Scenario **${scenario.id}** (${scenario.name}) updated: ${oldStatus} → **${params.status}**`,
