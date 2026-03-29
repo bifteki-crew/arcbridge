@@ -72,10 +72,8 @@ export function registerCreatePhase(
         );
       }
 
-      // Insert into DB (only after YAML succeeds)
-      db.prepare(
-        "INSERT INTO phases (id, name, phase_number, status, description, gate_status) VALUES (?, ?, ?, ?, ?, ?)",
-      ).run(phaseId, params.name, phaseNumber, "planned", params.description, "{}");
+      // Sync DB from YAML (single source of truth)
+      refreshFromDocs(db, params.target_dir);
 
       const lines = [
         `Phase created: **${phaseId}**`,
