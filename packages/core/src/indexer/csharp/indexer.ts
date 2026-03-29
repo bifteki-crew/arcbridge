@@ -44,9 +44,10 @@ export async function indexCSharpTreeSitter(
   // 1. Discover .cs files (skip build artifacts, Unity-managed dirs)
   const ignorePatterns = [
     "**/bin/**", "**/obj/**", "**/node_modules/**", "**/.git/**",
-    // Unity project directories that should never be indexed
-    "**/Library/**", "**/Temp/**", "**/Logs/**", "**/UserSettings/**",
-    "**/Packages/**", "**/ProjectSettings/**",
+    // Unity root-level directories (anchored to avoid matching nested folders
+    // like src/Library/ or src/Packages/ in non-Unity .NET projects)
+    "Library/**", "Temp/**", "Logs/**", "UserSettings/**",
+    "Packages/**", "ProjectSettings/**",
   ];
   const csFiles = globbySync("**/*.cs", {
     cwd: projectRoot,
