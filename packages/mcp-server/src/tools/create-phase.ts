@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { addPhaseToYaml } from "@arcbridge/core";
+import { addPhaseToYaml, refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
 
@@ -29,6 +29,9 @@ export function registerCreatePhase(
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
+
+      // Refresh DB from YAML to ensure phase numbers are current
+      refreshFromDocs(db, params.target_dir);
 
       // Determine phase number
       const maxPhase = db
