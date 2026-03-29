@@ -17,7 +17,7 @@ export function configTemplate(input: InitProjectInput): ArcBridgeConfig {
       csharp_indexer: "auto",
     },
     testing: {
-      test_command: "dotnet test",
+      test_command: "unity -batchmode -projectPath . -runTests -testPlatform EditMode",
       timeout_ms: 120000,
     },
     drift: {

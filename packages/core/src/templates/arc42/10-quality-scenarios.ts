@@ -309,7 +309,7 @@ const UNITY_GAME_SCENARIOS: Record<string, ScenarioList> = {
       priority: "must",
       scenario: "Game runs on target hardware during typical gameplay",
       expected:
-        "Maintains 60 FPS (or platform target) with no frame exceeding 20ms",
+        "Maintains 60 FPS (or platform target) with no frame exceeding 16.7ms",
       linked_code: [],
       linked_tests: [],
       linked_blocks: ["game-core"],
