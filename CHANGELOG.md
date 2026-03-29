@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.6 (2026-03-29)
+
+### New Features
+
+- **`arcbridge_create_phase`** (32 MCP tools) — add new phases to the project plan beyond the initial template. Supports explicit phase numbering or auto-assignment, with gate requirements.
+
+### Fixes
+
+- **Retry-safe phase creation** — YAML write happens first (source of truth), DB synced via `refreshFromDocs()` instead of manual INSERT. Retrying `create_phase` with the same inputs no longer risks YAML/DB inconsistency.
+- **No orphan task files on conflict** — `addPhaseToYaml` checks for phase_number conflicts before writing the task file.
+- **Correct phase number assignment** — DB is refreshed from YAML before computing the next phase number, preventing stale duplicates.
+
+### Docs
+
+- Fixed MCP tool count: 26 → 32
+- Added UX Reviewer to agent roles (7 core + UX Reviewer for frontend templates)
+- Updated test count: 371 → 377
+- Added `create_phase` to project plan spec
+
+### Stats
+
+- 32 MCP tools, 377 tests passing, 0 lint errors, 0 type errors
+
 ## 0.1.5 (2026-03-28)
 
 ### New Features
