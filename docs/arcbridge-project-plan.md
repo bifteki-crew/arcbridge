@@ -930,6 +930,14 @@ create_task: {
     "429 response with retry-after when exceeded"
   ]
 }
+
+# Create a new phase (beyond the initial template)
+create_phase: {
+  "name": "Integrations",
+  "description": "Third-party service integrations",
+  "phase_number": 5,  // optional — auto-assigns next number if omitted
+  "gate_requirements": ["All integrations have error handling", "Retry policies documented"]
+}
 ```
 
 ### Agent Role Tools

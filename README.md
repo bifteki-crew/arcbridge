@@ -38,7 +38,8 @@ When you run `arcbridge_init_project`, it creates:
     ├── quality-guardian.md
     ├── phase-manager.md
     ├── onboarding.md
-    └── code-reviewer.md
+    ├── code-reviewer.md
+    └── ux-reviewer.md             # Only for UI templates (nextjs-app-router, react-vite)
 ```
 
 Plus platform-specific configs (`CLAUDE.md`, `.claude/agents/`, `.github/copilot-instructions.md`, `.github/agents/`).
@@ -95,7 +96,7 @@ For local development, point your MCP config at the built output:
 }
 ```
 
-## MCP Tools (26)
+## MCP Tools (32)
 
 ### Lifecycle
 
@@ -171,7 +172,7 @@ For local development, point your MCP config at the built output:
 
 ## Agent Roles
 
-ArcBridge ships with 7 predefined agent roles that specialize AI behavior for different tasks. Each role has a system prompt, tool access constraints, and quality focus areas. Platform adapters translate these canonical definitions into Claude Code agents (`.claude/agents/`) and Copilot agents (`.github/agents/`).
+ArcBridge ships with 7 core agent roles plus a UX Reviewer for frontend templates, each specializing AI behavior for different tasks. Each role has a system prompt, tool access constraints, and quality focus areas. Platform adapters translate these canonical definitions into Claude Code agents (`.claude/agents/`) and Copilot agents (`.github/agents/`).
 
 | Role | Purpose | Automatic? |
 |------|---------|------------|
@@ -182,8 +183,9 @@ ArcBridge ships with 7 predefined agent roles that specialize AI behavior for di
 | **Phase Manager** | Tracks progress, manages task transitions, triggers arc42 sync | Phase gates |
 | **Onboarding** | Explains the project to new team members or returning developers | On-demand |
 | **Code Reviewer** | Reviews code for correctness, patterns, edge cases, simplicity | On-demand |
+| **UX Reviewer** | Reviews frontend code for usability, accessibility, and design consistency | On-demand |
 
-The first 5 roles participate in the automatic Plan → Build → Sync → Review loop. The **Onboarding** and **Code Reviewer** roles are opt-in — invoke them when you want a second pair of eyes or need to get up to speed.
+The first 5 roles participate in the automatic Plan → Build → Sync → Review loop. The **Onboarding**, **Code Reviewer**, and **UX Reviewer** roles are opt-in — invoke them when you want a second pair of eyes or need to get up to speed.
 
 The Code Reviewer focuses on what a senior developer would catch in a pull request: logic bugs, unhandled edge cases, pattern violations, and over-engineering. It deliberately does not overlap with the Security Reviewer (OWASP, auth, secrets) or the Quality Guardian (metrics, coverage, accessibility).
 
@@ -233,7 +235,7 @@ packages/
 - **Phase 3.5** (done): Git integration — arc42 update proposals, practice reviews — 22 MCP tools
 - **Phase 4** (done): Planning & sync loop — phase gates, role activation, task inference, sync triggers — 24 MCP tools
 - **Phase 5** (done): Polish & hardening — roles loaded from files, CLI binary with sync/status/drift commands, test runner integration (`verify_scenarios`), 3 project templates (nextjs-app-router, react-vite, api-service) — 25 MCP tools
-- **Phase 5.5** (done): Release prep — `arcbridge init` CLI command, walkthrough docs, CI workflows, npm publish setup — 32 MCP tools, 371 tests
+- **Phase 5.5** (done): Release prep — `arcbridge init` CLI command, walkthrough docs, CI workflows, npm publish setup — 32 MCP tools, 377 tests
 
 See [`docs/arcbridge-project-plan.md`](docs/arcbridge-project-plan.md) for the full specification.
 
