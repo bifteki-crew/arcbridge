@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { parse, stringify } from "yaml";
@@ -473,7 +473,7 @@ describe("addPhaseToYaml", () => {
     expect(file.phases.length).toBe(1);
   });
 
-  it("prevents duplicate phase_number with different id", () => {
+  it("prevents duplicate phase_number with different id and no orphan task file", () => {
     setupPhasesFile([
       { id: "phase-0-setup", name: "Setup", phase_number: 0 },
     ]);
@@ -489,6 +489,9 @@ describe("addPhaseToYaml", () => {
     const file = readPhasesFile();
     expect(file.phases.length).toBe(1); // Not added
     expect(file.phases[0].id).toBe("phase-0-setup"); // Original kept
+
+    // No orphan task file for the rejected phase
+    expect(existsSync(join(tempDir, ".arcbridge", "plan", "tasks", "phase-0-different.yaml"))).toBe(false);
   });
 
   it("returns warning when phases.yaml missing", () => {

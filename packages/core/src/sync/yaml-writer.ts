@@ -156,7 +156,16 @@ export function addPhaseToYaml(
 
     const phasesFile = result.data;
 
-    // Always ensure task file exists (even on retry when phase already in YAML)
+    // Guard against duplicates
+    const existingById = phasesFile.phases.some((p) => p.id === phase.id);
+    const existingByNumber = phasesFile.phases.some((p) => p.phase_number === phase.phase_number);
+
+    if (existingByNumber && !existingById) {
+      // Different id but same phase_number — conflict, don't create anything
+      return { success: true };
+    }
+
+    // Ensure task file exists (for new phases and retries of the same phase)
     const tasksDir = join(projectRoot, ".arcbridge", "plan", "tasks");
     mkdirSync(tasksDir, { recursive: true });
     const taskFilePath = join(tasksDir, `${phase.id}.yaml`);
@@ -168,9 +177,8 @@ export function addPhaseToYaml(
       );
     }
 
-    // Guard against duplicates (retry safety)
-    if (phasesFile.phases.some((p) => p.id === phase.id || p.phase_number === phase.phase_number)) {
-      return { success: true }; // Already exists — idempotent
+    if (existingById) {
+      return { success: true }; // Retry — phase already exists, task file ensured
     }
 
     phasesFile.phases.push({
