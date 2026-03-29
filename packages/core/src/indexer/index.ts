@@ -30,6 +30,14 @@ export type CSharpBackend = "roslyn" | "tree-sitter";
  * This prevents a stray .csproj from hijacking a TypeScript project.
  */
 export function detectProjectLanguage(projectRoot: string): "typescript" | "csharp" {
+  // Unity projects are always C# (check before TypeScript — Unity has no tsconfig/package.json)
+  if (
+    existsSync(join(projectRoot, "ProjectSettings")) &&
+    existsSync(join(projectRoot, "Assets"))
+  ) {
+    return "csharp";
+  }
+
   // TypeScript signals take priority (package.json + tsconfig.json is the stronger signal)
   if (existsSync(join(projectRoot, "tsconfig.json"))) return "typescript";
   if (existsSync(join(projectRoot, "package.json"))) return "typescript";
