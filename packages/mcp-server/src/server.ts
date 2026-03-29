@@ -14,6 +14,7 @@ import { registerGetCurrentTasks } from "./tools/get-current-tasks.js";
 import { registerUpdateTask } from "./tools/update-task.js";
 import { registerCreateTask } from "./tools/create-task.js";
 import { registerDeleteTask } from "./tools/delete-task.js";
+import { registerCreatePhase } from "./tools/create-phase.js";
 import { registerGetRelevantAdrs } from "./tools/get-relevant-adrs.js";
 import { registerReindex } from "./tools/reindex.js";
 import { registerSearchSymbols } from "./tools/search-symbols.js";
@@ -60,6 +61,7 @@ export function createArcBridgeServer(): McpServer {
   registerUpdateTask(server, ctx);
   registerCreateTask(server, ctx);
   registerDeleteTask(server, ctx);
+  registerCreatePhase(server, ctx);
 
   // Code Intelligence
   registerReindex(server, ctx);

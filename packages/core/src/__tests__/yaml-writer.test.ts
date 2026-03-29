@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { parse, stringify } from "yaml";
@@ -7,6 +7,7 @@ import {
   syncTaskToYaml,
   addTaskToYaml,
   deleteTaskFromYaml,
+  addPhaseToYaml,
   syncPhaseToYaml,
   syncScenarioToYaml,
 } from "../sync/yaml-writer.js";
@@ -381,5 +382,128 @@ describe("deleteTaskFromYaml", () => {
     const result = deleteTaskFromYaml(tempDir, "phase-0-setup", "task-1");
     expect(result.success).toBe(false);
     expect(result.warning).toBeDefined();
+  });
+});
+
+describe("addPhaseToYaml", () => {
+  function setupPhasesFile(phases: Array<{ id: string; name: string; phase_number: number }>) {
+    const planDir = join(tempDir, ".arcbridge", "plan");
+    mkdirSync(planDir, { recursive: true });
+    const phasesFile = {
+      schema_version: 1,
+      phases: phases.map((p) => ({
+        ...p,
+        status: "planned",
+        description: "Test phase",
+        gate_requirements: [],
+      })),
+    };
+    writeFileSync(join(planDir, "phases.yaml"), stringify(phasesFile), "utf-8");
+  }
+
+  function readPhasesFile() {
+    return parse(readFileSync(join(tempDir, ".arcbridge", "plan", "phases.yaml"), "utf-8"));
+  }
+
+  it("adds a phase to existing phases.yaml", () => {
+    setupPhasesFile([
+      { id: "phase-0-setup", name: "Setup", phase_number: 0 },
+    ]);
+
+    const result = addPhaseToYaml(tempDir, {
+      id: "phase-1-foundation",
+      name: "Foundation",
+      phase_number: 1,
+      description: "Core setup",
+    });
+
+    expect(result.success).toBe(true);
+    const file = readPhasesFile();
+    expect(file.phases.length).toBe(2);
+    expect(file.phases[1].id).toBe("phase-1-foundation");
+  });
+
+  it("sorts phases by phase_number", () => {
+    setupPhasesFile([
+      { id: "phase-0-setup", name: "Setup", phase_number: 0 },
+      { id: "phase-2-features", name: "Features", phase_number: 2 },
+    ]);
+
+    addPhaseToYaml(tempDir, {
+      id: "phase-1-foundation",
+      name: "Foundation",
+      phase_number: 1,
+      description: "Core setup",
+    });
+
+    const file = readPhasesFile();
+    expect(file.phases.map((p: { phase_number: number }) => p.phase_number)).toEqual([0, 1, 2]);
+  });
+
+  it("creates empty task file for new phase", () => {
+    setupPhasesFile([]);
+
+    addPhaseToYaml(tempDir, {
+      id: "phase-0-setup",
+      name: "Setup",
+      phase_number: 0,
+      description: "Initial setup",
+    });
+
+    const taskFilePath = join(tempDir, ".arcbridge", "plan", "tasks", "phase-0-setup.yaml");
+    const taskFile = parse(readFileSync(taskFilePath, "utf-8"));
+    expect(taskFile.phase_id).toBe("phase-0-setup");
+    expect(taskFile.tasks).toEqual([]);
+  });
+
+  it("prevents duplicate phases (idempotent)", () => {
+    setupPhasesFile([
+      { id: "phase-0-setup", name: "Setup", phase_number: 0 },
+    ]);
+
+    const result = addPhaseToYaml(tempDir, {
+      id: "phase-0-setup",
+      name: "Setup Again",
+      phase_number: 0,
+      description: "Duplicate",
+    });
+
+    expect(result.success).toBe(true);
+    const file = readPhasesFile();
+    expect(file.phases.length).toBe(1);
+  });
+
+  it("prevents duplicate phase_number with different id and no orphan task file", () => {
+    setupPhasesFile([
+      { id: "phase-0-setup", name: "Setup", phase_number: 0 },
+    ]);
+
+    const result = addPhaseToYaml(tempDir, {
+      id: "phase-0-different",
+      name: "Different",
+      phase_number: 0,
+      description: "Same number, different id",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.warning).toContain("phase-0-setup");
+    const file = readPhasesFile();
+    expect(file.phases.length).toBe(1); // Not added
+    expect(file.phases[0].id).toBe("phase-0-setup"); // Original kept
+
+    // No orphan task file for the rejected phase
+    expect(existsSync(join(tempDir, ".arcbridge", "plan", "tasks", "phase-0-different.yaml"))).toBe(false);
+  });
+
+  it("returns warning when phases.yaml missing", () => {
+    const result = addPhaseToYaml(tempDir, {
+      id: "phase-0",
+      name: "Test",
+      phase_number: 0,
+      description: "Test",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.warning).toContain("not found");
   });
 });

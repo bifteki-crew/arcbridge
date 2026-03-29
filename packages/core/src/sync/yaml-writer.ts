@@ -124,6 +124,88 @@ export function syncPhaseToYaml(
 }
 
 /**
+ * Add a new phase to the phases.yaml file.
+ */
+export function addPhaseToYaml(
+  projectRoot: string,
+  phase: {
+    id: string;
+    name: string;
+    phase_number: number;
+    description: string;
+    gate_requirements?: string[];
+  },
+): { success: boolean; warning?: string } {
+  try {
+    const phasesPath = join(
+      projectRoot,
+      ".arcbridge",
+      "plan",
+      "phases.yaml",
+    );
+
+    if (!existsSync(phasesPath)) {
+      return { success: false, warning: "phases.yaml not found" };
+    }
+
+    const raw = readFileSync(phasesPath, "utf-8");
+    const result = PhasesFileSchema.safeParse(parse(raw));
+    if (!result.success) {
+      return { success: false, warning: "phases.yaml failed validation" };
+    }
+
+    const phasesFile = result.data;
+
+    // Guard against duplicates
+    const existingById = phasesFile.phases.some((p) => p.id === phase.id);
+    const existingByNumber = phasesFile.phases.some((p) => p.phase_number === phase.phase_number);
+
+    if (existingByNumber && !existingById) {
+      const conflicting = phasesFile.phases.find((p) => p.phase_number === phase.phase_number);
+      return {
+        success: false,
+        warning: `Phase number ${phase.phase_number} already used by '${conflicting?.id}'`,
+      };
+    }
+
+    // Ensure task file exists (for new phases and retries of the same phase)
+    const tasksDir = join(projectRoot, ".arcbridge", "plan", "tasks");
+    mkdirSync(tasksDir, { recursive: true });
+    const taskFilePath = join(tasksDir, `${phase.id}.yaml`);
+    if (!existsSync(taskFilePath)) {
+      writeFileSync(
+        taskFilePath,
+        stringify({ schema_version: 1, phase_id: phase.id, tasks: [] }),
+        "utf-8",
+      );
+    }
+
+    if (existingById) {
+      return { success: true }; // Retry — phase already exists, task file ensured
+    }
+
+    phasesFile.phases.push({
+      id: phase.id,
+      name: phase.name,
+      phase_number: phase.phase_number,
+      status: "planned",
+      description: phase.description,
+      gate_requirements: phase.gate_requirements ?? [],
+    });
+
+    phasesFile.phases.sort((a, b) => a.phase_number - b.phase_number);
+    writeFileSync(phasesPath, stringify(phasesFile), "utf-8");
+
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      warning: `YAML write failed: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+}
+
+/**
  * Update a quality scenario's status in 10-quality-scenarios.yaml.
  */
 export function syncScenarioToYaml(
