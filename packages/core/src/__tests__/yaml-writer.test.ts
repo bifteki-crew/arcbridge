@@ -485,7 +485,8 @@ describe("addPhaseToYaml", () => {
       description: "Same number, different id",
     });
 
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    expect(result.warning).toContain("phase-0-setup");
     const file = readPhasesFile();
     expect(file.phases.length).toBe(1); // Not added
     expect(file.phases[0].id).toBe("phase-0-setup"); // Original kept

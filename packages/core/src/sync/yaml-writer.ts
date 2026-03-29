@@ -161,8 +161,11 @@ export function addPhaseToYaml(
     const existingByNumber = phasesFile.phases.some((p) => p.phase_number === phase.phase_number);
 
     if (existingByNumber && !existingById) {
-      // Different id but same phase_number — conflict, don't create anything
-      return { success: true };
+      const conflicting = phasesFile.phases.find((p) => p.phase_number === phase.phase_number);
+      return {
+        success: false,
+        warning: `Phase number ${phase.phase_number} already used by '${conflicting?.id}'`,
+      };
     }
 
     // Ensure task file exists (for new phases and retries of the same phase)

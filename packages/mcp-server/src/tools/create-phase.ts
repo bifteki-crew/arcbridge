@@ -57,12 +57,7 @@ export function registerCreatePhase(
         .slice(0, 30) || "unnamed";
       const phaseId = `phase-${phaseNumber}-${slug}`;
 
-      // Insert into DB
-      db.prepare(
-        "INSERT INTO phases (id, name, phase_number, status, description, gate_status) VALUES (?, ?, ?, ?, ?, ?)",
-      ).run(phaseId, params.name, phaseNumber, "planned", params.description, "{}");
-
-      // Write to YAML (source of truth)
+      // Write to YAML first (source of truth)
       const yamlResult = addPhaseToYaml(params.target_dir, {
         id: phaseId,
         name: params.name,
@@ -70,6 +65,17 @@ export function registerCreatePhase(
         description: params.description,
         gate_requirements: params.gate_requirements,
       });
+
+      if (!yamlResult.success) {
+        return textResult(
+          `Failed to create phase: ${yamlResult.warning ?? "YAML update failed"}`,
+        );
+      }
+
+      // Insert into DB (only after YAML succeeds)
+      db.prepare(
+        "INSERT INTO phases (id, name, phase_number, status, description, gate_status) VALUES (?, ?, ?, ?, ?, ?)",
+      ).run(phaseId, params.name, phaseNumber, "planned", params.description, "{}");
 
       const lines = [
         `Phase created: **${phaseId}**`,
@@ -85,10 +91,6 @@ export function registerCreatePhase(
         for (const r of params.gate_requirements) {
           lines.push(`- [ ] ${r}`);
         }
-      }
-
-      if (yamlResult.warning) {
-        lines.push("", `**Warning:** ${yamlResult.warning}`);
       }
 
       lines.push(
