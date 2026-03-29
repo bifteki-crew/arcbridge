@@ -39,7 +39,7 @@ When you run `arcbridge_init_project`, it creates:
     ├── phase-manager.md
     ├── onboarding.md
     ├── code-reviewer.md
-    └── ux-reviewer.md
+    └── ux-reviewer.md             # Only for UI templates (nextjs-app-router, react-vite)
 ```
 
 Plus platform-specific configs (`CLAUDE.md`, `.claude/agents/`, `.github/copilot-instructions.md`, `.github/agents/`).
@@ -172,7 +172,7 @@ For local development, point your MCP config at the built output:
 
 ## Agent Roles
 
-ArcBridge ships with 8 predefined agent roles that specialize AI behavior for different tasks. Each role has a system prompt, tool access constraints, and quality focus areas. Platform adapters translate these canonical definitions into Claude Code agents (`.claude/agents/`) and Copilot agents (`.github/agents/`).
+ArcBridge ships with 7 core agent roles plus a UX Reviewer for frontend templates, each specializing AI behavior for different tasks. Each role has a system prompt, tool access constraints, and quality focus areas. Platform adapters translate these canonical definitions into Claude Code agents (`.claude/agents/`) and Copilot agents (`.github/agents/`).
 
 | Role | Purpose | Automatic? |
 |------|---------|------------|

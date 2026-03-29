@@ -22,7 +22,7 @@
 
 ### Stats
 
-- 31 MCP tools, 371 tests passing, 0 lint errors, 0 type errors
+- 32 MCP tools, 377 tests passing, 0 lint errors, 0 type errors
 
 ## 0.1.4 (2026-03-27)
 
