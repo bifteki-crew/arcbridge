@@ -195,13 +195,98 @@ function apiConcepts(): string {
 `;
 }
 
+function unityConcepts(): string {
+  return `## Scripting Architecture
+
+*Document the code organization and scripting patterns once established.*
+
+- MonoBehaviour vs plain C# class usage guidelines
+- Assembly definition (.asmdef) boundaries and dependencies
+- Component composition patterns
+- Singleton vs dependency injection approach
+
+## Asset Management
+
+*Document how assets are organized and loaded.*
+
+- Folder structure and naming conventions
+- Resource loading strategy (Resources, Addressables, AssetBundles)
+- Asset versioning and memory lifecycle
+- Prefab organization and instantiation patterns
+
+## Scene Management
+
+*Document the scene structure and loading strategy.*
+
+- Scene organization (main scenes, additive scenes, test scenes)
+- Scene loading patterns (async loading, transition effects)
+- DontDestroyOnLoad usage and persistent objects
+- Scene-to-scene data passing
+
+## Physics & Collision
+
+*Document physics setup and collision detection.*
+
+- Physics layers and collision matrix configuration
+- Rigidbody usage guidelines (kinematic vs dynamic)
+- Collision detection mode choices
+- Physics performance budget
+
+## Input Handling
+
+*Document player input processing.*
+
+- Input System package configuration and action maps
+- Input abstraction layer for platform-independent code
+- Rebinding and accessibility considerations
+- Mobile/touch input handling
+
+## Audio
+
+*Document audio implementation.*
+
+- AudioMixer group structure
+- Music vs SFX management and pooling
+- Spatial audio configuration
+- Volume control and persistence
+
+## Visual Effects & Animation
+
+*Document visual effects and animation approach.*
+
+- Particle system conventions
+- Shader usage and material management
+- Animator controller organization and state naming
+- Animation event and callback patterns
+
+## Object Pooling
+
+*Document object pooling strategy.*
+
+- Which objects are pooled (projectiles, effects, enemies)
+- Pool sizing and growth strategy
+- Return-to-pool lifecycle management
+
+## Save System
+
+*Document the save/load approach.*
+
+- Serialization format (JSON, binary, PlayerPrefs)
+- Save data structure and versioning
+- Auto-save and checkpoint strategy
+`;
+}
+
 export function crosscuttingTemplate(input: InitProjectInput): TemplateOutput {
   const isDotnet = input.template === "dotnet-webapi";
   const isFrontend = input.template === "nextjs-app-router" || input.template === "react-vite";
+  const isUnity = input.template === "unity-game";
 
   let concepts: string;
   if (isDotnet) {
     concepts = dotnetConcepts();
+  } else if (isUnity) {
+    concepts = unityConcepts();
   } else if (isFrontend) {
     concepts = frontendConcepts();
   } else {

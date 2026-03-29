@@ -18,7 +18,13 @@ ${input.template === "dotnet-webapi" ? `| Platform | Description | Notes |
 |----------|-------------|-------|
 | Azure App Service | Managed PaaS for .NET | Recommended for ASP.NET Core |
 | Docker / Kubernetes | Container-based | For self-hosted or multi-cloud |
-| AWS ECS / Fargate | Container orchestration | For AWS environments |` : `| Platform | Description | Notes |
+| AWS ECS / Fargate | Container orchestration | For AWS environments |` : input.template === "unity-game" ? `| Platform | Description | Notes |
+|----------|-------------|-------|
+| Steam | PC distribution | Recommended for indie games |
+| Apple App Store | iOS distribution | Requires Xcode build |
+| Google Play | Android distribution | For mobile games |
+| WebGL | Browser-based | For quick prototypes and web distribution |
+| Console | PlayStation, Xbox, Switch | Requires platform-specific SDKs |` : `| Platform | Description | Notes |
 |----------|-------------|-------|
 | Vercel | Recommended for Next.js | Zero-config deployment |
 | Docker | Container-based | For self-hosted environments |`}
@@ -27,7 +33,7 @@ ${input.template === "dotnet-webapi" ? `| Platform | Description | Notes |
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| \`${input.template === "dotnet-webapi" ? "ASPNETCORE_ENVIRONMENT" : "NODE_ENV"}\` | Runtime environment | Yes |
+| \`${input.template === "dotnet-webapi" ? "ASPNETCORE_ENVIRONMENT" : input.template === "unity-game" ? "UNITY_TARGET_PLATFORM" : "NODE_ENV"}\` | ${input.template === "unity-game" ? "Build target platform" : "Runtime environment"} | Yes |
 | *Add your environment variables here* | | |
 `,
   };

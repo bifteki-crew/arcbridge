@@ -68,6 +68,17 @@ const FRAMEWORK_IGNORES: Record<string, string[]> = {
     "Migrations/",
     "wwwroot/",
   ],
+  "unity-game": [
+    "Library/",
+    "Temp/",
+    "Logs/",
+    "UserSettings/",
+    "Packages/",
+    "ProjectSettings/",
+    "Assets/Plugins/",
+    "obj/",
+    "bin/",
+  ],
 };
 
 /**

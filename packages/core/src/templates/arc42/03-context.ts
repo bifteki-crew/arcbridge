@@ -14,6 +14,10 @@ function techStack(template: string): string {
       return `- **Framework:** Express / Fastify
 - **Language:** TypeScript
 - **Runtime:** Node.js`;
+    case "unity-game":
+      return `- **Engine:** Unity
+- **Language:** C#
+- **Runtime:** Mono / IL2CPP`;
     default:
       return `- **Framework:** Next.js (App Router)
 - **Language:** TypeScript

@@ -20,7 +20,7 @@ interface InitOptions {
   spec?: string;
 }
 
-type ProjectTemplate = "nextjs-app-router" | "react-vite" | "api-service" | "dotnet-webapi";
+type ProjectTemplate = "nextjs-app-router" | "react-vite" | "api-service" | "dotnet-webapi" | "unity-game";
 
 interface DetectedInfo {
   name: string;
@@ -36,6 +36,7 @@ const VALID_TEMPLATES: ProjectTemplate[] = [
   "react-vite",
   "api-service",
   "dotnet-webapi",
+  "unity-game",
 ];
 
 /**
@@ -60,8 +61,22 @@ function detectProjectInfo(projectRoot: string): DetectedInfo {
   let template: ProjectTemplate = "nextjs-app-router";
   let templateSource = "default";
 
-  // Check for .NET solution first (multi-project)
   const entries = readdirSync(projectRoot);
+
+  // Check for Unity project first (ProjectSettings/ + Assets/ is definitive,
+  // and Unity auto-generates .sln files that would otherwise match .NET detection)
+  if (
+    existsSync(join(projectRoot, "ProjectSettings")) &&
+    existsSync(join(projectRoot, "Assets"))
+  ) {
+    name = fallbackName;
+    nameSource = "directory name";
+    template = "unity-game";
+    templateSource = "detected (ProjectSettings/ + Assets/ found)";
+    return { name, template, nameSource, templateSource };
+  }
+
+  // Check for .NET solution (multi-project)
   const slnFile = entries.find((e) => e.endsWith(".sln"));
   if (slnFile) {
     name = slnFile.replace(".sln", "");

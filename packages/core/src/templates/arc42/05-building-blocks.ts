@@ -25,7 +25,9 @@ export function buildingBlocksTemplate(
   const defaultBlocks: BlockDef[] =
     input.template === "dotnet-webapi"
       ? buildDotnetBlocks(input)
-      : buildJsBlocks(input, layout);
+      : input.template === "unity-game"
+        ? buildUnityBlocks()
+        : buildJsBlocks(input, layout);
 
   function buildJsBlocks(inp: InitProjectInput, lt: typeof layout): BlockDef[] {
     const src = lt.srcPrefix;
@@ -259,6 +261,107 @@ export function buildingBlocksTemplate(
     });
 
     return blocks;
+  }
+
+  function buildUnityBlocks(): BlockDef[] {
+    return [
+      {
+        id: "game-core",
+        name: "Game Core",
+        level: 1,
+        code_paths: ["Assets/Scripts/Core/"],
+        interfaces: [],
+        quality_scenarios: ["PERF-01", "PERF-02"],
+        adrs: [],
+        responsibility:
+          "Game loop, GameManager, state machine, scene management",
+        service: "main",
+      },
+      {
+        id: "input-system",
+        name: "Input System",
+        level: 1,
+        code_paths: ["Assets/Scripts/Input/"],
+        interfaces: [],
+        quality_scenarios: ["PERF-06"],
+        adrs: [],
+        responsibility:
+          "Input handling layer, action maps, platform-independent input abstraction",
+        service: "main",
+      },
+      {
+        id: "player-systems",
+        name: "Player Systems",
+        level: 1,
+        code_paths: ["Assets/Scripts/Player/"],
+        interfaces: ["input-system"],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility:
+          "Player controller, camera system, character state and animation",
+        service: "main",
+      },
+      {
+        id: "gameplay-systems",
+        name: "Gameplay Systems",
+        level: 1,
+        code_paths: ["Assets/Scripts/Gameplay/"],
+        interfaces: ["game-core"],
+        quality_scenarios: ["MAINT-02"],
+        adrs: [],
+        responsibility:
+          "Game mechanics, combat, inventory, AI, physics interactions",
+        service: "main",
+      },
+      {
+        id: "ui-framework",
+        name: "UI Framework",
+        level: 1,
+        code_paths: ["Assets/Scripts/UI/"],
+        interfaces: [],
+        quality_scenarios: ["A11Y-01"],
+        adrs: [],
+        responsibility:
+          "HUD, menus, dialogs, settings screens, and UI event handling",
+        service: "main",
+      },
+      {
+        id: "audio-system",
+        name: "Audio System",
+        level: 1,
+        code_paths: ["Assets/Scripts/Audio/"],
+        interfaces: [],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility:
+          "Music playback, sound effects, spatial audio, and audio mixing",
+        service: "main",
+      },
+      {
+        id: "data-layer",
+        name: "Data Layer",
+        level: 1,
+        code_paths: ["Assets/Scripts/Data/"],
+        interfaces: [],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility:
+          "ScriptableObject definitions, save/load system, game configuration, and persistent data",
+        service: "main",
+      },
+      {
+        id: "editor-tools",
+        name: "Editor Tools",
+        level: 1,
+        code_paths: ["Assets/Editor/"],
+        interfaces: [],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility:
+          "Custom inspectors, editor windows, debug overlays, and development tools",
+        service: "main",
+      },
+    ];
   }
 
   return {

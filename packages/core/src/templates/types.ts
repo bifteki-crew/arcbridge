@@ -1,6 +1,6 @@
 export interface InitProjectInput {
   name: string;
-  template: "nextjs-app-router" | "react-vite" | "api-service" | "dotnet-webapi";
+  template: "nextjs-app-router" | "react-vite" | "api-service" | "dotnet-webapi" | "unity-game";
   features: string[];
   quality_priorities: string[];
   platforms: string[];

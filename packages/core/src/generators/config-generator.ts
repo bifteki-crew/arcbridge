@@ -5,6 +5,7 @@ import { configTemplate as nextjsConfig } from "../templates/config/nextjs-app-r
 import { configTemplate as reactViteConfig } from "../templates/config/react-vite.js";
 import { configTemplate as apiServiceConfig } from "../templates/config/api-service.js";
 import { configTemplate as dotnetWebapiConfig } from "../templates/config/dotnet-webapi.js";
+import { configTemplate as unityGameConfig } from "../templates/config/unity-game.js";
 import type { InitProjectInput } from "../templates/types.js";
 import type { ArcBridgeConfig } from "../schemas/config.js";
 
@@ -13,6 +14,7 @@ const configTemplates: Record<string, (input: InitProjectInput) => ArcBridgeConf
   "react-vite": reactViteConfig,
   "api-service": apiServiceConfig,
   "dotnet-webapi": dotnetWebapiConfig,
+  "unity-game": unityGameConfig,
 };
 
 export function generateConfig(
