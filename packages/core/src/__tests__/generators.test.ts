@@ -456,3 +456,130 @@ describe("dotnet-webapi template", () => {
     db.close();
   });
 });
+
+describe("unity-game template", () => {
+  const UNITY_INPUT: InitProjectInput = {
+    name: "my-game",
+    template: "unity-game",
+    features: [],
+    quality_priorities: ["performance", "maintainability", "reliability", "accessibility"],
+    platforms: ["claude"],
+  };
+
+  it("generates valid config with unity service type", () => {
+    const config = generateConfig(tempDir, UNITY_INPUT);
+
+    expect(config.project_type).toBe("unity-game");
+    expect(config.services[0]!.type).toBe("unity");
+    expect(config.indexing.include).toContain("Assets/**/*.cs");
+    expect(config.indexing.exclude).toContain("Library");
+    expect(config.indexing.exclude).toContain("Temp");
+  });
+
+  it("generates unity-specific building blocks", () => {
+    generateArc42(tempDir, UNITY_INPUT);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      "utf-8",
+    );
+    const { data } = matter(raw);
+    const validated = BuildingBlocksFrontmatterSchema.parse(data);
+
+    const ids = validated.blocks.map((b) => b.id);
+    expect(ids).toContain("game-core");
+    expect(ids).toContain("input-system");
+    expect(ids).toContain("player-systems");
+    expect(ids).toContain("gameplay-systems");
+    expect(ids).toContain("ui-framework");
+    expect(ids).toContain("audio-system");
+    expect(ids).toContain("data-layer");
+    expect(ids).toContain("editor-tools");
+    // Should NOT contain web-specific blocks
+    expect(ids).not.toContain("app-shell");
+    expect(ids).not.toContain("api-host");
+    expect(ids).not.toContain("controllers");
+  });
+
+  it("generates unity quality scenarios with game-specific metrics", () => {
+    generateArc42(tempDir, UNITY_INPUT);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "10-quality-scenarios.yaml"),
+      "utf-8",
+    );
+    const parsed = parse(raw);
+    const validated = QualityScenariosFileSchema.parse(parsed);
+
+    const ids = validated.scenarios.map((s) => s.id);
+    expect(ids).toContain("PERF-01"); // 60 FPS
+    expect(ids).toContain("PERF-02"); // Zero GC allocations
+    expect(ids).toContain("A11Y-01"); // Color-blind friendly
+
+    // PERF-01 should be the Unity version (60 FPS), not the web version
+    const perf01 = validated.scenarios.find((s) => s.id === "PERF-01");
+    expect(perf01!.name).toContain("60 FPS");
+  });
+
+  it("generates Unity ADR", () => {
+    generateArc42(tempDir, UNITY_INPUT);
+    expect(
+      existsSync(join(tempDir, ".arcbridge", "arc42", "09-decisions", "001-unity-code-heavy.md")),
+    ).toBe(true);
+    expect(
+      existsSync(join(tempDir, ".arcbridge", "arc42", "09-decisions", "001-nextjs-app-router.md")),
+    ).toBe(false);
+  });
+
+  it("generates unity phase plan with correct tasks", () => {
+    generatePlan(tempDir, UNITY_INPUT);
+    const planDir = join(tempDir, ".arcbridge", "plan");
+
+    const raw = readFileSync(join(planDir, "phases.yaml"), "utf-8");
+    const parsed = parse(raw);
+    const validated = PhasesFileSchema.parse(parsed);
+
+    expect(validated.phases).toHaveLength(4);
+    expect(validated.phases[0]!.description).toContain("Unity");
+
+    expect(existsSync(join(planDir, "tasks", "phase-0-setup.yaml"))).toBe(true);
+    expect(existsSync(join(planDir, "tasks", "phase-1-core.yaml"))).toBe(true);
+  });
+
+  it("includes ux-reviewer role for unity template", () => {
+    const roles = generateAgentRoles(tempDir, "unity-game");
+    expect(roles).toHaveLength(8);
+    expect(roles.some((r) => r.role_id === "ux-reviewer")).toBe(true);
+  });
+
+  it("full unity project generation with database", () => {
+    generateConfig(tempDir, UNITY_INPUT);
+    generateArc42(tempDir, UNITY_INPUT);
+    generatePlan(tempDir, UNITY_INPUT);
+    generateAgentRoles(tempDir, "unity-game");
+
+    const { db, warnings } = generateDatabase(tempDir, UNITY_INPUT);
+
+    expect(warnings).toHaveLength(0);
+
+    const blocks = db
+      .prepare("SELECT COUNT(*) as count FROM building_blocks")
+      .get() as { count: number };
+    expect(blocks.count).toBe(8);
+
+    const phases = db
+      .prepare("SELECT COUNT(*) as count FROM phases")
+      .get() as { count: number };
+    expect(phases.count).toBe(4);
+
+    const tasks = db
+      .prepare("SELECT COUNT(*) as count FROM tasks")
+      .get() as { count: number };
+    expect(tasks.count).toBeGreaterThan(0);
+
+    const adrs = db
+      .prepare("SELECT id FROM adrs")
+      .all() as { id: string }[];
+    expect(adrs[0]!.id).toBe("001-unity-code-heavy");
+
+    db.close();
+  });
+});

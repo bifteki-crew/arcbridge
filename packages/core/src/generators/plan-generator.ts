@@ -19,6 +19,10 @@ import {
   phasePlanTemplate as dotnetWebapiPlan,
   phaseTasksTemplate as dotnetWebapiTasks,
 } from "../templates/phases/dotnet-webapi.js";
+import {
+  phasePlanTemplate as unityGamePlan,
+  phaseTasksTemplate as unityGameTasks,
+} from "../templates/phases/unity-game.js";
 
 type PlanFn = (input: InitProjectInput) => PhasesFile;
 type TasksFn = (input: InitProjectInput, phaseId: string) => TaskFile | null;
@@ -28,6 +32,7 @@ const planTemplates: Record<string, { plan: PlanFn; tasks: TasksFn }> = {
   "react-vite": { plan: reactVitePlan, tasks: reactViteTasks },
   "api-service": { plan: apiServicePlan, tasks: apiServiceTasks },
   "dotnet-webapi": { plan: dotnetWebapiPlan, tasks: dotnetWebapiTasks },
+  "unity-game": { plan: unityGamePlan, tasks: unityGameTasks },
 };
 
 export function generatePlan(

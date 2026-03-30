@@ -14,6 +14,15 @@ Client → HTTP Server → Middleware → Route Handler
                                   → Services
                                   → Database / External APIs
 \`\`\``;
+    case "unity-game":
+      return `\`\`\`
+Input System → Player Controller → Gameplay Systems
+                                 → Physics / Collision
+GameManager → State Machine → Active Game Systems
+                            → UI Framework
+                            → Audio System
+Unity Engine → Update Loop → Render Pipeline
+\`\`\``;
     default:
       return `\`\`\`
 Browser → Next.js Server → Layout (server) → Page (server/client)
@@ -33,7 +42,7 @@ export function runtimeViewsTemplate(input: InitProjectInput): TemplateOutput {
 
 ## Key Runtime Scenarios
 
-### Request Flow
+### ${input.template === "unity-game" ? "Game Loop" : "Request Flow"}
 
 ${runtimeDiagram(input.template)}
 

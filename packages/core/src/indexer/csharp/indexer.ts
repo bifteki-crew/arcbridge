@@ -41,10 +41,17 @@ export async function indexCSharpTreeSitter(
   const service = options.service ?? "main";
   const projectRoot = options.projectRoot;
 
-  // 1. Discover .cs files (skip bin/obj/node_modules/.git)
+  // 1. Discover .cs files (skip build artifacts, Unity-managed dirs)
+  const ignorePatterns = [
+    "**/bin/**", "**/obj/**", "**/node_modules/**", "**/.git/**",
+    // Unity root-level directories (anchored to avoid matching nested folders
+    // like src/Library/ or src/Packages/ in non-Unity .NET projects)
+    "Library/**", "Temp/**", "Logs/**", "UserSettings/**",
+    "Packages/**", "ProjectSettings/**",
+  ];
   const csFiles = globbySync("**/*.cs", {
     cwd: projectRoot,
-    ignore: ["**/bin/**", "**/obj/**", "**/node_modules/**", "**/.git/**"],
+    ignore: ignorePatterns,
     absolute: false,
   });
 

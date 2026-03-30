@@ -298,6 +298,144 @@ const API_SCENARIOS: Record<string, ScenarioList> = {
   ],
 };
 
+// ─── Unity game scenarios ──────────────────────────────────────────────────
+
+const UNITY_GAME_SCENARIOS: Record<string, ScenarioList> = {
+  performance: [
+    {
+      id: "PERF-01",
+      name: "Frame rate stability at 60 FPS",
+      category: "performance",
+      priority: "must",
+      scenario: "Game runs on target hardware during typical gameplay",
+      expected:
+        "Maintains 60 FPS (or platform target) with no frame exceeding 16.7ms",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: ["game-core"],
+      verification: "semi-automatic",
+      status: "untested",
+    },
+    {
+      id: "PERF-02",
+      name: "Zero per-frame GC allocations in gameplay",
+      category: "performance",
+      priority: "must",
+      scenario: "Gameplay systems run during a typical session",
+      expected:
+        "No GC allocations per frame in hot-path gameplay code (use object pooling)",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: ["gameplay-systems"],
+      verification: "semi-automatic",
+      status: "untested",
+    },
+    {
+      id: "PERF-03",
+      name: "Draw calls under budget",
+      category: "performance",
+      priority: "should",
+      scenario: "Peak visual complexity scene is rendered",
+      expected:
+        "Draw calls stay under 200 on target hardware (use batching, atlasing, instancing)",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: [],
+      verification: "semi-automatic",
+      status: "untested",
+    },
+    {
+      id: "PERF-04",
+      name: "Scene load time under 3s",
+      category: "performance",
+      priority: "should",
+      scenario: "Player transitions between major scenes",
+      expected: "Scene load completes within 3 seconds on minimum-spec hardware",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: ["game-core"],
+      verification: "semi-automatic",
+      status: "untested",
+    },
+    {
+      id: "PERF-05",
+      name: "Memory usage under platform budget",
+      category: "performance",
+      priority: "should",
+      scenario: "Game is loaded and gameplay session is active",
+      expected:
+        "Memory stays under 512MB on mobile, 2GB on desktop",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: [],
+      verification: "semi-automatic",
+      status: "untested",
+    },
+    {
+      id: "PERF-06",
+      name: "Input-to-visual response under 100ms",
+      category: "performance",
+      priority: "should",
+      scenario: "Player presses an input during gameplay",
+      expected:
+        "Visual feedback appears within 100ms of input",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: ["input-system", "player-systems"],
+      verification: "semi-automatic",
+      status: "untested",
+    },
+  ],
+  security: [
+    {
+      id: "SEC-01",
+      name: "No client-only validation for multiplayer state",
+      category: "security",
+      priority: "should",
+      scenario: "Game state changes are validated (if multiplayer)",
+      expected:
+        "Critical game state changes are server-authoritative; client cannot cheat by modifying local state",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: [],
+      verification: "manual",
+      status: "untested",
+    },
+  ],
+  reliability: [
+    {
+      id: "REL-01",
+      name: "No unhandled exceptions crash the game",
+      category: "reliability",
+      priority: "should",
+      scenario: "An unexpected error occurs during gameplay",
+      expected:
+        "Error is caught and logged; game recovers gracefully or shows error UI without crashing",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: ["game-core"],
+      verification: "automatic",
+      status: "untested",
+    },
+  ],
+  accessibility: [
+    {
+      id: "A11Y-01",
+      name: "Color-blind friendly UI",
+      category: "accessibility",
+      priority: "should",
+      scenario: "Player with color vision deficiency plays the game",
+      expected:
+        "Critical UI elements distinguish by shape, pattern, or label — not color alone",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: ["ui-framework"],
+      verification: "manual",
+      status: "untested",
+    },
+  ],
+};
+
 // ─── Template → scenario set mapping ────────────────────────────────────────
 
 const TEMPLATE_SCENARIOS: Record<string, Record<string, ScenarioList>> = {
@@ -305,6 +443,7 @@ const TEMPLATE_SCENARIOS: Record<string, Record<string, ScenarioList>> = {
   "react-vite": FRONTEND_SCENARIOS,
   "api-service": API_SCENARIOS,
   "dotnet-webapi": DOTNET_SCENARIOS,
+  "unity-game": UNITY_GAME_SCENARIOS,
 };
 
 /**

@@ -3,7 +3,7 @@ import { z } from "zod";
 export const ServiceSchema = z.object({
   name: z.string().min(1),
   path: z.string().default("."),
-  type: z.enum(["nextjs", "react", "fastify", "express", "hono", "dotnet"]),
+  type: z.enum(["nextjs", "react", "fastify", "express", "hono", "dotnet", "unity"]),
   tsconfig: z.string().optional(),
   csproj: z.string().optional(),
 });
@@ -17,6 +17,7 @@ export const ArcBridgeConfigSchema = z.object({
       "react-vite",
       "api-service",
       "dotnet-webapi",
+      "unity-game",
     ])
     .default("nextjs-app-router"),
 

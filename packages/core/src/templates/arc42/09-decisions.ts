@@ -15,6 +15,8 @@ export function firstAdrTemplate(input: InitProjectInput): AdrResult {
       return reactViteAdr(input, now);
     case "api-service":
       return apiServiceAdr(input, now);
+    case "unity-game":
+      return unityAdr(input, now);
     default:
       return nextjsAdr(input, now);
   }
@@ -122,6 +124,45 @@ Use a Node.js HTTP framework (Express, Fastify, or Hono) as the API service foun
 - **Positive:** Easy to deploy to containers, serverless, or traditional hosts
 - **Negative:** Single-threaded — CPU-intensive operations need worker threads or external services
 - **Negative:** No built-in ORM — need to choose data access strategy
+`,
+  };
+}
+
+function unityAdr(input: InitProjectInput, date: string): AdrResult {
+  return {
+    filename: "001-unity-code-heavy.md",
+    frontmatter: {
+      id: "001-unity-code-heavy",
+      title: "Use Unity with Code-Heavy Architecture",
+      status: "accepted",
+      date,
+      affected_blocks: ["game-core", "player-systems"],
+      affected_files: ["Assets/Scripts/"],
+      quality_scenarios: [],
+    },
+    body: `# ADR-001: Use Unity with Code-Heavy Architecture
+
+## Context
+
+${input.name} needs a game engine with cross-platform support, strong performance, and a productive development workflow. The team prefers a code-driven approach over hand-crafting scenes in the editor.
+
+## Decision
+
+Use Unity as the game engine with a code-heavy C# architecture. Favor programmatic scene composition, ScriptableObject data architecture, and assembly definitions for modular code organization.
+
+## Consequences
+
+- **Positive:** Version control friendly — most logic lives in .cs files, not serialized scenes
+- **Positive:** Testable — gameplay logic can be unit tested without the editor
+- **Positive:** Reusable systems — assembly definitions enforce module boundaries
+- **Positive:** AI-agent friendly — agents work effectively with C# scripts
+- **Negative:** More boilerplate than visual scripting or drag-and-drop workflows
+- **Negative:** Scene references require discipline (use ScriptableObjects or addressables)
+- **Negative:** Some Unity features (Animator, Timeline) still require editor interaction
+
+## Agent Limitations
+
+AI agents can review C# scripts, suggest architectural improvements, and check code quality — but they **cannot** evaluate gameplay feel, frame timing, or visual quality. Use [Unity-MCP](https://github.com/IvanMurzak/Unity-MCP) to give agents basic editor access (scene management, asset operations). For runtime quality (actual FPS, GC spikes, input latency), rely on the Unity Profiler and manual playtesting.
 `,
   };
 }
