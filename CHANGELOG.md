@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.2.0 (2026-03-30)
+
+### New Features
+
+- **Unity game project template** (`unity-game`) — 5th project template targeting code-heavy Unity C# game development. Reuses the existing C# tree-sitter indexer with Unity-specific templates, quality scenarios, and agent guidance.
+  - 8 building blocks: game-core, input-system, player-systems, gameplay-systems, ui-framework, audio-system, data-layer, editor-tools
+  - 8 Unity-specific quality scenarios: frame rate (60 FPS / 16.7ms budget), GC allocations, draw calls, memory budget, input latency, scene load time, accessibility, error handling (plus shared scenarios merged at init)
+  - 4 phases: Project Setup, Core Systems, Gameplay Features, Polish & Launch
+  - Unity-specific crosscutting concepts: scripting architecture, asset management, scene management, physics, input, audio, VFX, object pooling, save system
+  - Auto-detection via `ProjectSettings/` + `Assets/` directories (before .sln check, since Unity auto-generates .sln files)
+  - UX reviewer role included for game UI
+  - ADR documents agent limitations and recommends [Unity-MCP](https://github.com/IvanMurzak/Unity-MCP) for editor access
+
+### Improvements
+
+- **Unity language detection** — `detectProjectLanguage()` recognizes Unity projects as C# before checking for tsconfig/package.json
+- **C# indexer Unity ignores** — tree-sitter indexer skips Unity-managed directories (Library/, Temp/, Logs/, UserSettings/, Packages/, ProjectSettings/) anchored to root level to avoid false matches in non-Unity .NET projects
+- **Unity test runner** — config template uses `unity -batchmode -runTests` instead of `dotnet test`
+
+### Stats
+
+- 32 MCP tools, 384 tests passing, 0 lint errors, 0 type errors
+
 ## 0.1.6 (2026-03-29)
 
 ### New Features
