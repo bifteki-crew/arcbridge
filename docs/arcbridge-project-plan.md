@@ -938,6 +938,16 @@ create_phase: {
   "phase_number": 5,  // optional — auto-assigns next number if omitted
   "gate_requirements": ["All integrations have error handling", "Retry policies documented"]
 }
+
+# Delete a phase and its tasks (for removing template phases)
+delete_phase: {
+  "phase_id": "phase-3-polish"
+}
+
+# Delete tasks (batch — for removing template/example tasks)
+delete_task: {
+  "task_ids": ["task-2.1-example", "task-2.2-example", "task-2.3-example"]
+}
 ```
 
 ### Agent Role Tools

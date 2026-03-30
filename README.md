@@ -65,7 +65,7 @@ Then connect the MCP server to your AI agent. Create `.mcp.json` in your project
 }
 ```
 
-Restart Claude Code — approve the MCP server when prompted, and all 32 architecture tools become available.
+Restart Claude Code — approve the MCP server when prompted, and all 33 architecture tools become available.
 
 See the [walkthrough](docs/walkthrough.md) for a full step-by-step guide.
 
@@ -96,7 +96,7 @@ For local development, point your MCP config at the built output:
 }
 ```
 
-## MCP Tools (32)
+## MCP Tools (33)
 
 ### Lifecycle
 
@@ -122,8 +122,9 @@ For local development, point your MCP config at the built output:
 | `arcbridge_get_current_tasks` | Tasks for the active phase |
 | `arcbridge_update_task` | Mark tasks in-progress, done, or blocked |
 | `arcbridge_create_task` | Add a task to any phase |
-| `arcbridge_delete_task` | Remove a task permanently (for example/template tasks) |
+| `arcbridge_delete_task` | Remove one or more tasks permanently (batch via task_ids array) |
 | `arcbridge_create_phase` | Add a new phase to the project plan |
+| `arcbridge_delete_phase` | Remove a phase and all its tasks permanently |
 
 ### Code Intelligence
 
