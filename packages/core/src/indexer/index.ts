@@ -26,8 +26,9 @@ export type CSharpBackend = "roslyn" | "tree-sitter";
 
 /**
  * Detect the project language from files in the project root.
- * Checks for tsconfig.json first (TypeScript priority), then .csproj/.sln.
- * This prevents a stray .csproj from hijacking a TypeScript project.
+ * Checks Unity first (ProjectSettings/ + Assets/), then tsconfig.json/package.json
+ * (TypeScript), then .csproj/.sln (.NET). Unity check comes first because Unity
+ * auto-generates .sln files that would otherwise match .NET detection.
  */
 export function detectProjectLanguage(projectRoot: string): "typescript" | "csharp" {
   // Unity projects are always C# (check before TypeScript — Unity has no tsconfig/package.json)
