@@ -6,7 +6,7 @@
 
 - **Unity game project template** (`unity-game`) — 5th project template targeting code-heavy Unity C# game development. Reuses the existing C# tree-sitter indexer with Unity-specific templates, quality scenarios, and agent guidance.
   - 8 building blocks: game-core, input-system, player-systems, gameplay-systems, ui-framework, audio-system, data-layer, editor-tools
-  - 11 quality scenarios: frame rate (60 FPS / 16.7ms budget), GC allocations, draw calls, memory budget, input latency, scene load time, accessibility, error handling
+  - 8 Unity-specific quality scenarios: frame rate (60 FPS / 16.7ms budget), GC allocations, draw calls, memory budget, input latency, scene load time, accessibility, error handling (plus shared scenarios merged at init)
   - 4 phases: Project Setup, Core Systems, Gameplay Features, Polish & Launch
   - Unity-specific crosscutting concepts: scripting architecture, asset management, scene management, physics, input, audio, VFX, object pooling, save system
   - Auto-detection via `ProjectSettings/` + `Assets/` directories (before .sln check, since Unity auto-generates .sln files)
