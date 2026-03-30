@@ -325,10 +325,12 @@ export function deletePhaseFromYaml(
 
     writeFileSync(phasesPath, stringify(phasesFile), "utf-8");
 
-    // Remove the associated task file if it exists
+    // Remove the associated task file
     const taskFilePath = join(projectRoot, ".arcbridge", "plan", "tasks", `${phaseId}.yaml`);
-    if (existsSync(taskFilePath)) {
+    try {
       unlinkSync(taskFilePath);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
     }
 
     return { success: true };
