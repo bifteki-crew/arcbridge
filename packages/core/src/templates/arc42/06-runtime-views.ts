@@ -42,7 +42,7 @@ export function runtimeViewsTemplate(input: InitProjectInput): TemplateOutput {
 
 ## Key Runtime Scenarios
 
-### Request Flow
+### ${input.template === "unity-game" ? "Game Loop" : "Request Flow"}
 
 ${runtimeDiagram(input.template)}
 
