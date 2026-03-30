@@ -106,14 +106,19 @@ The goal is that by the time you start Phase 0, the building blocks describe you
 
 Each building block in \`05-building-blocks.md\` should declare its dependencies on other blocks using the \`interfaces\` field. This is required for drift detection to catch undeclared cross-block dependencies at phase gates.
 
-Format — list the IDs of blocks this block depends on:
+Format — within the \`blocks:\` array, list the IDs of other blocks this block depends on:
 \`\`\`yaml
-id: canvas-engine
-name: Canvas Engine
-code_paths: ["src/canvas/"]
-interfaces:
-  - workflow-model
-  - shared-types
+blocks:
+  - id: canvas-engine
+    name: Canvas Engine
+    level: 1
+    responsibility: "Render and manage collaborative canvas state"
+    service: main
+    code_paths:
+      - "src/canvas/"
+    interfaces:
+      - workflow-model
+      - shared-types
 \`\`\`
 
 If your code imports across block boundaries without declaring the interface, \`arcbridge_check_drift\` will flag it and \`arcbridge_complete_phase\` will block the gate.
