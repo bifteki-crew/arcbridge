@@ -8,6 +8,7 @@ import {
   addTaskToYaml,
   deleteTaskFromYaml,
   addPhaseToYaml,
+  deletePhaseFromYaml,
   syncPhaseToYaml,
   syncScenarioToYaml,
 } from "../sync/yaml-writer.js";
@@ -503,6 +504,87 @@ describe("addPhaseToYaml", () => {
       description: "Test",
     });
 
+    expect(result.success).toBe(false);
+    expect(result.warning).toContain("not found");
+  });
+});
+
+describe("deletePhaseFromYaml", () => {
+  function setupPhasesAndTasks(
+    phases: Array<{ id: string; name: string; phase_number: number }>,
+    taskPhaseIds: string[] = [],
+  ) {
+    const planDir = join(tempDir, ".arcbridge", "plan");
+    const tasksDir = join(planDir, "tasks");
+    mkdirSync(tasksDir, { recursive: true });
+    const phasesFile = {
+      schema_version: 1,
+      phases: phases.map((p) => ({
+        ...p,
+        status: "planned",
+        description: "Test phase",
+        gate_requirements: [],
+      })),
+    };
+    writeFileSync(join(planDir, "phases.yaml"), stringify(phasesFile), "utf-8");
+    for (const phaseId of taskPhaseIds) {
+      writeFileSync(
+        join(tasksDir, `${phaseId}.yaml`),
+        stringify({ schema_version: 1, phase_id: phaseId, tasks: [{ id: "task-1", title: "Test", status: "todo", quality_scenarios: [], acceptance_criteria: [] }] }),
+        "utf-8",
+      );
+    }
+  }
+
+  function readPhasesFile() {
+    return parse(readFileSync(join(tempDir, ".arcbridge", "plan", "phases.yaml"), "utf-8"));
+  }
+
+  it("removes a phase from phases.yaml", () => {
+    setupPhasesAndTasks([
+      { id: "phase-0-setup", name: "Setup", phase_number: 0 },
+      { id: "phase-1-core", name: "Core", phase_number: 1 },
+      { id: "phase-2-features", name: "Features", phase_number: 2 },
+    ]);
+
+    const result = deletePhaseFromYaml(tempDir, "phase-1-core");
+    expect(result.success).toBe(true);
+
+    const file = readPhasesFile();
+    expect(file.phases.length).toBe(2);
+    expect(file.phases.map((p: { id: string }) => p.id)).toEqual(["phase-0-setup", "phase-2-features"]);
+  });
+
+  it("removes the associated task file", () => {
+    setupPhasesAndTasks(
+      [{ id: "phase-0-setup", name: "Setup", phase_number: 0 }],
+      ["phase-0-setup"],
+    );
+
+    const taskPath = join(tempDir, ".arcbridge", "plan", "tasks", "phase-0-setup.yaml");
+    expect(existsSync(taskPath)).toBe(true);
+
+    deletePhaseFromYaml(tempDir, "phase-0-setup");
+    expect(existsSync(taskPath)).toBe(false);
+  });
+
+  it("succeeds even when no task file exists", () => {
+    setupPhasesAndTasks([{ id: "phase-0-setup", name: "Setup", phase_number: 0 }]);
+
+    const result = deletePhaseFromYaml(tempDir, "phase-0-setup");
+    expect(result.success).toBe(true);
+  });
+
+  it("fails when phase not found in phases.yaml", () => {
+    setupPhasesAndTasks([{ id: "phase-0-setup", name: "Setup", phase_number: 0 }]);
+
+    const result = deletePhaseFromYaml(tempDir, "phase-99-nonexistent");
+    expect(result.success).toBe(false);
+    expect(result.warning).toContain("not found");
+  });
+
+  it("fails when phases.yaml does not exist", () => {
+    const result = deletePhaseFromYaml(tempDir, "phase-0-setup");
     expect(result.success).toBe(false);
     expect(result.warning).toContain("not found");
   });
