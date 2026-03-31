@@ -10,7 +10,7 @@ npm install -g @arcbridge/mcp-server
 
 ## Setup
 
-Add to your project's `.mcp.json`:
+**Claude Code** — add to your project's `.mcp.json`:
 
 ```json
 {
@@ -23,7 +23,15 @@ Add to your project's `.mcp.json`:
 }
 ```
 
-Restart your AI agent (Claude Code, etc.) and approve the MCP server when prompted.
+**Codex CLI** — add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.arcbridge]
+command = "npx"
+args = ["-y", "@arcbridge/mcp-server"]
+```
+
+Restart your AI agent and approve the MCP server when prompted.
 
 ## Tools
 
