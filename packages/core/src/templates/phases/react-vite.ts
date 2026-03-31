@@ -7,7 +7,7 @@ export function phasePlanTemplate(_input: InitProjectInput): PhasesFile {
       id: "phase-0-setup",
       name: "Project Setup",
       phase_number: 0,
-      status: "in-progress" as const,
+      status: "planned" as const,
       description:
         "Initialize Vite + React project, configure TypeScript, install dependencies",
       gate_requirements: [

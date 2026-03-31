@@ -7,7 +7,7 @@ export function phasePlanTemplate(_input: InitProjectInput): PhasesFile {
       id: "phase-0-setup",
       name: "Project Setup",
       phase_number: 0,
-      status: "in-progress" as const,
+      status: "planned" as const,
       description:
         "Initialize ASP.NET Core project, configure DI, set up database and middleware pipeline",
       gate_requirements: [
