@@ -89,6 +89,7 @@ export {
   addTaskToYaml,
   deleteTaskFromYaml,
   addPhaseToYaml,
+  deletePhaseFromYaml,
   syncPhaseToYaml,
   syncScenarioToYaml,
 } from "./sync/yaml-writer.js";

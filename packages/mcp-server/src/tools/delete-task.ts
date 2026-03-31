@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { deleteTaskFromYaml } from "@arcbridge/core";
+import { deleteTaskFromYaml, refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
 
@@ -16,36 +16,68 @@ export function registerDeleteTask(
 ): void {
   server.tool(
     "arcbridge_delete_task",
-    "Delete a task permanently. Use this to remove example/template tasks or duplicates. For tasks that were planned but are no longer relevant, prefer `arcbridge_update_task` with status 'cancelled' instead — this preserves the decision trail.",
+    "Delete one or more tasks permanently. Use this to remove example/template tasks or duplicates. Pass task_ids (array) for batch deletion, or task_id (string) for a single task. For tasks that were planned but are no longer relevant, prefer `arcbridge_update_task` with status 'cancelled' instead — this preserves the decision trail.",
     {
       target_dir: z
         .string()
         .describe("Absolute path to the project directory"),
-      task_id: z.string().describe("Task ID to delete"),
+      task_id: z.string().optional().describe("Single task ID to delete (deprecated — use task_ids)"),
+      task_ids: z
+        .array(z.string())
+        .optional()
+        .describe("Task IDs to delete (preferred)"),
     },
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
-      const task = db
-        .prepare("SELECT id, title, phase_id FROM tasks WHERE id = ?")
-        .get(params.task_id) as TaskRow | undefined;
-
-      if (!task) {
-        return textResult(
-          `Task '${params.task_id}' not found. Use \`arcbridge_get_current_tasks\` to see available tasks.`,
-        );
+      const ids = params.task_ids ?? (params.task_id ? [params.task_id] : []);
+      if (ids.length === 0) {
+        return textResult("Provide `task_ids` (array) or `task_id` (string) to delete.");
       }
 
-      // Delete from YAML first (source of truth), then DB
-      const yamlResult = deleteTaskFromYaml(params.target_dir, task.phase_id, params.task_id);
-      db.prepare("DELETE FROM tasks WHERE id = ?").run(params.task_id);
+      const results: string[] = [];
+      const warnings: string[] = [];
 
-      const msg = `Task **${task.id}** deleted: "${task.title}"`;
-      if (yamlResult.warning) {
-        return textResult(`${msg}\n\n**Warning:** ${yamlResult.warning}`);
+      for (const id of ids) {
+        const task = db
+          .prepare("SELECT id, title, phase_id FROM tasks WHERE id = ?")
+          .get(id) as TaskRow | undefined;
+
+        if (!task) {
+          warnings.push(`Task '${id}' not found — skipped`);
+          continue;
+        }
+
+        const yamlResult = deleteTaskFromYaml(params.target_dir, task.phase_id, id);
+
+        if (yamlResult.success === false) {
+          warnings.push(`${task.id}: ${yamlResult.warning ?? "YAML delete failed"}`);
+        } else {
+          results.push(`- **${task.id}**: "${task.title}"`);
+          if (yamlResult.warning) {
+            warnings.push(`${task.id}: ${yamlResult.warning}`);
+          }
+        }
       }
-      return textResult(msg);
+
+      // Sync DB from YAML (single refresh instead of per-task DELETE)
+      if (results.length > 0) {
+        refreshFromDocs(db, params.target_dir);
+      }
+
+      const lines: string[] = [];
+      if (results.length > 0) {
+        lines.push(`Deleted ${results.length} task${results.length === 1 ? "" : "s"}:`, "", ...results);
+      }
+      if (warnings.length > 0) {
+        lines.push("", "**Warnings:**", ...warnings.map((w) => `- ${w}`));
+      }
+      if (results.length === 0 && warnings.length > 0) {
+        lines.unshift("No tasks were deleted.");
+      }
+
+      return textResult(lines.join("\n"));
     },
   );
 }

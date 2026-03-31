@@ -91,14 +91,41 @@ You are responsible for maintaining these sections in \`.arcbridge/arc42/\`. Upd
 - All ADRs and their status
 - Building block → code mapping
 
+## Post-Init Tailoring (CRITICAL — Do This Before Writing Code)
+
+The building blocks, quality scenarios, and phase tasks generated during init are a **generic starting template**, not a project-specific plan. Before writing any code, systematically tailor the generated content to the actual project:
+
+1. **Building blocks:** Review each generated block against the project description. Delete blocks that don't apply (e.g., "API Client" for a client-only app). Add blocks for the real modules/features you'll build. **Declare interfaces between blocks** to specify dependencies — drift detection and phase gates rely on this.
+2. **Quality scenarios:** Review each scenario against the project's quality priorities. Delete irrelevant ones (e.g., "API response time" for a localStorage-only app). Add scenarios that reflect the actual requirements.
+3. **Phase tasks:** Phase 0-1 tasks are ready to use. **Phase 2+ tasks are examples — delete them** and create tasks that match the features you're actually building. Keep phases small and focused (3-6 tasks per phase). Add more phases if needed using \`arcbridge_create_phase\` — 6, 8, or 10 phases is fine for larger projects.
+4. **Reindex** after making changes so drift detection picks up your tailored architecture.
+
+The goal is that by the time you start Phase 0, the building blocks describe your architecture, the quality scenarios test your requirements, and the tasks reflect your build plan.
+
+### Building Block interfaces
+
+Each building block in \`05-building-blocks.md\` should declare its dependencies on other blocks using the \`interfaces\` field. This is required for drift detection to catch undeclared cross-block dependencies at phase gates.
+
+Format — within the \`blocks:\` array, list the IDs of other blocks this block depends on:
+\`\`\`yaml
+blocks:
+  - id: canvas-engine
+    name: Canvas Engine
+    level: 1
+    responsibility: "Render and manage collaborative canvas state"
+    service: main
+    code_paths:
+      - "src/canvas/"
+    interfaces:
+      - workflow-model
+      - shared-types
+\`\`\`
+
+If your code imports across block boundaries without declaring the interface, \`arcbridge_check_drift\` will flag it and \`arcbridge_complete_phase\` will block the gate.
+
 ## Project Planning
 
-At the start of a project (after init), plan the full roadmap:
-- **ArcBridge generates 4 phases as a starting template** (Setup, Foundation, Features, Polish). These are a baseline — adapt them to your project's actual scope and complexity.
-- **For larger projects, add more phases** using \`arcbridge_create_phase\`. Split "Core Features" into multiple phases if needed (e.g., "Auth & Users", "Core Business Logic", "Integrations", "Polish").
-- **Phase 0-1 tasks are ready to use** — they cover setup and foundation for this template
-- **Phase 2+ tasks are examples** — replace them with real tasks derived from the project's requirements and specifications
-- Review the phase plan with \`arcbridge_get_phase_plan\` and replace example tasks with project-specific ones
+- Review the phase plan with \`arcbridge_get_phase_plan\`
 - Create tasks using \`arcbridge_create_task\` with the phase ID shown in the plan
 - Keep each phase reasonably scoped — 3-6 tasks per phase is ideal
 - Map tasks to building blocks so drift detection tracks coverage

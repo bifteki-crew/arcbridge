@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { parse, stringify } from "yaml";
 import { TaskFileSchema, PhasesFileSchema } from "../schemas/phases.js";
 import { QualityScenariosFileSchema } from "../schemas/quality-scenarios.js";
@@ -288,6 +288,56 @@ export function deleteTaskFromYaml(
     return {
       success: false,
       warning: `YAML update failed: ${err instanceof Error ? err.message : String(err)} — task may reappear after reindex`,
+    };
+  }
+}
+
+/**
+ * Delete a phase from phases.yaml and its associated task file.
+ */
+export function deletePhaseFromYaml(
+  projectRoot: string,
+  phaseId: string,
+): { success: boolean; warning?: string } {
+  try {
+    const phasesPath = join(projectRoot, ".arcbridge", "plan", "phases.yaml");
+
+    if (!existsSync(phasesPath)) {
+      return { success: false, warning: "phases.yaml not found" };
+    }
+
+    const raw = readFileSync(phasesPath, "utf-8");
+    const result = PhasesFileSchema.safeParse(parse(raw));
+    if (!result.success) {
+      return {
+        success: false,
+        warning: "Could not parse phases.yaml — phase may reappear after reindex",
+      };
+    }
+
+    const phasesFile = result.data;
+    const before = phasesFile.phases.length;
+    phasesFile.phases = phasesFile.phases.filter((p) => p.id !== phaseId);
+
+    if (phasesFile.phases.length === before) {
+      return { success: false, warning: `Phase '${phaseId}' not found in phases.yaml` };
+    }
+
+    writeFileSync(phasesPath, stringify(phasesFile), "utf-8");
+
+    // Remove the associated task file
+    const taskFilePath = join(projectRoot, ".arcbridge", "plan", "tasks", `${phaseId}.yaml`);
+    try {
+      unlinkSync(taskFilePath);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+    }
+
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      warning: `YAML update failed: ${err instanceof Error ? err.message : String(err)}`,
     };
   }
 }
