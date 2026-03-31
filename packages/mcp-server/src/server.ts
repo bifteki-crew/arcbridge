@@ -37,6 +37,7 @@ import { registerUpdateScenarioStatus } from "./tools/update-scenario-status.js"
 import { registerRecordActivity } from "./tools/record-activity.js";
 import { registerGetMetrics } from "./tools/get-metrics.js";
 import { registerExportMetrics } from "./tools/export-metrics.js";
+import { registerUpdateArc42Section } from "./tools/update-arc42-section.js";
 
 export function createArcBridgeServer(): McpServer {
   const server = new McpServer({
@@ -87,6 +88,9 @@ export function createArcBridgeServer(): McpServer {
   registerVerifyScenarios(server, ctx);
   registerUpdateScenarioStatus(server, ctx);
   registerRunRoleCheck(server, ctx);
+
+  // Arc42 Documentation
+  registerUpdateArc42Section(server, ctx);
 
   // Metrics
   registerRecordActivity(server, ctx);
