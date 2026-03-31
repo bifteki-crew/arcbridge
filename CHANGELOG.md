@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.2.1 (2026-03-31)
+
+### New Features
+
+- **`arcbridge_delete_phase`** (33 MCP tools) — delete a phase and all its tasks permanently. Guards against deleting in-progress or complete phases.
+- **Batch task deletion** — `arcbridge_delete_task` now accepts `task_ids` array for deleting multiple tasks in one call. Single `task_id` still supported for backward compatibility.
+- **Post-init tailoring guidance** — architect role now includes a "Post-Init Tailoring" section explaining how to customize building blocks, quality scenarios, and phase tasks before writing code. Init output changed from "PLAN FIRST" to "TAILOR FIRST" with specific editing instructions and file paths.
+- **Building block interfaces documentation** — architect role documents the `interfaces` field with a full schema example, explaining how drift detection uses it.
+
+### Fixes
+
+- **Phase status check** — `delete_phase` correctly checks for `"planned"` status (not `"done"` which doesn't exist in the schema)
+- **YAML failure handling** — `delete_task` only reports a task as deleted when YAML write succeeds; parse failures go to warnings
+- **TOCTOU fix** — `deletePhaseFromYaml` uses try/catch ENOENT instead of `existsSync` + `unlinkSync`
+- **DB sync consistency** — `delete_task` now uses `refreshFromDocs` (single refresh after all YAML deletes) instead of per-task manual DB DELETE
+
+### Stats
+
+- 33 MCP tools, 389 tests passing, 0 lint errors, 0 type errors
+
 ## 0.2.0 (2026-03-30)
 
 ### New Features
