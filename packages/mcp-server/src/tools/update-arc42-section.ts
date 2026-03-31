@@ -16,7 +16,7 @@ function splitFrontmatter(raw: string): { frontmatterBlock: string; body: string
   }
   const endIndex = raw.indexOf("\n---", 3);
   if (endIndex < 0) {
-    return { frontmatterBlock: "", body: raw };
+    throw new Error("Unterminated frontmatter: file starts with '---' but no closing delimiter found. Fix the file manually.");
   }
   const fmEnd = endIndex + 4; // include the closing ---\n
   return {
@@ -60,7 +60,7 @@ export function registerUpdateArc42Section(
 ): void {
   server.tool(
     "arcbridge_update_arc42_section",
-    "Read or update an arc42 documentation section. Omit `content` to read the current section. Provide `content` to replace the markdown body (frontmatter is preserved automatically). Use this for sections without dedicated tools: introduction, context, runtime views, deployment, crosscutting concepts, risks & debt. For building blocks use `arcbridge_get_building_blocks`, for quality scenarios use `arcbridge_get_quality_scenarios`.",
+    "Read or update an arc42 documentation section. Omit `content` to read the current section. Provide `content` to replace the markdown body (frontmatter is preserved automatically). Use this for sections without dedicated tools: introduction, constraints, context, solution strategy, runtime views, deployment, crosscutting concepts, risks & debt. For building blocks use `arcbridge_get_building_blocks`, for quality scenarios use `arcbridge_get_quality_scenarios`.",
     {
       target_dir: z
         .string()

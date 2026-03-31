@@ -66,7 +66,7 @@ function generateAgentsMd(config: ArcBridgeConfig): string {
     "### Completing a Phase",
     "",
     "Activate the **phase-manager** role, then: `arcbridge_complete_phase`",
-    "— validates three gates: all tasks done, no critical drift, quality scenarios not failing.",
+    "— validates three gates: all tasks done, no critical drift, must-have quality scenarios (priority = \"must\") not failing.",
     "",
   ];
 
@@ -174,10 +174,13 @@ export class CodexAdapter implements PlatformAdapter {
       if (markerIndex >= 0) {
         // Replace everything from the marker onwards
         const userContent = existing.slice(0, markerIndex).trimEnd();
-        writeFileSync(agentsMdPath, `${userContent}\n\n${marker}\n\n${agentsMdContent}`, "utf-8");
+        const prefix = userContent ? `${userContent}\n\n` : "";
+        writeFileSync(agentsMdPath, `${prefix}${marker}\n\n${agentsMdContent}`, "utf-8");
       } else {
         // No existing ArcBridge content — append
-        writeFileSync(agentsMdPath, `${existing.trimEnd()}\n\n${marker}\n\n${agentsMdContent}`, "utf-8");
+        const existingTrimmed = existing.trimEnd();
+        const prefix = existingTrimmed ? `${existingTrimmed}\n\n` : "";
+        writeFileSync(agentsMdPath, `${prefix}${marker}\n\n${agentsMdContent}`, "utf-8");
       }
     } else {
       writeFileSync(agentsMdPath, `${marker}\n\n${agentsMdContent}`, "utf-8");
