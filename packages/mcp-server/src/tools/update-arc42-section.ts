@@ -2,7 +2,6 @@ import { z } from "zod";
 import { join } from "node:path";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
 
@@ -16,7 +15,8 @@ function splitFrontmatter(raw: string): { frontmatterBlock: string; body: string
   }
   const endIndex = raw.indexOf("\n---", 3);
   if (endIndex < 0) {
-    throw new Error("Unterminated frontmatter: file starts with '---' but no closing delimiter found. Fix the file manually.");
+    // Unterminated frontmatter — treat entire content as body to avoid crashing tool handler
+    return { frontmatterBlock: "", body: raw };
   }
   const fmEnd = endIndex + 4; // include the closing ---\n
   return {
@@ -120,15 +120,10 @@ export function registerUpdateArc42Section(
         : `${params.content}\n`;
       writeFileSync(filePath, updated, "utf-8");
 
-      // Refresh DB to pick up changes
-      const refreshWarnings = refreshFromDocs(db, params.target_dir);
-
       const label = SECTION_LABELS[params.section];
-      const lines = [`Updated **${label}** (\`${params.section}.md\`). Frontmatter preserved, DB refreshed.`];
-      if (refreshWarnings.length > 0) {
-        lines.push("", "**Warnings:**", ...refreshWarnings.map((w) => `- ${w}`));
-      }
-      return textResult(lines.join("\n"));
+      return textResult(
+        `Updated **${label}** (\`${params.section}.md\`). Frontmatter preserved.`,
+      );
     },
   );
 }

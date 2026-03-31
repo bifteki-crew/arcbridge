@@ -26,7 +26,7 @@ export function registerGetCurrentTasks(
 ): void {
   server.tool(
     "arcbridge_get_current_tasks",
-    "Get tasks for the current in-progress phase, with their building blocks, quality scenarios, and acceptance criteria.",
+    "Get tasks for the current phase (in-progress, or first planned if none is in-progress), with their building blocks, quality scenarios, and acceptance criteria.",
     {
       target_dir: z
         .string()
