@@ -121,12 +121,14 @@ export function registerUpdateArc42Section(
       writeFileSync(filePath, updated, "utf-8");
 
       // Refresh DB to pick up changes
-      refreshFromDocs(db, params.target_dir);
+      const refreshWarnings = refreshFromDocs(db, params.target_dir);
 
       const label = SECTION_LABELS[params.section];
-      return textResult(
-        `Updated **${label}** (\`${params.section}.md\`). Frontmatter preserved, DB refreshed.`,
-      );
+      const lines = [`Updated **${label}** (\`${params.section}.md\`). Frontmatter preserved, DB refreshed.`];
+      if (refreshWarnings.length > 0) {
+        lines.push("", "**Warnings:**", ...refreshWarnings.map((w) => `- ${w}`));
+      }
+      return textResult(lines.join("\n"));
     },
   );
 }

@@ -43,19 +43,28 @@ export function registerGetCurrentTasks(
       // Refresh DB from docs to pick up any YAML edits
       refreshFromDocs(db, params.target_dir);
 
-      // Find current phase
-      const currentPhase = db
+      // Find current phase (in-progress first, fall back to first planned)
+      let currentPhase = db
         .prepare(
           "SELECT id, name FROM phases WHERE status = 'in-progress' ORDER BY phase_number LIMIT 1",
         )
         .get() as PhaseRow | undefined;
 
       if (!currentPhase) {
+        // No in-progress phase — show first planned phase so agents can start it
+        currentPhase = db
+          .prepare(
+            "SELECT id, name FROM phases WHERE status = 'planned' ORDER BY phase_number LIMIT 1",
+          )
+          .get() as PhaseRow | undefined;
+      }
+
+      if (!currentPhase) {
         return {
           content: [
             {
               type: "text" as const,
-              text: "No phase is currently in-progress. Use `arcbridge_get_phase_plan` to see all phases.",
+              text: "No active or planned phases found. Use `arcbridge_get_phase_plan` to see all phases.",
             },
           ],
         };

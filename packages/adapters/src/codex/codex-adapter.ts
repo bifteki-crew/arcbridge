@@ -85,19 +85,10 @@ function generateAgentsMd(config: ArcBridgeConfig): string {
   lines.push(
     "## Agent Roles",
     "",
-    "Activate roles with `arcbridge_activate_role` to get specialized context:",
-    "",
-    "| Role | When to Use |",
-    "|------|-------------|",
-    "| `architect` | Defining building blocks, reviewing dependencies, creating ADRs |",
-    "| `implementer` | Writing code within the established architecture |",
-    "| `security-reviewer` | Auditing auth, input validation, client/server boundaries |",
-    "| `quality-guardian` | Reviewing test coverage, quality scenarios, quality gates |",
-    "| `phase-manager` | Completing phases, managing task transitions |",
-    "| `code-reviewer` | Reviewing code for correctness, patterns, edge cases |",
-    "| `onboarding` | Understanding the project (for new developers) |",
-    "",
+    "Activate roles with `arcbridge_activate_role` to get specialized context.",
     "Roles are defined in `.arcbridge/agents/`.",
+    "",
+    "*Role table is appended below after agent configs are generated.*",
     "",
   );
 
@@ -187,7 +178,24 @@ export class CodexAdapter implements PlatformAdapter {
     }
   }
 
-  generateAgentConfigs(targetDir: string, _roles: AgentRole[]): void {
+  generateAgentConfigs(targetDir: string, roles: AgentRole[]): void {
+    // Append dynamic role table to AGENTS.md (replaces placeholder)
+    const agentsMdPath = join(targetDir, "AGENTS.md");
+    if (existsSync(agentsMdPath)) {
+      let content = readFileSync(agentsMdPath, "utf-8");
+      const roleTable = [
+        "| Role | Description |",
+        "|------|-------------|",
+        ...roles.map((r) => `| \`${r.role_id}\` | ${r.description} |`),
+        "",
+      ].join("\n");
+      content = content.replace(
+        "*Role table is appended below after agent configs are generated.*",
+        roleTable,
+      );
+      writeFileSync(agentsMdPath, content, "utf-8");
+    }
+
     // Generate skills (reusable workflows) instead of per-role agent files,
     // since Codex agent definitions live in the global ~/.codex/config.toml
     const skillsDir = join(targetDir, ".agents", "skills");
