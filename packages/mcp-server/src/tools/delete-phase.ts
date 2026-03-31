@@ -42,9 +42,9 @@ export function registerDeletePhase(
         );
       }
 
-      if (phase.status === "in-progress" || phase.status === "done") {
+      if (phase.status !== "planned") {
         return textResult(
-          `Cannot delete phase **${phase.id}** (status: ${phase.status}). Only 'planned' phases can be deleted.`,
+          `Cannot delete phase **${phase.id}** (status: ${phase.status}). Only phases with status 'planned' can be deleted.`,
         );
       }
 

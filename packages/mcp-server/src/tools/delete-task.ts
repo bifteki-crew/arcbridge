@@ -16,24 +16,30 @@ export function registerDeleteTask(
 ): void {
   server.tool(
     "arcbridge_delete_task",
-    "Delete one or more tasks permanently. Use this to remove example/template tasks or duplicates. For tasks that were planned but are no longer relevant, prefer `arcbridge_update_task` with status 'cancelled' instead — this preserves the decision trail.",
+    "Delete one or more tasks permanently. Use this to remove example/template tasks or duplicates. Pass task_ids (array) for batch deletion, or task_id (string) for a single task. For tasks that were planned but are no longer relevant, prefer `arcbridge_update_task` with status 'cancelled' instead — this preserves the decision trail.",
     {
       target_dir: z
         .string()
         .describe("Absolute path to the project directory"),
+      task_id: z.string().optional().describe("Single task ID to delete (deprecated — use task_ids)"),
       task_ids: z
         .array(z.string())
-        .min(1)
-        .describe("Task IDs to delete"),
+        .optional()
+        .describe("Task IDs to delete (preferred)"),
     },
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
+      const ids = params.task_ids ?? (params.task_id ? [params.task_id] : []);
+      if (ids.length === 0) {
+        return textResult("Provide `task_ids` (array) or `task_id` (string) to delete.");
+      }
+
       const results: string[] = [];
       const warnings: string[] = [];
 
-      for (const id of params.task_ids) {
+      for (const id of ids) {
         const task = db
           .prepare("SELECT id, title, phase_id FROM tasks WHERE id = ?")
           .get(id) as TaskRow | undefined;
@@ -45,9 +51,13 @@ export function registerDeleteTask(
 
         const yamlResult = deleteTaskFromYaml(params.target_dir, task.phase_id, id);
 
-        results.push(`- **${task.id}**: "${task.title}"`);
-        if (yamlResult.warning) {
-          warnings.push(`${task.id}: ${yamlResult.warning}`);
+        if (yamlResult.success === false) {
+          warnings.push(`${task.id}: ${yamlResult.warning ?? "YAML delete failed"}`);
+        } else {
+          results.push(`- **${task.id}**: "${task.title}"`);
+          if (yamlResult.warning) {
+            warnings.push(`${task.id}: ${yamlResult.warning}`);
+          }
         }
       }
 
