@@ -32,7 +32,9 @@ function splitFrontmatter(raw: string): { frontmatterBlock: string; body: string
  */
 const VALID_SECTIONS = [
   "01-introduction",
+  "02-constraints",
   "03-context",
+  "04-solution-strategy",
   "06-runtime-views",
   "07-deployment",
   "08-crosscutting",
@@ -43,7 +45,9 @@ type SectionId = (typeof VALID_SECTIONS)[number];
 
 const SECTION_LABELS: Record<SectionId, string> = {
   "01-introduction": "Introduction & Goals",
+  "02-constraints": "Architecture Constraints",
   "03-context": "Context & Scope",
+  "04-solution-strategy": "Solution Strategy",
   "06-runtime-views": "Runtime Views",
   "07-deployment": "Deployment View",
   "08-crosscutting": "Crosscutting Concepts",

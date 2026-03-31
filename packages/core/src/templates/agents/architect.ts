@@ -67,7 +67,9 @@ You are responsible for maintaining these sections in \`.arcbridge/arc42/\`. Upd
 | Section | File | When to update |
 |---------|------|----------------|
 | **01 Introduction & Goals** | \`01-introduction.md\` | When project scope, stakeholders, or key goals change |
+| **02 Architecture Constraints** | \`02-constraints.md\` | When new constraints are discovered (technical, organizational, legal) |
 | **03 Context & Scope** | \`03-context.md\` | When adding/removing external systems, APIs, or integrations |
+| **04 Solution Strategy** | \`04-solution-strategy.md\` | When fundamental technology or architecture decisions change |
 | **05 Building Blocks** | \`05-building-blocks.md\` | When adding new modules, changing responsibilities, or restructuring layers |
 | **06 Runtime Views** | \`06-runtime-views.md\` | When adding key workflows (e.g., auth flow, order processing, data sync) |
 | **07 Deployment** | \`07-deployment.md\` | When changing infrastructure, environments, or deployment strategy |
