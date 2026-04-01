@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.3.0 (2026-04-01)
+
+### New Features
+
+- **Codex CLI adapter** — ArcBridge now supports OpenAI Codex CLI as a target platform. Generates `AGENTS.md` (project instructions with workflow, tool references, MCP setup) and two reusable skills (`.agents/skills/arcbridge-sync/`, `.agents/skills/arcbridge-review/`). Pass `platforms: ["codex"]` during init.
+- **`arcbridge_update_arc42_section`** (34 MCP tools) — read or update any arc42 markdown section. Frontmatter is preserved automatically. Covers introduction, constraints, context, solution strategy, runtime views, deployment, crosscutting concepts, and risks/debt.
+- **Arc42 sections 02 + 04** — init now generates all standard arc42 sections including `02-constraints.md` (Architecture Constraints) and `04-solution-strategy.md` (Solution Strategy).
+
+### Improvements
+
+- **Phase 0 starts as `planned`** — all phases now generate with status `planned`. Agents tailor building blocks, scenarios, and tasks first, then explicitly start Phase 0. Aligns with the "TAILOR FIRST, BUILD SECOND" workflow.
+- **`get_current_tasks` fallback** — when no phase is in-progress, falls back to the first `planned` phase instead of returning an error. Works immediately after init.
+- **Dynamic role table in AGENTS.md** — generated from actual AgentRole[] instead of hardcoded, includes ux-reviewer when applicable.
+- **Codex adapter merge safety** — AGENTS.md uses marker-based merge to preserve user content, role table appended with fallback if placeholder is removed.
+
+### Fixes
+
+- **Non-throwing frontmatter parser** — `splitFrontmatter` returns gracefully on unterminated frontmatter instead of crashing tool handlers.
+- **No unnecessary DB refresh** — `update_arc42_section` skips `refreshFromDocs` since plain markdown sections aren't indexed.
+- **No duplicate headings** — read mode skips prepending heading when section body already starts with one.
+
+### Stats
+
+- 34 MCP tools, 406 tests passing, 0 lint errors, 0 type errors
+- 3 platform adapters: Claude Code, GitHub Copilot, Codex CLI
+
 ## 0.2.1 (2026-03-31)
 
 ### New Features
