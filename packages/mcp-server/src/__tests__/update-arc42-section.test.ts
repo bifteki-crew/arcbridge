@@ -136,11 +136,17 @@ describe("arc42 section update (file-level)", () => {
     expect(() => refreshFromDocs(db, tempDir)).not.toThrow();
   });
 
-  it("corrupted frontmatter causes refreshFromDocs to warn but not crash", () => {
+  it("missing frontmatter does not crash refreshFromDocs", () => {
     const filePath = join(tempDir, ".arcbridge", "arc42", "06-runtime-views.md");
     writeFileSync(filePath, "no frontmatter just markdown", "utf-8");
 
-    // refreshFromDocs should handle gracefully
+    expect(() => refreshFromDocs(db, tempDir)).not.toThrow();
+  });
+
+  it("unterminated frontmatter does not crash refreshFromDocs", () => {
+    const filePath = join(tempDir, ".arcbridge", "arc42", "06-runtime-views.md");
+    writeFileSync(filePath, "---\nsection: runtime-views\nschema_version: 1\n# no closing delimiter", "utf-8");
+
     expect(() => refreshFromDocs(db, tempDir)).not.toThrow();
   });
 });
