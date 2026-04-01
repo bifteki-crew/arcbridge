@@ -102,13 +102,20 @@ export function registerUpdateArc42Section(
         const { body } = splitFrontmatter(raw);
         const label = SECTION_LABELS[params.section];
 
-        return textResult([
-          `# ${label}`,
-          "",
+        const trimmedBody = body.trim();
+        const startsWithHeading = /^#\s+/.test(trimmedBody);
+
+        const outputLines: string[] = [];
+        if (!startsWithHeading) {
+          outputLines.push(`# ${label}`, "");
+        }
+        outputLines.push(
           `**File:** \`.arcbridge/arc42/${params.section}.md\``,
           "",
-          body.trim(),
-        ].join("\n"));
+          trimmedBody,
+        );
+
+        return textResult(outputLines.join("\n"));
       }
 
       // Write mode — update the markdown body, preserve frontmatter

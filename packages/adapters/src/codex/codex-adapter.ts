@@ -189,10 +189,14 @@ export class CodexAdapter implements PlatformAdapter {
         ...roles.map((r) => `| \`${r.role_id}\` | ${r.description} |`),
         "",
       ].join("\n");
-      content = content.replace(
-        "*Role table is appended below after agent configs are generated.*",
-        roleTable,
-      );
+
+      const placeholder = "*Role table is appended below after agent configs are generated.*";
+      if (content.includes(placeholder)) {
+        content = content.replace(placeholder, roleTable);
+      } else {
+        // Fallback: append role table at the end if placeholder was removed
+        content = `${content.trimEnd()}\n\n## Agent Roles\n\n${roleTable}\n`;
+      }
       writeFileSync(agentsMdPath, content, "utf-8");
     }
 
