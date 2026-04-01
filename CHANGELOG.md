@@ -5,7 +5,7 @@
 ### New Features
 
 - **Codex CLI adapter** — ArcBridge now supports OpenAI Codex CLI as a target platform. Generates `AGENTS.md` (project instructions with workflow, tool references, MCP setup) and two reusable skills (`.agents/skills/arcbridge-sync/`, `.agents/skills/arcbridge-review/`). Pass `platforms: ["codex"]` during init.
-- **`arcbridge_update_arc42_section`** (34 MCP tools) — read or update any arc42 markdown section. Frontmatter is preserved automatically. Covers introduction, constraints, context, solution strategy, runtime views, deployment, crosscutting concepts, and risks/debt.
+- **`arcbridge_update_arc42_section`** (34 tools total) — read or update any arc42 markdown section. Frontmatter is preserved automatically. Covers introduction, constraints, context, solution strategy, runtime views, deployment, crosscutting concepts, and risks/debt.
 - **Arc42 sections 02 + 04** — init now generates all standard arc42 sections including `02-constraints.md` (Architecture Constraints) and `04-solution-strategy.md` (Solution Strategy).
 
 ### Improvements
