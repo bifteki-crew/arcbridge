@@ -4,7 +4,9 @@ import matter from "gray-matter";
 import { stringify } from "yaml";
 import type { InitProjectInput } from "../templates/types.js";
 import { introductionTemplate } from "../templates/arc42/01-introduction.js";
+import { constraintsTemplate } from "../templates/arc42/02-constraints.js";
 import { contextTemplate } from "../templates/arc42/03-context.js";
+import { solutionStrategyTemplate } from "../templates/arc42/04-solution-strategy.js";
 import { buildingBlocksTemplate } from "../templates/arc42/05-building-blocks.js";
 import { runtimeViewsTemplate } from "../templates/arc42/06-runtime-views.js";
 import { deploymentTemplate } from "../templates/arc42/07-deployment.js";
@@ -35,7 +37,9 @@ export function generateArc42(
   // Standard markdown sections
   const sections = [
     { file: "01-introduction.md", template: introductionTemplate },
+    { file: "02-constraints.md", template: constraintsTemplate },
     { file: "03-context.md", template: contextTemplate },
+    { file: "04-solution-strategy.md", template: solutionStrategyTemplate },
     { file: "05-building-blocks.md", template: buildingBlocksTemplate },
     { file: "06-runtime-views.md", template: runtimeViewsTemplate },
     { file: "07-deployment.md", template: deploymentTemplate },

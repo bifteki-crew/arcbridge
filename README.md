@@ -52,7 +52,9 @@ cd your-project
 arcbridge init                   # Initialize ArcBridge (auto-detects project type)
 ```
 
-Then connect the MCP server to your AI agent. Create `.mcp.json` in your project root:
+Then connect the MCP server to your AI agent:
+
+**Claude Code** — create `.mcp.json` in your project root:
 
 ```json
 {
@@ -65,7 +67,17 @@ Then connect the MCP server to your AI agent. Create `.mcp.json` in your project
 }
 ```
 
-Restart Claude Code — approve the MCP server when prompted, and all 33 architecture tools become available.
+**Codex CLI** — add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.arcbridge]
+command = "npx"
+args = ["-y", "@arcbridge/mcp-server"]
+```
+
+Restart your AI agent — approve the MCP server when prompted, and all 34 architecture tools become available.
+
+When running `arcbridge init`, pass `platforms: ["claude"]`, `["codex"]`, or `["claude", "codex"]` to generate the appropriate project instruction files (`CLAUDE.md`, `AGENTS.md`).
 
 See the [walkthrough](docs/walkthrough.md) for a full step-by-step guide.
 
@@ -96,7 +108,7 @@ For local development, point your MCP config at the built output:
 }
 ```
 
-## MCP Tools (33)
+## MCP Tools (34)
 
 ### Lifecycle
 
@@ -152,6 +164,7 @@ For local development, point your MCP config at the built output:
 | `arcbridge_get_open_questions` | Unresolved architectural questions and risks |
 | `arcbridge_propose_arc42_update` | Generate arc42 update proposals from recent code changes |
 | `arcbridge_get_practice_review` | 5-dimension review: architecture, security, testing, docs, complexity |
+| `arcbridge_update_arc42_section` | Read or update any arc42 markdown section (frontmatter preserved) |
 
 ### Roles & Sync
 

@@ -1,6 +1,6 @@
 # @arcbridge/mcp-server
 
-MCP server for ArcBridge — exposes 33 architecture tools to AI coding agents via the [Model Context Protocol](https://modelcontextprotocol.io).
+MCP server for ArcBridge — exposes 34 architecture tools to AI coding agents via the [Model Context Protocol](https://modelcontextprotocol.io).
 
 ## Install
 
@@ -10,7 +10,7 @@ npm install -g @arcbridge/mcp-server
 
 ## Setup
 
-Add to your project's `.mcp.json`:
+**Claude Code** — add to your project's `.mcp.json`:
 
 ```json
 {
@@ -23,7 +23,15 @@ Add to your project's `.mcp.json`:
 }
 ```
 
-Restart your AI agent (Claude Code, etc.) and approve the MCP server when prompted.
+**Codex CLI** — add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.arcbridge]
+command = "npx"
+args = ["-y", "@arcbridge/mcp-server"]
+```
+
+Restart your AI agent and approve the MCP server when prompted.
 
 ## Tools
 
@@ -81,6 +89,7 @@ Restart your AI agent (Claude Code, etc.) and approve the MCP server when prompt
 | `arcbridge_get_open_questions` | Unresolved architectural questions and risks |
 | `arcbridge_propose_arc42_update` | Generate arc42 update proposals from code changes |
 | `arcbridge_get_practice_review` | 5-dimension review: architecture, security, testing, docs, complexity |
+| `arcbridge_update_arc42_section` | Read or update any arc42 markdown section (frontmatter preserved) |
 
 ### Roles & Sync
 

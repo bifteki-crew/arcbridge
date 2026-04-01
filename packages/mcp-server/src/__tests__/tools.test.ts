@@ -121,18 +121,18 @@ describe("phase plan queries", () => {
       .all() as { id: string; phase_number: number; status: string }[];
 
     expect(phases.length).toBe(4);
-    expect(phases[0]!.status).toBe("in-progress");
+    expect(phases[0]!.status).toBe("planned");
     expect(phases[0]!.phase_number).toBe(0);
   });
 
-  it("gets current phase tasks", () => {
-    const currentPhase = db
-      .prepare("SELECT id FROM phases WHERE status = 'in-progress' LIMIT 1")
+  it("gets first phase tasks", () => {
+    const firstPhase = db
+      .prepare("SELECT id FROM phases WHERE phase_number = 0 LIMIT 1")
       .get() as { id: string };
 
     const tasks = db
       .prepare("SELECT id, title, status FROM tasks WHERE phase_id = ? ORDER BY id")
-      .all(currentPhase.id) as { id: string; title: string; status: string }[];
+      .all(firstPhase.id) as { id: string; title: string; status: string }[];
 
     expect(tasks.length).toBeGreaterThan(0);
     expect(tasks.every((t) => t.status === "todo")).toBe(true);
