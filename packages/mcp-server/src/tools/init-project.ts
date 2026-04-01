@@ -43,7 +43,11 @@ export function registerInitProject(
       quality_priorities: z
         .array(z.string())
         .default(["security", "performance", "accessibility", "maintainability"])
-        .describe("Quality priorities in order"),
+        .describe(
+          "Quality priorities in order. Common: security, performance, accessibility, " +
+          "reliability, maintainability, usability, portability, compatibility. " +
+          "Custom categories like data-integrity or compliance are also supported.",
+        ),
       platforms: z
         .array(z.string())
         .default(["claude"])

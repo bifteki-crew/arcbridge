@@ -29,15 +29,17 @@ export const ArcBridgeConfigSchema = z.object({
 
   quality_priorities: z
     .array(
-      z.enum([
-        "security",
-        "performance",
-        "accessibility",
-        "reliability",
-        "maintainability",
-      ]),
+      z.string().min(1).regex(
+        /^[a-z][a-z0-9-]*$/,
+        "Must be lowercase kebab-case (e.g., 'security', 'data-integrity')",
+      ),
     )
-    .default(["security", "performance", "accessibility"]),
+    .default(["security", "performance", "accessibility"])
+    .describe(
+      "Quality priorities in order. Common: security, performance, accessibility, " +
+      "reliability, maintainability, usability, portability, compatibility. " +
+      "Custom categories like data-integrity or compliance are also supported.",
+    ),
 
   indexing: z
     .object({

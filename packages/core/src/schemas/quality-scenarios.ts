@@ -1,12 +1,15 @@
 import { z } from "zod";
 
-export const QualityCategorySchema = z.enum([
-  "security",
-  "performance",
-  "accessibility",
-  "reliability",
-  "maintainability",
-]);
+/**
+ * Quality categories. Accepts any lowercase kebab-case string for extensibility.
+ * Common categories (ISO 25010): security, performance, accessibility, reliability,
+ * maintainability, usability, portability, compatibility.
+ * Projects can define custom categories like: data-integrity, compliance, auditability.
+ */
+export const QualityCategorySchema = z
+  .string()
+  .min(1)
+  .regex(/^[a-z][a-z0-9-]*$/, "Must be lowercase kebab-case (e.g., 'security', 'data-integrity')");
 
 export const QualityPrioritySchema = z.enum(["must", "should", "could"]);
 
