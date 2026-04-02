@@ -41,7 +41,12 @@ export function registerInitProject(
         .default([])
         .describe("Features to scaffold"),
       quality_priorities: z
-        .array(z.string())
+        .array(
+          z.string().min(1).regex(
+            /^[a-z][a-z0-9-]*$/,
+            "Must be lowercase kebab-case (e.g., 'security', 'data-integrity')",
+          ),
+        )
         .default(["security", "performance", "accessibility", "maintainability"])
         .describe(
           "Quality priorities in order. Common: security, performance, accessibility, " +

@@ -2,8 +2,9 @@ import { z } from "zod";
 
 /**
  * Quality categories. Accepts any lowercase kebab-case string for extensibility.
- * Common categories (ISO 25010): security, performance, accessibility, reliability,
- * maintainability, usability, portability, compatibility.
+ * Common categories (inspired by ISO/IEC 25010): reliability, usability, security,
+ * maintainability, portability, compatibility, performance, and accessibility
+ * (often a sub-characteristic of usability, but commonly tracked separately).
  * Projects can define custom categories like: data-integrity, compliance, auditability.
  */
 export const QualityCategorySchema = z
