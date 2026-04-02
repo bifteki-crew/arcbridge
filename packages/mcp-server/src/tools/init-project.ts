@@ -12,6 +12,7 @@ import {
   indexProject,
   loadConfig,
   type InitProjectInput,
+  QualityCategorySchema,
 } from "@arcbridge/core";
 import { getAdapter } from "@arcbridge/adapters";
 import type { ServerContext } from "../context.js";
@@ -41,12 +42,7 @@ export function registerInitProject(
         .default([])
         .describe("Features to scaffold"),
       quality_priorities: z
-        .array(
-          z.string().min(1).regex(
-            /^[a-z][a-z0-9-]*$/,
-            "Must be lowercase kebab-case (e.g., 'security', 'data-integrity')",
-          ),
-        )
+        .array(QualityCategorySchema)
         .default(["security", "performance", "accessibility", "maintainability"])
         .describe(
           "Quality priorities in order. Common: security, performance, accessibility, " +
