@@ -38,20 +38,21 @@ Run the full review suite before completing a phase gate.
 
 /**
  * Generate ArcBridge skills under .agents/skills/.
- * Only writes skills that don't already exist — preserves existing content.
+ * By default, only writes skills that don't already exist — preserves existing content.
+ * Pass force=true to overwrite existing skills (e.g., after template updates).
  * Shared between Codex and Gemini adapters.
  */
-export function generateSkills(targetDir: string): void {
+export function generateSkills(targetDir: string, force = false): void {
   const skillsDir = join(targetDir, ".agents", "skills");
 
   const syncPath = join(skillsDir, "arcbridge-sync", "SKILL.md");
-  if (!existsSync(syncPath)) {
+  if (force || !existsSync(syncPath)) {
     mkdirSync(join(skillsDir, "arcbridge-sync"), { recursive: true });
     writeFileSync(syncPath, SYNC_SKILL, "utf-8");
   }
 
   const reviewPath = join(skillsDir, "arcbridge-review", "SKILL.md");
-  if (!existsSync(reviewPath)) {
+  if (force || !existsSync(reviewPath)) {
     mkdirSync(join(skillsDir, "arcbridge-review"), { recursive: true });
     writeFileSync(reviewPath, REVIEW_SKILL, "utf-8");
   }

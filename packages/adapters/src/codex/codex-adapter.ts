@@ -1,7 +1,7 @@
 import { writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
-import type { PlatformAdapter } from "../types.js";
+import type { PlatformAdapter, AdapterOptions } from "../types.js";
 import { generateSkills } from "../shared/skills.js";
 
 function generateAgentsMd(config: ArcBridgeConfig): string {
@@ -124,7 +124,7 @@ export class CodexAdapter implements PlatformAdapter {
     }
   }
 
-  generateAgentConfigs(targetDir: string, roles: AgentRole[]): void {
+  generateAgentConfigs(targetDir: string, roles: AgentRole[], options?: AdapterOptions): void {
     // Append dynamic role table to AGENTS.md (replaces placeholder)
     const agentsMdPath = join(targetDir, "AGENTS.md");
     if (existsSync(agentsMdPath)) {
@@ -147,6 +147,6 @@ export class CodexAdapter implements PlatformAdapter {
     }
 
     // Generate missing skills (shared with Gemini adapter — only writes if not present)
-    generateSkills(targetDir);
+    generateSkills(targetDir, options?.force);
   }
 }

@@ -1,4 +1,4 @@
-export type { PlatformAdapter } from "./types.js";
+export type { PlatformAdapter, AdapterOptions } from "./types.js";
 export { ClaudeAdapter } from "./claude/claude-adapter.js";
 export { CopilotAdapter } from "./copilot/copilot-adapter.js";
 export { CodexAdapter } from "./codex/codex-adapter.js";

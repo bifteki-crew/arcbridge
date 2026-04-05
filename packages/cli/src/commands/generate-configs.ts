@@ -12,6 +12,7 @@ interface GenerateResult {
 export async function generateConfigs(
   dir: string,
   json: boolean,
+  force = false,
 ): Promise<void> {
   const projectRoot = resolve(dir);
   const errors: string[] = [];
@@ -51,9 +52,10 @@ export async function generateConfigs(
   for (const platform of platforms) {
     try {
       const adapter = getAdapter(platform);
-      adapter.generateProjectConfig(projectRoot, config);
+      const options = force ? { force } : undefined;
+      adapter.generateProjectConfig(projectRoot, config, options);
       if (roles.length > 0) {
-        adapter.generateAgentConfigs(projectRoot, roles);
+        adapter.generateAgentConfigs(projectRoot, roles, options);
       }
       generatedPlatforms.push(platform);
     } catch (err) {

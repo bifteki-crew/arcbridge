@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
-import type { PlatformAdapter } from "../types.js";
+import type { PlatformAdapter, AdapterOptions } from "../types.js";
 import { generateSkills } from "../shared/skills.js";
 
 const MARKER = "<!-- arcbridge-generated -->";
@@ -187,7 +187,7 @@ export class GeminiAdapter implements PlatformAdapter {
     writeWithMarkerMerge(join(targetDir, "GEMINI.md"), styleguideContent);
   }
 
-  generateAgentConfigs(targetDir: string, roles: AgentRole[]): void {
+  generateAgentConfigs(targetDir: string, roles: AgentRole[], options?: AdapterOptions): void {
     // Generate .gemini/agents/*.md (Gemini subagents mapped from ArcBridge roles)
     const agentsDir = join(targetDir, ".gemini", "agents");
     mkdirSync(agentsDir, { recursive: true });
@@ -198,6 +198,6 @@ export class GeminiAdapter implements PlatformAdapter {
     }
 
     // Generate missing skills (shared with Codex adapter — only writes if not present)
-    generateSkills(targetDir);
+    generateSkills(targetDir, options?.force);
   }
 }
