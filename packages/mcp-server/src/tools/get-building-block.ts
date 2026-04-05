@@ -2,48 +2,12 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, safeParseJson, escapeLike, normalizeCodePath } from "../helpers.js";
-
-interface BlockRow {
-  id: string;
-  name: string;
-  level: number;
-  parent_id: string | null;
-  description: string | null;
-  responsibility: string;
-  code_paths: string;
-  interfaces: string;
-  service: string;
-  last_synced: string | null;
-}
+import type { BlockRow, ScenarioRow, AdrRow, TaskRow } from "../db-types.js";
 
 interface ChildRow {
   id: string;
   name: string;
   responsibility: string;
-}
-
-interface ScenarioRow {
-  id: string;
-  name: string;
-  category: string;
-  priority: string;
-  status: string;
-  scenario: string;
-  expected: string;
-}
-
-interface AdrRow {
-  id: string;
-  title: string;
-  status: string;
-  date: string;
-}
-
-interface TaskRow {
-  id: string;
-  title: string;
-  status: string;
-  phase_id: string;
 }
 
 export function registerGetBuildingBlock(

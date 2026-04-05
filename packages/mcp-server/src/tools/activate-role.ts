@@ -3,32 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
 import { loadRole, loadRoles } from "@arcbridge/core";
-
-interface BlockRow {
-  id: string;
-  name: string;
-  responsibility: string;
-}
-
-interface ScenarioRow {
-  id: string;
-  name: string;
-  category: string;
-  priority: string;
-  status: string;
-}
-
-interface PhaseRow {
-  id: string;
-  name: string;
-  status: string;
-}
-
-interface TaskRow {
-  id: string;
-  title: string;
-  status: string;
-}
+import type { BlockRow, ScenarioRow, PhaseRow, TaskRow } from "../db-types.js";
 
 export function registerActivateRole(
   server: McpServer,

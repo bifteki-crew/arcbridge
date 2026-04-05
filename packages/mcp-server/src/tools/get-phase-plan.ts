@@ -3,26 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
-
-interface PhaseRow {
-  id: string;
-  name: string;
-  phase_number: number;
-  status: string;
-  description: string;
-  gate_status: string;
-  started_at: string | null;
-  completed_at: string | null;
-}
-
-interface TaskRow {
-  id: string;
-  title: string;
-  status: string;
-  building_block: string | null;
-  quality_scenarios: string;
-  acceptance_criteria: string;
-}
+import type { PhaseRow, TaskRow } from "../db-types.js";
 
 export function registerGetPhasePlan(
   server: McpServer,

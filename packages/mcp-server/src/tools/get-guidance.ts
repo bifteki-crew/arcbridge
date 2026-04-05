@@ -3,36 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { loadConfig } from "@arcbridge/core";
 import { ensureDb, notInitialized, textResult, safeParseJson, escapeLike, normalizeCodePath } from "../helpers.js";
-
-interface BlockRow {
-  id: string;
-  name: string;
-  responsibility: string;
-  code_paths: string;
-  interfaces: string;
-}
-
-interface ScenarioRow {
-  id: string;
-  name: string;
-  category: string;
-  scenario: string;
-  expected: string;
-  priority: string;
-}
-
-interface SymbolRow {
-  name: string;
-  kind: string;
-  file_path: string;
-}
-
-interface TaskRow {
-  id: string;
-  title: string;
-  status: string;
-  building_block: string | null;
-}
+import type { BlockRow, ScenarioRow, SymbolRow, TaskRow } from "../db-types.js";
 
 interface DriftRow {
   kind: string;

@@ -4,26 +4,7 @@ import { join } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson } from "../helpers.js";
-
-interface SymbolRow {
-  id: string;
-  name: string;
-  qualified_name: string;
-  kind: string;
-  file_path: string;
-  start_line: number;
-  end_line: number;
-  start_col: number;
-  end_col: number;
-  signature: string | null;
-  return_type: string | null;
-  doc_comment: string | null;
-  is_exported: number;
-  is_async: number;
-  service: string;
-  content_hash: string;
-  indexed_at: string;
-}
+import type { SymbolRow } from "../db-types.js";
 
 interface DepRow {
   symbol_id: string;

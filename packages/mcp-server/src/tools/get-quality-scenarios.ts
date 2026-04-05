@@ -3,20 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { QualityCategorySchema, QualityPrioritySchema, QualityScenarioStatusSchema } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
-
-interface ScenarioRow {
-  id: string;
-  name: string;
-  category: string;
-  scenario: string;
-  expected: string;
-  priority: string;
-  linked_code: string;
-  linked_tests: string;
-  linked_blocks: string;
-  verification: string;
-  status: string;
-}
+import type { ScenarioRow } from "../db-types.js";
 
 export function registerGetQualityScenarios(
   server: McpServer,

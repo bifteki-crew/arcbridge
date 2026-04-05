@@ -2,7 +2,30 @@ import { join } from "node:path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { parse, stringify } from "yaml";
 import { TaskFileSchema, PhasesFileSchema } from "../schemas/phases.js";
+import type { TaskFile, PhasesFile } from "../schemas/phases.js";
 import { QualityScenariosFileSchema } from "../schemas/quality-scenarios.js";
+
+// ─── Internal helpers to DRY up read-parse-validate patterns ─────────────────
+
+function readTaskFile(projectRoot: string, phaseId: string): { taskFile: TaskFile; taskPath: string } | null {
+  const taskPath = join(projectRoot, ".arcbridge", "plan", "tasks", `${phaseId}.yaml`);
+  if (!existsSync(taskPath)) return null;
+  const raw = readFileSync(taskPath, "utf-8");
+  const result = TaskFileSchema.safeParse(parse(raw));
+  if (!result.success) return null;
+  return { taskFile: result.data, taskPath };
+}
+
+function readPhasesFile(projectRoot: string): { phasesFile: PhasesFile; phasesPath: string } | null {
+  const phasesPath = join(projectRoot, ".arcbridge", "plan", "phases.yaml");
+  if (!existsSync(phasesPath)) return null;
+  const raw = readFileSync(phasesPath, "utf-8");
+  const result = PhasesFileSchema.safeParse(parse(raw));
+  if (!result.success) return null;
+  return { phasesFile: result.data, phasesPath };
+}
+
+// ─── Public API ──────────────────────────────────────────────────────────────
 
 /**
  * Update a task's status in the YAML task file.
@@ -15,22 +38,10 @@ export function syncTaskToYaml(
   status: string,
   completedAt?: string | null,
 ): void {
-  const taskPath = join(
-    projectRoot,
-    ".arcbridge",
-    "plan",
-    "tasks",
-    `${phaseId}.yaml`,
-  );
+  const result = readTaskFile(projectRoot, phaseId);
+  if (!result) return;
 
-  if (!existsSync(taskPath)) return;
-
-  const raw = readFileSync(taskPath, "utf-8");
-  const parsed = parse(raw);
-  const result = TaskFileSchema.safeParse(parsed);
-  if (!result.success) return;
-
-  const taskFile = result.data;
+  const { taskFile, taskPath } = result;
   const task = taskFile.tasks.find((t) => t.id === taskId);
   if (!task) return;
 
@@ -61,30 +72,19 @@ export function addTaskToYaml(
   },
 ): void {
   const tasksDir = join(projectRoot, ".arcbridge", "plan", "tasks");
-  const taskPath = join(tasksDir, `${phaseId}.yaml`);
-
   mkdirSync(tasksDir, { recursive: true });
 
-  let taskFile: { schema_version: 1; phase_id: string; tasks: typeof task[] };
-
-  if (existsSync(taskPath)) {
-    const raw = readFileSync(taskPath, "utf-8");
-    const parsed = parse(raw);
-    const result = TaskFileSchema.safeParse(parsed);
-    if (result.success) {
-      taskFile = result.data as typeof taskFile;
-    } else {
-      taskFile = { schema_version: 1, phase_id: phaseId, tasks: [] };
-    }
-  } else {
-    taskFile = { schema_version: 1, phase_id: phaseId, tasks: [] };
-  }
+  const result = readTaskFile(projectRoot, phaseId);
+  const taskFile = result
+    ? (result.taskFile as { schema_version: 1; phase_id: string; tasks: typeof task[] })
+    : { schema_version: 1, phase_id: phaseId, tasks: [] as typeof task[] };
 
   // Don't duplicate
   if (!taskFile.tasks.some((t) => t.id === task.id)) {
     taskFile.tasks.push(task);
   }
 
+  const taskPath = join(tasksDir, `${phaseId}.yaml`);
   writeFileSync(taskPath, stringify(taskFile), "utf-8");
 }
 
@@ -98,21 +98,10 @@ export function syncPhaseToYaml(
   startedAt?: string | null,
   completedAt?: string | null,
 ): void {
-  const phasesPath = join(
-    projectRoot,
-    ".arcbridge",
-    "plan",
-    "phases.yaml",
-  );
+  const result = readPhasesFile(projectRoot);
+  if (!result) return;
 
-  if (!existsSync(phasesPath)) return;
-
-  const raw = readFileSync(phasesPath, "utf-8");
-  const parsed = parse(raw);
-  const result = PhasesFileSchema.safeParse(parsed);
-  if (!result.success) return;
-
-  const phasesFile = result.data;
+  const { phasesFile, phasesPath } = result;
   const phase = phasesFile.phases.find((p) => p.id === phaseId);
   if (!phase) return;
 
@@ -137,24 +126,12 @@ export function addPhaseToYaml(
   },
 ): { success: boolean; warning?: string } {
   try {
-    const phasesPath = join(
-      projectRoot,
-      ".arcbridge",
-      "plan",
-      "phases.yaml",
-    );
-
-    if (!existsSync(phasesPath)) {
-      return { success: false, warning: "phases.yaml not found" };
+    const readResult = readPhasesFile(projectRoot);
+    if (!readResult) {
+      return { success: false, warning: "phases.yaml not found or failed validation" };
     }
 
-    const raw = readFileSync(phasesPath, "utf-8");
-    const result = PhasesFileSchema.safeParse(parse(raw));
-    if (!result.success) {
-      return { success: false, warning: "phases.yaml failed validation" };
-    }
-
-    const phasesFile = result.data;
+    const { phasesFile, phasesPath } = readResult;
 
     // Guard against duplicates
     const existingById = phasesFile.phases.some((p) => p.id === phase.id);
@@ -253,28 +230,20 @@ export function deleteTaskFromYaml(
   taskId: string,
 ): { success: boolean; warning?: string } {
   try {
-    const taskPath = join(
-      projectRoot,
-      ".arcbridge",
-      "plan",
-      "tasks",
-      `${phaseId}.yaml`,
-    );
-
-    if (!existsSync(taskPath)) {
-      return { success: true }; // No file = nothing to remove
-    }
-
-    const raw = readFileSync(taskPath, "utf-8");
-    const result = TaskFileSchema.safeParse(parse(raw));
-    if (!result.success) {
+    const readResult = readTaskFile(projectRoot, phaseId);
+    if (!readResult) {
+      // No file or unparseable — check which case
+      const taskPath = join(projectRoot, ".arcbridge", "plan", "tasks", `${phaseId}.yaml`);
+      if (!existsSync(taskPath)) {
+        return { success: true }; // No file = nothing to remove
+      }
       return {
         success: false,
         warning: `Could not parse ${phaseId}.yaml — task may reappear after reindex`,
       };
     }
 
-    const taskFile = result.data;
+    const { taskFile, taskPath } = readResult;
     const before = taskFile.tasks.length;
     taskFile.tasks = taskFile.tasks.filter((t) => t.id !== taskId);
 
@@ -300,22 +269,12 @@ export function deletePhaseFromYaml(
   phaseId: string,
 ): { success: boolean; warning?: string } {
   try {
-    const phasesPath = join(projectRoot, ".arcbridge", "plan", "phases.yaml");
-
-    if (!existsSync(phasesPath)) {
-      return { success: false, warning: "phases.yaml not found" };
+    const readResult = readPhasesFile(projectRoot);
+    if (!readResult) {
+      return { success: false, warning: "phases.yaml not found or could not be parsed" };
     }
 
-    const raw = readFileSync(phasesPath, "utf-8");
-    const result = PhasesFileSchema.safeParse(parse(raw));
-    if (!result.success) {
-      return {
-        success: false,
-        warning: "Could not parse phases.yaml — phase may reappear after reindex",
-      };
-    }
-
-    const phasesFile = result.data;
+    const { phasesFile, phasesPath } = readResult;
     const before = phasesFile.phases.length;
     phasesFile.phases = phasesFile.phases.filter((p) => p.id !== phaseId);
 
