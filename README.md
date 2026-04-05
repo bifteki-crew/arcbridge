@@ -91,7 +91,7 @@ args = ["-y", "@arcbridge/mcp-server"]
 
 Restart your AI agent — approve the MCP server when prompted, and all 34 architecture tools become available.
 
-When running `arcbridge init`, pass `platforms: ["claude"]`, `["codex"]`, or `["claude", "codex"]` to generate the appropriate project instruction files (`CLAUDE.md`, `AGENTS.md`).
+When running `arcbridge init`, use `--platform` to generate platform-specific instruction and configuration files for your selected AI agent(s). Multiple platforms can be combined (e.g., `--platform claude --platform codex`).
 
 See the [walkthrough](docs/walkthrough.md) for a full step-by-step guide.
 

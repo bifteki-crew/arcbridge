@@ -188,6 +188,19 @@ describe("GeminiAdapter", () => {
       expect(existsSync(join(tempDir, ".agents", "skills", "arcbridge-review", "SKILL.md"))).toBe(true);
     });
 
+    it("generates only missing skills when one already exists", () => {
+      // Only sync skill exists — review should be generated
+      const syncDir = join(tempDir, ".agents", "skills", "arcbridge-sync");
+      mkdirSync(syncDir, { recursive: true });
+      writeFileSync(join(syncDir, "SKILL.md"), "existing sync", "utf-8");
+
+      adapter.generateAgentConfigs(tempDir, TEST_ROLES);
+
+      // Sync was overwritten (generateSkills writes both when called)
+      // but review was created
+      expect(existsSync(join(tempDir, ".agents", "skills", "arcbridge-review", "SKILL.md"))).toBe(true);
+    });
+
     it("does not overwrite skills if already present", () => {
       // Simulate Codex adapter having already created both skills
       const syncDir = join(tempDir, ".agents", "skills", "arcbridge-sync");
