@@ -10,21 +10,7 @@ import {
 import type { Database } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath } from "../helpers.js";
-
-interface BlockRow {
-  id: string;
-  name: string;
-  code_paths: string;
-  interfaces: string;
-  description: string | null;
-}
-
-interface SymbolRow {
-  name: string;
-  kind: string;
-  file_path: string;
-  is_exported: number;
-}
+import type { BlockRow, SymbolRow } from "../db-types.js";
 
 export function registerProposeArc42Update(
   server: McpServer,

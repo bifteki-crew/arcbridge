@@ -20,10 +20,13 @@ When you run `arcbridge_init_project`, it creates:
 ├── index.db                       # SQLite database (queryable via MCP)
 ├── arc42/
 │   ├── 01-introduction.md         # Goals and stakeholders
+│   ├── 02-constraints.md          # Technical, organizational, legal constraints
 │   ├── 03-context.md              # System scope
+│   ├── 04-solution-strategy.md    # Technology decisions and architecture approach
 │   ├── 05-building-blocks.md      # Architecture decomposition
 │   ├── 06-runtime-views.md        # Key scenarios
 │   ├── 07-deployment.md           # Infrastructure
+│   ├── 08-crosscutting.md         # Patterns and conventions
 │   ├── 09-decisions/              # ADRs (one per file)
 │   ├── 10-quality-scenarios.yaml  # Testable quality requirements
 │   └── 11-risks-debt.md           # Risks and tech debt

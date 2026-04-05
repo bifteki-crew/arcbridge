@@ -10,13 +10,7 @@ import {
 import type { Database } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath } from "../helpers.js";
-
-interface BlockRow {
-  id: string;
-  name: string;
-  code_paths: string;
-  interfaces: string;
-}
+import type { BlockRow } from "../db-types.js";
 
 interface RouteRow {
   route_path: string;

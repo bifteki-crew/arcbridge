@@ -2,19 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, safeParseJson, escapeLike } from "../helpers.js";
-
-interface AdrRow {
-  id: string;
-  title: string;
-  status: string;
-  date: string;
-  context: string | null;
-  decision: string | null;
-  consequences: string | null;
-  affected_blocks: string;
-  affected_files: string;
-  quality_scenarios: string;
-}
+import type { AdrRow } from "../db-types.js";
 
 export function registerGetRelevantAdrs(
   server: McpServer,

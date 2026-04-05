@@ -12,35 +12,7 @@ import {
 } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath } from "../helpers.js";
-
-interface BlockRow {
-  id: string;
-  name: string;
-  responsibility: string;
-  code_paths: string;
-  interfaces: string;
-}
-
-interface ScenarioRow {
-  id: string;
-  name: string;
-  category: string;
-  priority: string;
-  status: string;
-}
-
-interface PhaseRow {
-  id: string;
-  name: string;
-  status: string;
-}
-
-interface TaskRow {
-  id: string;
-  title: string;
-  status: string;
-  phase_id: string;
-}
+import type { BlockRow, ScenarioRow, PhaseRow, TaskRow, CountRow } from "../db-types.js";
 
 interface RoleDef {
   name: string;
@@ -378,12 +350,12 @@ function runSecurityReviewerCheck(
     .prepare(
       `SELECT COUNT(*) as count FROM components WHERE is_client = 1`,
     )
-    .get() as { count: number };
+    .get() as CountRow;
   const serverActions = db
     .prepare(
       `SELECT COUNT(*) as count FROM components WHERE is_server_action = 1`,
     )
-    .get() as { count: number };
+    .get() as CountRow;
   const crossBoundary = db
     .prepare(
       `SELECT COUNT(*) as count
@@ -393,7 +365,7 @@ function runSecurityReviewerCheck(
        WHERE cs.is_client != ct.is_client
          AND d.kind IN ('imports', 'calls', 'renders')`,
     )
-    .get() as { count: number };
+    .get() as CountRow;
 
   lines.push("## Boundary Summary", "");
   lines.push(`- **Client components:** ${clientComponents.count}`);

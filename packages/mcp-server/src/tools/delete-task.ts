@@ -3,12 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { deleteTaskFromYaml, refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
-
-interface TaskRow {
-  id: string;
-  title: string;
-  phase_id: string;
-}
+import type { TaskRow } from "../db-types.js";
 
 export function registerDeleteTask(
   server: McpServer,

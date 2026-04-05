@@ -2,18 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
-
-interface BlockRow {
-  id: string;
-  name: string;
-  level: number;
-  parent_id: string | null;
-  responsibility: string;
-  code_paths: string;
-  interfaces: string;
-  service: string;
-  last_synced: string | null;
-}
+import type { BlockRow } from "../db-types.js";
 
 interface ScenarioLinkRow {
   id: string;

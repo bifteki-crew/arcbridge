@@ -2,20 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, escapeLike } from "../helpers.js";
-
-interface SymbolRow {
-  id: string;
-  name: string;
-  qualified_name: string;
-  kind: string;
-  file_path: string;
-  start_line: number;
-  signature: string | null;
-  return_type: string | null;
-  is_exported: number;
-  is_async: number;
-  doc_comment: string | null;
-}
+import type { SymbolRow } from "../db-types.js";
 
 export function registerSearchSymbols(
   server: McpServer,

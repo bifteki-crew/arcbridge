@@ -3,22 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
-
-interface TaskRow {
-  id: string;
-  phase_id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  building_block: string | null;
-  quality_scenarios: string;
-  acceptance_criteria: string;
-}
-
-interface PhaseRow {
-  id: string;
-  name: string;
-}
+import type { TaskRow, PhaseRow } from "../db-types.js";
 
 export function registerGetCurrentTasks(
   server: McpServer,

@@ -4,13 +4,7 @@ import { syncTaskToYaml } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized } from "../helpers.js";
 import { autoRecord } from "../auto-record.js";
-
-interface TaskRow {
-  id: string;
-  title: string;
-  status: string;
-  phase_id: string;
-}
+import type { TaskRow } from "../db-types.js";
 
 export function registerUpdateTask(
   server: McpServer,

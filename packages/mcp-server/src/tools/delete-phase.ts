@@ -3,17 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { deletePhaseFromYaml, refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
-
-interface PhaseRow {
-  id: string;
-  name: string;
-  phase_number: number;
-  status: string;
-}
-
-interface TaskCountRow {
-  count: number;
-}
+import type { PhaseRow, CountRow } from "../db-types.js";
 
 export function registerDeletePhase(
   server: McpServer,
@@ -50,7 +40,7 @@ export function registerDeletePhase(
 
       const taskCount = db
         .prepare("SELECT COUNT(*) as count FROM tasks WHERE phase_id = ?")
-        .get(params.phase_id) as TaskCountRow;
+        .get(params.phase_id) as CountRow;
 
       // Delete from YAML (source of truth) — removes phase + task file
       const yamlResult = deletePhaseFromYaml(params.target_dir, params.phase_id);

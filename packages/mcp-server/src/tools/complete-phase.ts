@@ -15,28 +15,8 @@ import {
 } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import type { PhaseRow, TaskRow, ScenarioRow } from "../db-types.js";
 import { autoRecord } from "../auto-record.js";
-
-interface PhaseRow {
-  id: string;
-  name: string;
-  phase_number: number;
-  status: string;
-  gate_status: string;
-}
-
-interface TaskRow {
-  id: string;
-  title: string;
-  status: string;
-}
-
-interface ScenarioRow {
-  id: string;
-  name: string;
-  status: string;
-  priority: string;
-}
 
 export function registerCompletePhase(
   server: McpServer,

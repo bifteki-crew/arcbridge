@@ -3,31 +3,11 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized } from "../helpers.js";
+import type { PhaseRow, BlockRow, ScenarioRow, CountRow } from "../db-types.js";
 
-interface CountRow {
-  count: number;
-}
-interface PhaseRow {
-  id: string;
-  name: string;
-  phase_number: number;
-  status: string;
-}
 interface TaskStatusRow {
   status: string;
   count: number;
-}
-interface BlockRow {
-  id: string;
-  name: string;
-  responsibility: string;
-}
-interface ScenarioRow {
-  id: string;
-  name: string;
-  category: string;
-  status: string;
-  priority: string;
 }
 interface MetaRow {
   value: string;

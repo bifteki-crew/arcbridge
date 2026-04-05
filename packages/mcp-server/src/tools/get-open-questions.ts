@@ -2,41 +2,12 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson } from "../helpers.js";
-
-interface ScenarioRow {
-  id: string;
-  name: string;
-  category: string;
-  status: string;
-  priority: string;
-  linked_tests: string;
-  linked_code: string;
-}
-
-interface BlockRow {
-  id: string;
-  name: string;
-  code_paths: string;
-  description: string | null;
-}
+import type { ScenarioRow, BlockRow, PhaseRow, TaskRow } from "../db-types.js";
 
 interface DriftRow {
   kind: string;
   severity: string;
   description: string;
-}
-
-interface PhaseRow {
-  id: string;
-  name: string;
-  status: string;
-}
-
-interface TaskRow {
-  id: string;
-  title: string;
-  status: string;
-  acceptance_criteria: string;
 }
 
 export function registerGetOpenQuestions(
