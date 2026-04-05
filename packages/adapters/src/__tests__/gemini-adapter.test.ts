@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
@@ -116,7 +116,6 @@ describe("GeminiAdapter", () => {
 
     it("preserves existing user content in styleguide.md", () => {
       const geminiDir = join(tempDir, ".gemini");
-      const { mkdirSync } = require("node:fs");
       mkdirSync(geminiDir, { recursive: true });
       writeFileSync(join(geminiDir, "styleguide.md"), "# My Custom Rules\n\nUse tabs.\n", "utf-8");
 
@@ -138,7 +137,6 @@ describe("GeminiAdapter", () => {
 
     it("adds arcbridge to existing settings.json without overwriting", () => {
       const geminiDir = join(tempDir, ".gemini");
-      const { mkdirSync } = require("node:fs");
       mkdirSync(geminiDir, { recursive: true });
       writeFileSync(
         join(geminiDir, "settings.json"),
@@ -172,12 +170,15 @@ describe("GeminiAdapter", () => {
       expect(content).toContain("model: gemini-2.5-pro");
     });
 
-    it("read-only roles get read-only tools", () => {
+    it("read-only roles get both MCP tools and read-only tools with single tools: key", () => {
       adapter.generateAgentConfigs(tempDir, TEST_ROLES);
 
       const content = readFileSync(join(tempDir, ".gemini", "agents", "code-reviewer.md"), "utf-8");
       expect(content).toContain("read_file");
       expect(content).toContain("grep_search");
+      expect(content).toContain("mcp_arcbridge_get_building_block");
+      // No duplicate tools: key
+      expect((content.match(/^tools:/gm) ?? []).length).toBe(1);
     });
 
     it("generates skills if not already present", () => {
@@ -188,16 +189,18 @@ describe("GeminiAdapter", () => {
     });
 
     it("does not overwrite skills if already present", () => {
-      // Simulate Codex adapter having already created skills
-      const { mkdirSync } = require("node:fs");
+      // Simulate Codex adapter having already created both skills
       const syncDir = join(tempDir, ".agents", "skills", "arcbridge-sync");
+      const reviewDir = join(tempDir, ".agents", "skills", "arcbridge-review");
       mkdirSync(syncDir, { recursive: true });
-      writeFileSync(join(syncDir, "SKILL.md"), "existing content", "utf-8");
+      mkdirSync(reviewDir, { recursive: true });
+      writeFileSync(join(syncDir, "SKILL.md"), "existing sync", "utf-8");
+      writeFileSync(join(reviewDir, "SKILL.md"), "existing review", "utf-8");
 
       adapter.generateAgentConfigs(tempDir, TEST_ROLES);
 
-      const content = readFileSync(join(syncDir, "SKILL.md"), "utf-8");
-      expect(content).toBe("existing content");
+      expect(readFileSync(join(syncDir, "SKILL.md"), "utf-8")).toBe("existing sync");
+      expect(readFileSync(join(reviewDir, "SKILL.md"), "utf-8")).toBe("existing review");
     });
   });
 });
