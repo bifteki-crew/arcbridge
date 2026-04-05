@@ -125,9 +125,11 @@ function generateAgentFile(role: AgentRole): string {
   ];
 
   // Build single tools list (MCP tools + read-only file tools if applicable)
-  const tools: string[] = role.required_tools.map(
-    (tool) => `mcp_arcbridge_${tool.replace("arcbridge_", "")}`,
-  );
+  // Use wildcard to match MCP tools regardless of Gemini's naming convention
+  // (mcp_<tool>, mcp_arcbridge_<tool>, etc.)
+  const tools: string[] = role.required_tools.length > 0
+    ? ["mcp_arcbridge_*"]
+    : [];
   if (role.read_only) {
     tools.push("read_file", "grep_search", "list_directory");
   }

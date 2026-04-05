@@ -176,7 +176,8 @@ describe("GeminiAdapter", () => {
       const content = readFileSync(join(tempDir, ".gemini", "agents", "code-reviewer.md"), "utf-8");
       expect(content).toContain("read_file");
       expect(content).toContain("grep_search");
-      expect(content).toContain("mcp_arcbridge_get_building_block");
+      // Uses wildcard for all ArcBridge MCP tools
+      expect(content).toContain("mcp_arcbridge_*");
       // No duplicate tools: key
       expect((content.match(/^tools:/gm) ?? []).length).toBe(1);
     });
