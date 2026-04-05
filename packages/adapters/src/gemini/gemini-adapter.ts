@@ -86,11 +86,19 @@ function generateSettingsJson(): string {
   return JSON.stringify(settings, null, 2) + "\n";
 }
 
+function yamlQuote(value: string): string {
+  // Quote if value contains YAML-significant characters
+  if (/[:#{}&*!|>'"%@`\n]/.test(value) || value !== value.trim()) {
+    return JSON.stringify(value);
+  }
+  return value;
+}
+
 function generateAgentFile(role: AgentRole): string {
   const lines: string[] = [
     "---",
     `name: ${role.role_id}`,
-    `description: ${role.description}`,
+    `description: ${yamlQuote(role.description)}`,
   ];
 
   // Build single tools list (MCP tools + read-only file tools if applicable)
@@ -107,7 +115,10 @@ function generateAgentFile(role: AgentRole): string {
     }
   }
 
-  if (role.model_preferences.reasoning_depth === "high") {
+  const suggestedModel = role.model_preferences?.suggested_models?.gemini?.trim();
+  if (suggestedModel) {
+    lines.push(`model: ${suggestedModel}`);
+  } else if (role.model_preferences.reasoning_depth === "high") {
     lines.push("model: gemini-2.5-pro");
   }
 
