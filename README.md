@@ -2,6 +2,11 @@
 
 An MCP server that gives AI coding agents architectural awareness. It bridges arc42 documentation, structured planning, and code-level intelligence into a single queryable interface.
 
+> **Early Access** — ArcBridge is under active development. The core features are stable and used in production, but APIs and templates may change between minor versions. We welcome feedback via [issues](https://github.com/bifteki-crew/arcbridge/issues).
+
+[![npm version](https://img.shields.io/npm/v/@arcbridge/mcp-server)](https://www.npmjs.com/package/@arcbridge/mcp-server)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ## Why
 
 The biggest waste in AI-assisted development isn't token cost — it's the agent lacking *intent* about the system architecture and the developer lacking *visibility* into how architectural decisions accumulate. ArcBridge fixes both by:
@@ -45,7 +50,10 @@ When you run `arcbridge_init_project`, it creates:
     └── ux-reviewer.md             # Only for UI templates (nextjs-app-router, react-vite)
 ```
 
-Plus platform-specific configs (`CLAUDE.md`, `.claude/agents/`, `.github/copilot-instructions.md`, `.github/agents/`).
+Plus platform-specific configs:
+- **Claude Code:** `CLAUDE.md`, `.claude/agents/`, `.mcp.json`
+- **GitHub Copilot:** `.github/copilot-instructions.md`, `.github/agents/`
+- **Codex CLI:** `AGENTS.md`, `.agents/skills/`
 
 ## Quick Start
 
