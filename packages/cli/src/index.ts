@@ -35,8 +35,8 @@ Options:
 
 Init options:
   --name <name>      Project name (default: auto-detect from package.json)
-  --template <type>  Project template: nextjs-app-router, react-vite, api-service, dotnet-webapi
-  --platform <name>  Target platform (can be repeated, default: claude)
+  --template <type>  Project template: nextjs-app-router, react-vite, api-service, dotnet-webapi, unity-game
+  --platform <name>  Target platform: claude, copilot, codex (can be repeated, default: claude)
   --spec <file>      Path to a requirements/spec file to include
 `;
 
