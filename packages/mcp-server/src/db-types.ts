@@ -1,10 +1,11 @@
 /**
  * Shared database row type interfaces for MCP tool queries.
  *
- * These types represent the full column set from each table.
- * Tools SELECT a subset of columns and cast to these types —
- * unselected fields will be undefined at runtime, which is fine
- * since tools only access fields they selected.
+ * These types model common columns used by MCP tools, not
+ * necessarily the full schema for each underlying table.
+ * Tools may SELECT only a subset of these columns and cast to
+ * these interfaces; any unselected fields will be undefined at
+ * runtime, so callers must only access fields they actually selected.
  */
 
 /** Phase row from the `phases` table */
@@ -29,6 +30,7 @@ export interface TaskRow {
   building_block: string | null;
   quality_scenarios: string;
   acceptance_criteria: string;
+  created_at: string;
   completed_at: string | null;
 }
 
@@ -59,6 +61,7 @@ export interface ScenarioRow {
   linked_code: string;
   linked_blocks: string;
   verification: string;
+  last_checked: string | null;
 }
 
 /** ADR row from the `adrs` table */
@@ -73,6 +76,7 @@ export interface AdrRow {
   affected_blocks: string;
   affected_files: string;
   quality_scenarios: string;
+  superseded_by: string | null;
 }
 
 /** Symbol row from the `symbols` table */
@@ -91,8 +95,9 @@ export interface SymbolRow {
   doc_comment: string | null;
   is_exported: number;
   is_async: number;
+  language: string;
   service: string;
-  content_hash: string;
+  content_hash: string | null;
   indexed_at: string;
 }
 
