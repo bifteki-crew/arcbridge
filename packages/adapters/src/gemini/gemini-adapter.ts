@@ -4,6 +4,28 @@ import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
 import type { PlatformAdapter } from "../types.js";
 import { generateSkills } from "../shared/skills.js";
 
+const MARKER = "<!-- arcbridge-generated -->";
+
+/** Write content to a file with marker-based merge (preserves user content above marker) */
+function writeWithMarkerMerge(filePath: string, content: string): void {
+  if (existsSync(filePath)) {
+    const existing = readFileSync(filePath, "utf-8");
+    const markerIndex = existing.indexOf(MARKER);
+
+    if (markerIndex >= 0) {
+      const userContent = existing.slice(0, markerIndex).trimEnd();
+      const prefix = userContent ? `${userContent}\n\n` : "";
+      writeFileSync(filePath, `${prefix}${MARKER}\n\n${content}`, "utf-8");
+    } else {
+      const existingTrimmed = existing.trimEnd();
+      const prefix = existingTrimmed ? `${existingTrimmed}\n\n` : "";
+      writeFileSync(filePath, `${prefix}${MARKER}\n\n${content}`, "utf-8");
+    }
+  } else {
+    writeFileSync(filePath, `${MARKER}\n\n${content}`, "utf-8");
+  }
+}
+
 function generateStyleguide(config: ArcBridgeConfig): string {
   const lines: string[] = [
     `# ${config.project_name}`,
@@ -118,7 +140,7 @@ function generateAgentFile(role: AgentRole): string {
 
   const suggestedModel = role.model_preferences?.suggested_models?.gemini?.trim();
   if (suggestedModel) {
-    lines.push(`model: ${suggestedModel}`);
+    lines.push(`model: ${yamlQuote(suggestedModel)}`);
   } else if (role.model_preferences.reasoning_depth === "high") {
     lines.push("model: gemini-2.5-pro");
   }
@@ -159,46 +181,10 @@ export class GeminiAdapter implements PlatformAdapter {
       }
     }
 
-    // Generate .gemini/styleguide.md
+    // Generate .gemini/styleguide.md and GEMINI.md (same content)
     const styleguideContent = generateStyleguide(config);
-    const styleguidePath = join(geminiDir, "styleguide.md");
-    const marker = "<!-- arcbridge-generated -->";
-
-    if (existsSync(styleguidePath)) {
-      const existing = readFileSync(styleguidePath, "utf-8");
-      const markerIndex = existing.indexOf(marker);
-
-      if (markerIndex >= 0) {
-        const userContent = existing.slice(0, markerIndex).trimEnd();
-        const prefix = userContent ? `${userContent}\n\n` : "";
-        writeFileSync(styleguidePath, `${prefix}${marker}\n\n${styleguideContent}`, "utf-8");
-      } else {
-        const existingTrimmed = existing.trimEnd();
-        const prefix = existingTrimmed ? `${existingTrimmed}\n\n` : "";
-        writeFileSync(styleguidePath, `${prefix}${marker}\n\n${styleguideContent}`, "utf-8");
-      }
-    } else {
-      writeFileSync(styleguidePath, `${marker}\n\n${styleguideContent}`, "utf-8");
-    }
-
-    // Generate GEMINI.md (for Gemini CLI — same content as styleguide)
-    const geminiMdPath = join(targetDir, "GEMINI.md");
-    if (existsSync(geminiMdPath)) {
-      const existing = readFileSync(geminiMdPath, "utf-8");
-      const markerIndex = existing.indexOf(marker);
-
-      if (markerIndex >= 0) {
-        const userContent = existing.slice(0, markerIndex).trimEnd();
-        const prefix = userContent ? `${userContent}\n\n` : "";
-        writeFileSync(geminiMdPath, `${prefix}${marker}\n\n${styleguideContent}`, "utf-8");
-      } else {
-        const existingTrimmed = existing.trimEnd();
-        const prefix = existingTrimmed ? `${existingTrimmed}\n\n` : "";
-        writeFileSync(geminiMdPath, `${prefix}${marker}\n\n${styleguideContent}`, "utf-8");
-      }
-    } else {
-      writeFileSync(geminiMdPath, `${marker}\n\n${styleguideContent}`, "utf-8");
-    }
+    writeWithMarkerMerge(join(geminiDir, "styleguide.md"), styleguideContent);
+    writeWithMarkerMerge(join(targetDir, "GEMINI.md"), styleguideContent);
   }
 
   generateAgentConfigs(targetDir: string, roles: AgentRole[]): void {
