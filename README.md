@@ -54,6 +54,7 @@ Plus platform-specific configs:
 - **Claude Code:** `CLAUDE.md`, `.claude/agents/`, `.mcp.json`
 - **GitHub Copilot:** `.github/copilot-instructions.md`, `.github/agents/`
 - **Codex CLI:** `AGENTS.md`, `.agents/skills/`
+- **Gemini:** `.gemini/settings.json`, `.gemini/styleguide.md`, `.gemini/agents/`, `GEMINI.md`
 
 ## Quick Start
 
@@ -85,6 +86,8 @@ Then connect the MCP server to your AI agent:
 command = "npx"
 args = ["-y", "@arcbridge/mcp-server"]
 ```
+
+**Gemini** — runs automatically when `--platform gemini` is passed during init. Creates `.gemini/settings.json` with MCP config, `.gemini/styleguide.md` for project instructions, and `.gemini/agents/` for role-based subagents.
 
 Restart your AI agent — approve the MCP server when prompted, and all 34 architecture tools become available.
 
