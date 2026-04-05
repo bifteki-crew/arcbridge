@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.1 (2026-04-05)
+
+### New Features
+
+- **Extensible quality categories** — quality categories are no longer restricted to a hardcoded 5-item enum. Any lowercase kebab-case string is now accepted, enabling ISO 25010 categories (`usability`, `portability`, `compatibility`) and custom ones (`data-integrity`, `compliance`, `auditability`) without schema changes.
+
+### Refactoring
+
+- **Shared DB row types** — extracted `PhaseRow`, `TaskRow`, `BlockRow`, `ScenarioRow`, `AdrRow`, `SymbolRow`, `CountRow` into `packages/mcp-server/src/db-types.ts`. Updated 20 tool files, eliminating 250+ lines of duplicated interface declarations.
+- **YAML reader helpers** — extracted `readTaskFile()` and `readPhasesFile()` in `yaml-writer.ts`, eliminating 6x duplication of the read-parse-validate pattern. Helpers return discriminated errors (`"not-found"` vs `"invalid"`) to preserve specific warning messages.
+
+### Docs
+
+- README arc42 directory listing now includes all sections (02-constraints, 04-solution-strategy, 08-crosscutting)
+
+### Stats
+
+- 34 MCP tools, 409 tests passing, 0 lint errors, 0 type errors
+
 ## 0.3.0 (2026-04-01)
 
 ### New Features
