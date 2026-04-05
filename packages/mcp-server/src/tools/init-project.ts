@@ -13,6 +13,7 @@ import {
   loadConfig,
   type InitProjectInput,
   QualityCategorySchema,
+  QUALITY_PRIORITIES_DESCRIPTION,
 } from "@arcbridge/core";
 import { getAdapter } from "@arcbridge/adapters";
 import type { ServerContext } from "../context.js";
@@ -44,11 +45,7 @@ export function registerInitProject(
       quality_priorities: z
         .array(QualityCategorySchema)
         .default(["security", "performance", "accessibility", "maintainability"])
-        .describe(
-          "Quality priorities in order. Common: security, performance, accessibility, " +
-          "reliability, maintainability, usability, portability, compatibility. " +
-          "Custom categories like data-integrity or compliance are also supported.",
-        ),
+        .describe(QUALITY_PRIORITIES_DESCRIPTION),
       platforms: z
         .array(z.string())
         .default(["claude"])

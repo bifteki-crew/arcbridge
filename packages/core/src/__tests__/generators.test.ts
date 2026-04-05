@@ -11,7 +11,7 @@ import { generatePlan } from "../generators/plan-generator.js";
 import { generateAgentRoles } from "../generators/agent-generator.js";
 import { generateDatabase } from "../generators/db-generator.js";
 import { ArcBridgeConfigSchema } from "../schemas/config.js";
-import { QualityScenariosFileSchema } from "../schemas/quality-scenarios.js";
+import { QualityScenariosFileSchema, QualityCategorySchema } from "../schemas/quality-scenarios.js";
 import { BuildingBlocksFrontmatterSchema } from "../schemas/building-blocks.js";
 import { PhasesFileSchema } from "../schemas/phases.js";
 
@@ -97,6 +97,29 @@ describe("generateArc42", () => {
 
     expect(validated.scenarios.length).toBeGreaterThan(0);
     expect(validated.quality_goals.length).toBe(3);
+  });
+});
+
+describe("QualityCategorySchema", () => {
+  it("accepts built-in categories", () => {
+    expect(QualityCategorySchema.parse("security")).toBe("security");
+    expect(QualityCategorySchema.parse("performance")).toBe("performance");
+    expect(QualityCategorySchema.parse("maintainability")).toBe("maintainability");
+  });
+
+  it("accepts custom kebab-case categories", () => {
+    expect(QualityCategorySchema.parse("data-integrity")).toBe("data-integrity");
+    expect(QualityCategorySchema.parse("compliance")).toBe("compliance");
+    expect(QualityCategorySchema.parse("auditability")).toBe("auditability");
+  });
+
+  it("rejects invalid formats", () => {
+    expect(() => QualityCategorySchema.parse("SECURITY")).toThrow();
+    expect(() => QualityCategorySchema.parse("data_integrity")).toThrow();
+    expect(() => QualityCategorySchema.parse("security-")).toThrow();
+    expect(() => QualityCategorySchema.parse("-security")).toThrow();
+    expect(() => QualityCategorySchema.parse("data--integrity")).toThrow();
+    expect(() => QualityCategorySchema.parse("")).toThrow();
   });
 });
 

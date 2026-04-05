@@ -9,8 +9,13 @@ import { z } from "zod";
  */
 export const QualityCategorySchema = z
   .string()
-  .min(1)
   .regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/, "Must be lowercase kebab-case (e.g., 'security', 'data-integrity')");
+
+/** Description for quality_priorities fields — reused in config schema and MCP tools */
+export const QUALITY_PRIORITIES_DESCRIPTION =
+  "Quality priorities in order. Common: security, performance, accessibility, " +
+  "reliability, maintainability, usability, portability, compatibility. " +
+  "Custom categories like data-integrity or compliance are also supported.";
 
 export const QualityPrioritySchema = z.enum(["must", "should", "could"]);
 
