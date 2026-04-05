@@ -188,8 +188,8 @@ describe("GeminiAdapter", () => {
       expect(existsSync(join(tempDir, ".agents", "skills", "arcbridge-review", "SKILL.md"))).toBe(true);
     });
 
-    it("regenerates all skills when any skill is missing", () => {
-      // Only sync exists — review is missing, so both get (re)generated
+    it("generates only missing skills and preserves existing ones", () => {
+      // Only sync exists — review should be generated, sync preserved
       const syncDir = join(tempDir, ".agents", "skills", "arcbridge-sync");
       mkdirSync(syncDir, { recursive: true });
       writeFileSync(join(syncDir, "SKILL.md"), "existing sync", "utf-8");
@@ -197,8 +197,8 @@ describe("GeminiAdapter", () => {
       adapter.generateAgentConfigs(tempDir, TEST_ROLES);
 
       expect(existsSync(join(tempDir, ".agents", "skills", "arcbridge-review", "SKILL.md"))).toBe(true);
-      // Sync was regenerated (generateSkills writes both)
-      expect(readFileSync(join(syncDir, "SKILL.md"), "utf-8")).not.toBe("existing sync");
+      // Existing sync skill is preserved
+      expect(readFileSync(join(syncDir, "SKILL.md"), "utf-8")).toBe("existing sync");
     });
 
     it("does not overwrite skills if already present", () => {
