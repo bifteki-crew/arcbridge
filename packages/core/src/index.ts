@@ -9,6 +9,7 @@ export {
   QualityScenarioStatusSchema,
   QualityScenariosFileSchema,
   QualityCategorySchema,
+  QUALITY_PRIORITIES_DESCRIPTION,
   QualityPrioritySchema,
   type QualityScenario,
   type QualityScenariosFile,

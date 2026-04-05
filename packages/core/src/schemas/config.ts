@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { QualityCategorySchema, QUALITY_PRIORITIES_DESCRIPTION } from "./quality-scenarios.js";
 
 export const ServiceSchema = z.object({
   name: z.string().min(1),
@@ -28,16 +29,9 @@ export const ArcBridgeConfigSchema = z.object({
     .default(["claude"]),
 
   quality_priorities: z
-    .array(
-      z.enum([
-        "security",
-        "performance",
-        "accessibility",
-        "reliability",
-        "maintainability",
-      ]),
-    )
-    .default(["security", "performance", "accessibility"]),
+    .array(QualityCategorySchema)
+    .default(["security", "performance", "accessibility"])
+    .describe(QUALITY_PRIORITIES_DESCRIPTION),
 
   indexing: z
     .object({
