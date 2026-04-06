@@ -212,11 +212,12 @@ function indexTypeScriptProject(
   writeDependencies(db, allDeps);
 
   // 8. Analyze React components (populates components table)
-  // Client-only frameworks (react-vite) have no server component concept
+  // Client-only frameworks have no server component concept — all components are client
+  const CLIENT_ONLY_TEMPLATES = new Set(["react-vite"]);
   const projectType = (
     db.prepare("SELECT value FROM arcbridge_meta WHERE key = 'project_type'").get() as { value: string } | undefined
   )?.value;
-  const allClient = projectType === "react-vite";
+  const allClient = projectType ? CLIENT_ONLY_TEMPLATES.has(projectType) : false;
   const componentsAnalyzed = analyzeComponents(sourceFiles, checker, projectRoot, db, allClient);
 
   // 9. Analyze Next.js routes (populates routes table)

@@ -48,6 +48,7 @@ export function registerGetPhasePlan(
         conditions.push("status = ?");
         queryParams.push(params.status);
       }
+      // Explicit status filter takes precedence over include_completed
       if (!params.include_completed && !params.status) {
         conditions.push("status != 'complete'");
       }
@@ -70,13 +71,13 @@ export function registerGetPhasePlan(
         };
       }
 
-      // Count total for context
-      const totalPhases = (
-        db.prepare("SELECT COUNT(*) as count FROM phases").get() as { count: number }
-      ).count;
-
       const lines: string[] = [];
-      if (phases.length < totalPhases) {
+
+      // Only show "X of Y" when filters are active
+      if (conditions.length > 0) {
+        const totalPhases = (
+          db.prepare("SELECT COUNT(*) as count FROM phases").get() as { count: number }
+        ).count;
         lines.push(`# Phase Plan (${phases.length} of ${totalPhases} phases)`, "");
       } else {
         lines.push("# Phase Plan", "");

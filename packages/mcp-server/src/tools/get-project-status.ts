@@ -36,29 +36,16 @@ export function registerGetProjectStatus(
       refreshFromDocs(db, params.target_dir);
 
       // Project name
-      const projectName = (
-        db
-          .prepare(
-            "SELECT value FROM arcbridge_meta WHERE key = 'project_name'",
-          )
-          .get() as MetaRow | undefined
-      )?.value ?? "Unknown";
-
-      const projectType = (
-        db
-          .prepare(
-            "SELECT value FROM arcbridge_meta WHERE key = 'project_type'",
-          )
-          .get() as MetaRow | undefined
-      )?.value;
-
-      const platforms = (
-        db
-          .prepare(
-            "SELECT value FROM arcbridge_meta WHERE key = 'platforms'",
-          )
-          .get() as MetaRow | undefined
-      )?.value;
+      // Fetch all meta values in a single query
+      const metaRows = db
+        .prepare(
+          "SELECT key, value FROM arcbridge_meta WHERE key IN ('project_name', 'project_type', 'platforms')",
+        )
+        .all() as { key: string; value: string }[];
+      const meta = Object.fromEntries(metaRows.map((r) => [r.key, r.value]));
+      const projectName = meta.project_name ?? "Unknown";
+      const projectType = meta.project_type;
+      const platforms = meta.platforms;
 
       // Phases
       const phases = db
