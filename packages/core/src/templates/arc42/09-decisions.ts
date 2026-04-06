@@ -162,6 +162,10 @@ Use Angular with standalone components (default since Angular v17). Use the sign
 - **Positive:** Opinionated structure reduces architectural decision fatigue
 - **Negative:** Steeper learning curve compared to lighter frameworks
 - **Negative:** Larger initial bundle size (mitigated by lazy loading)
+
+## Current Limitations
+
+The TypeScript indexer fully indexes Angular symbols, dependencies, and services. However, **Angular-specific component graph analysis** (decorator metadata, template selector usage, parent/child component hierarchy) is not yet implemented. The \`arcbridge_get_component_graph\` tool works for React but returns empty for Angular projects. If your team needs component relationship tracking, let us know — it's a planned enhancement.
 `,
   };
 }
