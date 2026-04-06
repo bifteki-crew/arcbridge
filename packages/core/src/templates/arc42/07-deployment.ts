@@ -38,7 +38,7 @@ ${input.template === "angular-app" ? `| Platform | Description | Notes |
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| \`${input.template === "dotnet-webapi" ? "ASPNETCORE_ENVIRONMENT" : input.template === "unity-game" ? "UNITY_TARGET_PLATFORM" : input.template === "angular-app" ? "NG_ENV" : "NODE_ENV"}\` | ${input.template === "unity-game" ? "Build target platform" : "Runtime environment"} | Yes |
+| \`${input.template === "dotnet-webapi" ? "ASPNETCORE_ENVIRONMENT" : input.template === "unity-game" ? "UNITY_TARGET_PLATFORM" : "NODE_ENV"}\` | ${input.template === "unity-game" ? "Build target platform" : "Runtime environment"} | Yes |
 | *Add your environment variables here* | | |
 `,
   };

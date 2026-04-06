@@ -81,10 +81,14 @@ function detectProjectInfo(projectRoot: string): DetectedInfo {
   if (existsSync(join(projectRoot, "angular.json"))) {
     try {
       const angularJson = JSON.parse(readFileSync(join(projectRoot, "angular.json"), "utf-8")) as {
+        defaultProject?: string;
         projects?: Record<string, unknown>;
       };
       const projectNames = Object.keys(angularJson.projects ?? {});
-      if (projectNames.length > 0) {
+      if (angularJson.defaultProject && projectNames.includes(angularJson.defaultProject)) {
+        name = angularJson.defaultProject;
+        nameSource = "angular.json defaultProject";
+      } else if (projectNames.length > 0) {
         name = projectNames[0]!;
         nameSource = "angular.json";
       }

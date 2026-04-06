@@ -29,7 +29,7 @@ export function phasePlanTemplate(_input: InitProjectInput): PhasesFile {
         "At least one lazy-loaded feature route",
         "HTTP interceptor for API calls",
         "Shared component library started",
-        "Quality scenarios PERF-05, SEC-01 verified",
+        "Quality scenario PERF-05 (lazy loading) verified",
       ],
     },
     {

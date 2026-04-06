@@ -234,7 +234,8 @@ export function analyzeComponents(
 
         if (componentDecorator && ts.isCallExpression(componentDecorator.expression)) {
           const name = node.name.text;
-          const symbolId = `${relPath}::${name}#component`;
+          // Align with TypeScript symbol extractor which indexes classes as #class
+          const symbolId = `${relPath}::${name}#class`;
 
           // Extract selector from @Component metadata
           let propsType: string | null = null;

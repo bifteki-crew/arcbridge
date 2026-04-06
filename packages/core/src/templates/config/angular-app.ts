@@ -6,7 +6,7 @@ export function configTemplate(input: InitProjectInput): ArcBridgeConfig {
     schema_version: 1,
     project_name: input.name,
     project_type: input.template,
-    services: [{ name: "app", path: ".", type: "angular" as const }],
+    services: [{ name: "main", path: ".", type: "angular" as const }],
     platforms: input.platforms as ArcBridgeConfig["platforms"],
     quality_priorities:
       input.quality_priorities as ArcBridgeConfig["quality_priorities"],
