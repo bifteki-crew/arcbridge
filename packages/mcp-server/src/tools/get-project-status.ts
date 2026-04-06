@@ -44,6 +44,22 @@ export function registerGetProjectStatus(
           .get() as MetaRow | undefined
       )?.value ?? "Unknown";
 
+      const projectType = (
+        db
+          .prepare(
+            "SELECT value FROM arcbridge_meta WHERE key = 'project_type'",
+          )
+          .get() as MetaRow | undefined
+      )?.value;
+
+      const platforms = (
+        db
+          .prepare(
+            "SELECT value FROM arcbridge_meta WHERE key = 'platforms'",
+          )
+          .get() as MetaRow | undefined
+      )?.value;
+
       // Phases
       const phases = db
         .prepare(
@@ -112,6 +128,19 @@ export function registerGetProjectStatus(
       const lines: string[] = [
         `# Project Status: ${projectName}`,
         "",
+      ];
+
+      if (projectType) {
+        lines.push(`**Template:** ${projectType}`);
+      }
+      if (platforms) {
+        lines.push(`**Platforms:** ${platforms}`);
+      }
+      if (projectType || platforms) {
+        lines.push("");
+      }
+
+      lines.push(
         "## Current Phase",
         "",
         currentPhase
@@ -142,7 +171,7 @@ export function registerGetProjectStatus(
             `- ${s.status === "passing" ? "pass" : s.status === "failing" ? "FAIL" : s.status === "partial" ? "partial" : "untested"} ${s.id}: ${s.name} [${s.category}] (${s.priority})`,
         ),
         "",
-      ];
+      );
 
       // Code intelligence section
       lines.push("## Code Intelligence", "");

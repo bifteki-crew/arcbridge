@@ -18,6 +18,7 @@ export function architectTemplate(): AgentRole {
       "arcbridge_get_route_map",
       "arcbridge_get_boundary_analysis",
       "arcbridge_propose_arc42_update",
+      "arcbridge_update_arc42_section",
       "arcbridge_check_drift",
       "arcbridge_get_open_questions",
     ],

@@ -49,7 +49,7 @@ export function registerInitProject(
       platforms: z
         .array(z.string())
         .default(["claude"])
-        .describe("Target platforms for agent config generation"),
+        .describe("Target platforms: claude, copilot, codex, gemini. Generates platform-specific instruction files and agent configs."),
       target_dir: z
         .string()
         .describe("Absolute path to the target project directory"),

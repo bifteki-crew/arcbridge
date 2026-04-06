@@ -387,6 +387,7 @@ export function generateDatabase(
   );
   upsert.run("project_name", input.name);
   upsert.run("project_type", input.template);
+  upsert.run("platforms", input.platforms.join(", "));
   upsert.run("last_full_index", new Date().toISOString());
 
   // Populate from generated files
