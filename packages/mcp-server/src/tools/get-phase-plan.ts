@@ -48,8 +48,8 @@ export function registerGetPhasePlan(
         conditions.push("status = ?");
         queryParams.push(params.status);
       }
-      // Explicit status filter takes precedence over include_completed
-      if (!params.include_completed && !params.status) {
+      // Explicit status/phase_id filters take precedence over include_completed
+      if (!params.include_completed && !params.status && !params.phase_id) {
         conditions.push("status != 'complete'");
       }
 
