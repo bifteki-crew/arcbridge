@@ -46,7 +46,7 @@ export async function generateConfigs(
   }
 
   // Determine platforms from config
-  const platforms = config.platforms ?? ["claude", "copilot"];
+  const platforms = config.platforms ?? ["claude"];
   const generatedPlatforms: string[] = [];
 
   for (const platform of platforms) {
