@@ -54,7 +54,7 @@ Plus platform-specific configs:
 - **Claude Code:** `CLAUDE.md`, `.claude/agents/`, `.mcp.json`
 - **GitHub Copilot:** `.github/copilot-instructions.md`, `.github/agents/`
 - **Codex CLI:** `AGENTS.md`, `.agents/skills/`
-- **Gemini:** `.gemini/settings.json`, `.gemini/styleguide.md`, `.gemini/agents/`, `GEMINI.md`
+- **Gemini:** `.gemini/settings.json`, `.gemini/styleguide.md`, `.gemini/agents/`, `GEMINI.md`, `.agents/skills/`
 
 ## Quick Start
 
