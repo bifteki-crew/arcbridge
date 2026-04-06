@@ -11,11 +11,15 @@ export function registerGetCurrentTasks(
 ): void {
   server.tool(
     "arcbridge_get_current_tasks",
-    "Get tasks for the current phase (in-progress, or first planned if none is in-progress), with their building blocks, quality scenarios, and acceptance criteria.",
+    "Get tasks for a phase. Defaults to the current phase (in-progress, or first planned). Pass phase_id to get tasks for a specific phase.",
     {
       target_dir: z
         .string()
         .describe("Absolute path to the project directory"),
+      phase_id: z
+        .string()
+        .optional()
+        .describe("Get tasks for a specific phase by ID (default: current/first planned phase)"),
       status: z
         .enum(["todo", "in-progress", "done", "blocked"])
         .optional()
@@ -28,31 +32,48 @@ export function registerGetCurrentTasks(
       // Refresh DB from docs to pick up any YAML edits
       refreshFromDocs(db, params.target_dir);
 
-      // Find current phase (in-progress first, fall back to first planned)
-      let currentPhase = db
-        .prepare(
-          "SELECT id, name FROM phases WHERE status = 'in-progress' ORDER BY phase_number LIMIT 1",
-        )
-        .get() as PhaseRow | undefined;
+      // Find phase: explicit phase_id, or current in-progress, or first planned
+      let currentPhase: PhaseRow | undefined;
 
-      if (!currentPhase) {
-        // No in-progress phase — show first planned phase so agents can start it
+      if (params.phase_id) {
+        currentPhase = db
+          .prepare("SELECT id, name FROM phases WHERE id = ?")
+          .get(params.phase_id) as PhaseRow | undefined;
+        if (!currentPhase) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Phase '${params.phase_id}' not found. Use \`arcbridge_get_phase_plan\` to see all phases.`,
+              },
+            ],
+          };
+        }
+      } else {
         currentPhase = db
           .prepare(
-            "SELECT id, name FROM phases WHERE status = 'planned' ORDER BY phase_number LIMIT 1",
+            "SELECT id, name FROM phases WHERE status = 'in-progress' ORDER BY phase_number LIMIT 1",
           )
           .get() as PhaseRow | undefined;
-      }
 
-      if (!currentPhase) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: "No active or planned phases found. Use `arcbridge_get_phase_plan` to see all phases.",
-            },
-          ],
-        };
+        if (!currentPhase) {
+          currentPhase = db
+            .prepare(
+              "SELECT id, name FROM phases WHERE status = 'planned' ORDER BY phase_number LIMIT 1",
+            )
+            .get() as PhaseRow | undefined;
+        }
+
+        if (!currentPhase) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: "No active or planned phases found. Use `arcbridge_get_phase_plan` to see all phases.",
+              },
+            ],
+          };
+        }
       }
 
       let query =

@@ -11,11 +11,23 @@ export function registerGetPhasePlan(
 ): void {
   server.tool(
     "arcbridge_get_phase_plan",
-    "Get the complete phase plan with all phases, their tasks, status, and gate requirements.",
+    "Get the phase plan with phases, tasks, status, and gate requirements. Use filters to reduce output for large projects.",
     {
       target_dir: z
         .string()
         .describe("Absolute path to the project directory"),
+      phase_id: z
+        .string()
+        .optional()
+        .describe("Show only a specific phase by ID"),
+      status: z
+        .enum(["planned", "in-progress", "complete", "blocked"])
+        .optional()
+        .describe("Filter phases by status"),
+      include_completed: z
+        .boolean()
+        .default(true)
+        .describe("Include completed phases (default: true). Set to false to hide completed phases and reduce output."),
     },
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
@@ -24,21 +36,51 @@ export function registerGetPhasePlan(
       // Refresh DB from docs to pick up any YAML edits
       refreshFromDocs(db, params.target_dir);
 
-      const phases = db
-        .prepare(
-          "SELECT id, name, phase_number, status, description, gate_status, started_at, completed_at FROM phases ORDER BY phase_number",
-        )
-        .all() as PhaseRow[];
+      let query = "SELECT id, name, phase_number, status, description, gate_status, started_at, completed_at FROM phases";
+      const conditions: string[] = [];
+      const queryParams: string[] = [];
+
+      if (params.phase_id) {
+        conditions.push("id = ?");
+        queryParams.push(params.phase_id);
+      }
+      if (params.status) {
+        conditions.push("status = ?");
+        queryParams.push(params.status);
+      }
+      if (!params.include_completed && !params.status) {
+        conditions.push("status != 'complete'");
+      }
+
+      if (conditions.length > 0) {
+        query += " WHERE " + conditions.join(" AND ");
+      }
+      query += " ORDER BY phase_number";
+
+      const phases = db.prepare(query).all(...queryParams) as PhaseRow[];
 
       if (phases.length === 0) {
+        const hint = params.phase_id
+          ? `Phase '${params.phase_id}' not found.`
+          : params.status
+            ? `No phases with status '${params.status}'.`
+            : "No phases defined yet.";
         return {
-          content: [
-            { type: "text" as const, text: "No phases defined yet." },
-          ],
+          content: [{ type: "text" as const, text: hint }],
         };
       }
 
-      const lines: string[] = ["# Phase Plan", ""];
+      // Count total for context
+      const totalPhases = (
+        db.prepare("SELECT COUNT(*) as count FROM phases").get() as { count: number }
+      ).count;
+
+      const lines: string[] = [];
+      if (phases.length < totalPhases) {
+        lines.push(`# Phase Plan (${phases.length} of ${totalPhases} phases)`, "");
+      } else {
+        lines.push("# Phase Plan", "");
+      }
 
       for (const phase of phases) {
         const icon =
