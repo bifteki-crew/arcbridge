@@ -9,7 +9,7 @@
     <PackAsTool>true</PackAsTool>
     <PackageId>arcbridge-dotnet-indexer</PackageId>
     <ToolCommandName>arcbridge-dotnet-indexer</ToolCommandName>
-    <VersionPrefix>0.3.1</VersionPrefix>
+    <VersionPrefix>0.3.2</VersionPrefix>
     <Authors>bifteki-crew</Authors>
     <Description>Roslyn-based C# indexer for ArcBridge — deep semantic analysis for .NET projects</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
