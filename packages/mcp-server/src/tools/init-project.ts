@@ -47,9 +47,9 @@ export function registerInitProject(
         .default(["security", "performance", "accessibility", "maintainability"])
         .describe(QUALITY_PRIORITIES_DESCRIPTION),
       platforms: z
-        .array(z.string())
+        .array(z.enum(["claude", "copilot", "codex", "gemini"]))
         .default(["claude"])
-        .describe("Target platforms: claude, copilot, codex, gemini. Generates platform-specific instruction files and agent configs."),
+        .describe("Target platforms. Generates platform-specific instruction files and agent configs."),
       target_dir: z
         .string()
         .describe("Absolute path to the target project directory"),

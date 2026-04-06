@@ -135,8 +135,6 @@ function getPropsType(
 
 /**
  * Extract component information from source files and populate the components table.
- */
-/**
  * @param allClient - When true, all components are treated as client-side
  *   (e.g., react-vite where there's no server component concept).
  */
