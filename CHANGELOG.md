@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.3 (2026-04-06)
+
+### New Features
+
+- **Phase filtering** — `arcbridge_get_phase_plan` now accepts `phase_id`, `status`, and `include_completed` params to reduce output for large projects. `arcbridge_get_current_tasks` accepts `phase_id` to target a specific phase.
+- **React-vite component graph** — all Vite components are now correctly marked `is_client=1` since there's no server component concept. The `client_only` filter on `get_component_graph` now works for react-vite projects.
+
+### Improvements
+
+- **Architect role** — added `update_arc42_section` to required tools
+- **Init tool** — platforms param validates against `z.enum()` matching config schema (rejects invalid platforms at input)
+- **`get_project_status`** — shows template and platforms, consolidated 3 meta queries into 1
+- **CI workflows** — `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` on all workflows (suppresses Node.js 20 deprecation warnings)
+- **Client-only detection** — explicit `CLIENT_ONLY_TEMPLATES` set in indexer for extensibility
+- **`phase_id` exact lookup** — bypasses `include_completed` flag (fetching by ID always returns the phase)
+
+### Stats
+
+- 34 MCP tools, 432 tests passing, 0 lint errors, 0 type errors
+
 ## 0.3.2 (2026-04-06)
 
 ### New Features
