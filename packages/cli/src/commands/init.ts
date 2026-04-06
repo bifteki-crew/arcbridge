@@ -20,7 +20,7 @@ interface InitOptions {
   spec?: string;
 }
 
-type ProjectTemplate = "nextjs-app-router" | "react-vite" | "api-service" | "dotnet-webapi" | "unity-game";
+type ProjectTemplate = "nextjs-app-router" | "react-vite" | "api-service" | "dotnet-webapi" | "unity-game" | "angular-app";
 
 interface DetectedInfo {
   name: string;
@@ -37,6 +37,7 @@ const VALID_TEMPLATES: ProjectTemplate[] = [
   "api-service",
   "dotnet-webapi",
   "unity-game",
+  "angular-app",
 ];
 
 /**
@@ -73,6 +74,25 @@ function detectProjectInfo(projectRoot: string): DetectedInfo {
     nameSource = "directory name";
     template = "unity-game";
     templateSource = "detected (ProjectSettings/ + Assets/ found)";
+    return { name, template, nameSource, templateSource };
+  }
+
+  // Check for Angular project (angular.json is the definitive marker)
+  if (existsSync(join(projectRoot, "angular.json"))) {
+    try {
+      const angularJson = JSON.parse(readFileSync(join(projectRoot, "angular.json"), "utf-8")) as {
+        projects?: Record<string, unknown>;
+      };
+      const projectNames = Object.keys(angularJson.projects ?? {});
+      if (projectNames.length > 0) {
+        name = projectNames[0]!;
+        nameSource = "angular.json";
+      }
+    } catch {
+      // Ignore parse errors — use directory name
+    }
+    template = "angular-app";
+    templateSource = "detected (angular.json found)";
     return { name, template, nameSource, templateSource };
   }
 

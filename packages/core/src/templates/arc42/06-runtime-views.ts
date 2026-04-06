@@ -14,6 +14,12 @@ Client → HTTP Server → Middleware → Route Handler
                                   → Services
                                   → Database / External APIs
 \`\`\``;
+    case "angular-app":
+      return `\`\`\`
+Browser → Angular Router → Feature Component (lazy-loaded)
+                         → Services (DI)
+                         → HTTP Interceptors → API
+\`\`\``;
     case "unity-game":
       return `\`\`\`
 Input System → Player Controller → Gameplay Systems

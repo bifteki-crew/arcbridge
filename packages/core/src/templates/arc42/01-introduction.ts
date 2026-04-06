@@ -10,7 +10,7 @@ export function introductionTemplate(input: InitProjectInput): TemplateOutput {
 
 ## Requirements Overview
 
-${input.name} is a ${input.template === "nextjs-app-router" ? "Next.js application using the App Router" : input.template === "dotnet-webapi" ? "ASP.NET Core Web API" : input.template === "unity-game" ? "Unity game built with a code-heavy C# architecture" : "web application"}.
+${input.name} is a ${input.template === "nextjs-app-router" ? "Next.js application using the App Router" : input.template === "angular-app" ? "Angular application with standalone components" : input.template === "dotnet-webapi" ? "ASP.NET Core Web API" : input.template === "unity-game" ? "Unity game built with a code-heavy C# architecture" : "web application"}.
 
 ### Key Features
 

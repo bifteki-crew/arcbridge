@@ -17,6 +17,8 @@ export function firstAdrTemplate(input: InitProjectInput): AdrResult {
       return apiServiceAdr(input, now);
     case "unity-game":
       return unityAdr(input, now);
+    case "angular-app":
+      return angularAdr(input, now);
     default:
       return nextjsAdr(input, now);
   }
@@ -124,6 +126,42 @@ Use a Node.js HTTP framework (Express, Fastify, or Hono) as the API service foun
 - **Positive:** Easy to deploy to containers, serverless, or traditional hosts
 - **Negative:** Single-threaded — CPU-intensive operations need worker threads or external services
 - **Negative:** No built-in ORM — need to choose data access strategy
+`,
+  };
+}
+
+function angularAdr(input: InitProjectInput, date: string): AdrResult {
+  const { srcPrefix } = detectProjectLayout(input.projectRoot, input.template);
+
+  return {
+    filename: "001-angular-standalone.md",
+    frontmatter: {
+      id: "001-angular-standalone",
+      title: "Use Angular with Standalone Components",
+      status: "accepted",
+      date,
+      affected_blocks: ["app-shell", "feature-modules"],
+      affected_files: [srcPrefix || "./"],
+      quality_scenarios: [],
+    },
+    body: `# ADR-001: Use Angular with Standalone Components
+
+## Context
+
+${input.name} needs a modern, opinionated frontend framework with strong TypeScript support, dependency injection, and a structured approach to building large applications.
+
+## Decision
+
+Use Angular with standalone components (default since Angular v17). Use the signals API for reactive state management and functional guards/resolvers for routing.
+
+## Consequences
+
+- **Positive:** Strong TypeScript integration with decorators and DI
+- **Positive:** Standalone components simplify the module system and improve tree-shaking
+- **Positive:** Signals provide fine-grained reactivity without Zone.js overhead
+- **Positive:** Opinionated structure reduces architectural decision fatigue
+- **Negative:** Steeper learning curve compared to lighter frameworks
+- **Negative:** Larger initial bundle size (mitigated by lazy loading)
 `,
   };
 }

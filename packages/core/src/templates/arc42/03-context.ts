@@ -18,6 +18,10 @@ function techStack(template: string): string {
       return `- **Engine:** Unity
 - **Language:** C#
 - **Runtime:** Mono / IL2CPP`;
+    case "angular-app":
+      return `- **Framework:** Angular
+- **Language:** TypeScript
+- **Runtime:** Node.js (build) / Browser (runtime)`;
     default:
       return `- **Framework:** Next.js (App Router)
 - **Language:** TypeScript

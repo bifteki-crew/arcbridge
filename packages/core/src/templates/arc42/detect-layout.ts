@@ -67,6 +67,8 @@ function getEntrypoints(template: string, srcPrefix: string, appPrefix: string):
       return [`${srcPrefix}index.ts`, `${srcPrefix}app.ts`, `${srcPrefix}server.ts`];
     case "unity-game":
       return ["Assets/Scripts/Core/GameManager.cs"];
+    case "angular-app":
+      return [`${srcPrefix}main.ts`, `${srcPrefix}app/app.component.ts`, `${srcPrefix}app/app.routes.ts`];
     default:
       return [`${srcPrefix}index.ts`];
   }

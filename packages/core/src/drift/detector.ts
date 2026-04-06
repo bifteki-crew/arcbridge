@@ -61,6 +61,14 @@ const FRAMEWORK_IGNORES: Record<string, string[]> = {
   ],
   "react-vite": ["src/main.", "src/App.", "vite.config"],
   "api-service": ["src/index.", "src/app.", "src/server."],
+  "angular-app": [
+    ".angular/",
+    "src/environments/",
+    "src/main.ts",
+    "src/index.html",
+    "src/styles.",
+    "angular.json",
+  ],
   "dotnet-webapi": [
     "Program.", "Startup.",
     "bin/", "obj/",

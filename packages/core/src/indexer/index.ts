@@ -213,7 +213,7 @@ function indexTypeScriptProject(
 
   // 8. Analyze React components (populates components table)
   // Client-only frameworks have no server component concept — all components are client
-  const CLIENT_ONLY_TEMPLATES = new Set(["react-vite"]);
+  const CLIENT_ONLY_TEMPLATES = new Set(["react-vite", "angular-app"]);
   const projectType = (
     db.prepare("SELECT value FROM arcbridge_meta WHERE key = 'project_type'").get() as { value: string } | undefined
   )?.value;
