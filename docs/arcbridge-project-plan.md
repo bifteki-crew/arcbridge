@@ -902,14 +902,20 @@ get_boundary_analysis: {
 ### Planning & Task Tools
 
 ```
-# Get the phase plan
-get_phase_plan: {}
-→ Returns all phases with tasks, status, dependencies, estimates
+# Get the phase plan (supports filters to reduce output)
+get_phase_plan: {
+  "phase_id": "phase-1-foundation",  // optional — show single phase
+  "status": "in-progress",           // optional — filter by status
+  "include_completed": false          // optional — hide completed phases
+}
+→ Returns phases with tasks, status, gate requirements
 
-# Get tasks for current phase with context
-get_current_tasks: {}
+# Get tasks for current or specific phase
+get_current_tasks: {
+  "phase_id": "phase-2-features"  // optional — default: current/first planned phase
+}
 → Returns tasks with: description, acceptance criteria, relevant
-  building blocks, relevant quality scenarios, suggested file locations
+  building blocks, relevant quality scenarios
 
 # Update task status
 update_task: {

@@ -137,6 +137,36 @@ describe("phase plan queries", () => {
     expect(tasks.length).toBeGreaterThan(0);
     expect(tasks.every((t) => t.status === "todo")).toBe(true);
   });
+
+  it("filters phases by status", () => {
+    const planned = db
+      .prepare("SELECT id FROM phases WHERE status = 'planned'")
+      .all() as { id: string }[];
+
+    expect(planned.length).toBe(4); // All phases start as planned
+  });
+
+  it("filters phases by id", () => {
+    const phase = db
+      .prepare("SELECT id, name FROM phases WHERE id = 'phase-0-setup'")
+      .get() as { id: string; name: string } | undefined;
+
+    expect(phase).toBeDefined();
+    expect(phase!.name).toBe("Project Setup");
+  });
+
+  it("gets tasks for a specific phase by id", () => {
+    const phases = db
+      .prepare("SELECT id FROM phases ORDER BY phase_number")
+      .all() as { id: string }[];
+
+    // Phase 1 should have tasks too
+    const phase1Tasks = db
+      .prepare("SELECT id FROM tasks WHERE phase_id = ?")
+      .all(phases[1]!.id) as { id: string }[];
+
+    expect(phase1Tasks.length).toBeGreaterThan(0);
+  });
 });
 
 describe("task mutations", () => {
