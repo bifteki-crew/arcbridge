@@ -221,6 +221,79 @@ export function analyzeComponents(
           });
         }
       }
+
+      // Angular @Component class detection
+      if (ts.isClassDeclaration(node) && node.name && node.modifiers) {
+        const componentDecorator = node.modifiers.find(
+          (mod): mod is ts.Decorator =>
+            ts.isDecorator(mod) &&
+            ts.isCallExpression(mod.expression) &&
+            ts.isIdentifier(mod.expression.expression) &&
+            mod.expression.expression.text === "Component",
+        );
+
+        if (componentDecorator && ts.isCallExpression(componentDecorator.expression)) {
+          const name = node.name.text;
+          const symbolId = `${relPath}::${name}#component`;
+
+          // Extract selector from @Component metadata
+          let propsType: string | null = null;
+          const metaArg = componentDecorator.expression.arguments[0];
+          if (metaArg && ts.isObjectLiteralExpression(metaArg)) {
+            const selectorProp = metaArg.properties.find(
+              (p): p is ts.PropertyAssignment =>
+                ts.isPropertyAssignment(p) &&
+                ts.isIdentifier(p.name) &&
+                p.name.text === "selector",
+            );
+            if (selectorProp && ts.isStringLiteral(selectorProp.initializer)) {
+              propsType = `selector: ${selectorProp.initializer.text}`;
+            }
+          }
+
+          // Check for signal-based state (signal(), computed())
+          let hasState = false;
+          if (node.members) {
+            for (const member of node.members) {
+              if (ts.isPropertyDeclaration(member) && member.initializer) {
+                const initText = member.initializer.getText(sf);
+                if (/\bsignal\s*\(/.test(initText) || /\bcomputed\s*\(/.test(initText)) {
+                  hasState = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          // Extract imports array (standalone component dependencies)
+          const componentImports: string[] = [];
+          if (metaArg && ts.isObjectLiteralExpression(metaArg)) {
+            const importsProp = metaArg.properties.find(
+              (p): p is ts.PropertyAssignment =>
+                ts.isPropertyAssignment(p) &&
+                ts.isIdentifier(p.name) &&
+                p.name.text === "imports",
+            );
+            if (importsProp && ts.isArrayLiteralExpression(importsProp.initializer)) {
+              for (const el of importsProp.initializer.elements) {
+                if (ts.isIdentifier(el)) {
+                  componentImports.push(el.text);
+                }
+              }
+            }
+          }
+
+          components.push({
+            symbolId,
+            isClient: true, // Angular components are always client-side
+            isServerAction: false,
+            hasState,
+            contextProviders: [],
+            contextConsumers: componentImports, // Reuse field for Angular component imports
+            propsType,
+          });
+        }
+      }
     });
   }
 
