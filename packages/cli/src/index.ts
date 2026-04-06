@@ -35,9 +35,12 @@ Options:
 
 Init options:
   --name <name>      Project name (default: auto-detect from package.json)
-  --template <type>  Project template: nextjs-app-router, react-vite, api-service, dotnet-webapi
-  --platform <name>  Target platform (can be repeated, default: claude)
+  --template <type>  Project template: nextjs-app-router, react-vite, api-service, dotnet-webapi, unity-game
+  --platform <name>  Target platform: claude, copilot, codex, gemini (can be repeated, default: claude)
   --spec <file>      Path to a requirements/spec file to include
+
+Generate-configs options:
+  --force            Force-regenerate files that would normally be preserved (e.g. skills)
 `;
 
 interface ParsedArgs {
@@ -49,6 +52,7 @@ interface ParsedArgs {
   template?: string;
   platforms?: string[];
   spec?: string;
+  force: boolean;
 }
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -60,6 +64,7 @@ function parseArgs(args: string[]): ParsedArgs {
   let template: string | undefined;
   const platforms: string[] = [];
   let spec: string | undefined;
+  let force = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
@@ -75,6 +80,8 @@ function parseArgs(args: string[]): ParsedArgs {
       platforms.push(args[++i]!);
     } else if (arg === "--spec" && i + 1 < args.length) {
       spec = args[++i]!;
+    } else if (arg === "--force") {
+      force = true;
     } else if (arg === "--help" || arg === "-h") {
       console.log(USAGE);
       process.exit(0);
@@ -97,6 +104,7 @@ function parseArgs(args: string[]): ParsedArgs {
     template,
     platforms: platforms.length > 0 ? platforms : undefined,
     spec,
+    force,
   };
 }
 
@@ -142,7 +150,7 @@ async function main(): Promise<void> {
         break;
       }
       case "generate-configs":
-        await generateConfigs(dir, json);
+        await generateConfigs(dir, json, parsed.force);
         break;
       default:
         console.error(`Unknown command: ${command}`);

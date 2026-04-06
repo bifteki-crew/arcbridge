@@ -1,7 +1,8 @@
-import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
+import { writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
-import type { PlatformAdapter } from "../types.js";
+import type { PlatformAdapter, AdapterOptions } from "../types.js";
+import { generateSkills } from "../shared/skills.js";
 
 function generateAgentsMd(config: ArcBridgeConfig): string {
   const lines: string[] = [
@@ -95,61 +96,6 @@ function generateAgentsMd(config: ArcBridgeConfig): string {
   return lines.join("\n");
 }
 
-function generateSyncSkill(): string {
-  return `---
-name: arcbridge-sync
-description: Run the ArcBridge sync loop — reindex code, detect architecture drift, and update task statuses. Use after significant code changes or before completing a phase.
----
-
-# ArcBridge Sync
-
-Run the full sync loop to keep architecture docs and task statuses in sync with code changes.
-
-## Steps
-
-1. **Reindex** — \`arcbridge_reindex\` to update the symbol index with recent code changes
-2. **Check drift** — \`arcbridge_check_drift\` to detect undeclared dependencies and missing modules
-3. **Review tasks** — \`arcbridge_get_current_tasks\` to see if any tasks can be inferred as done
-4. **Propose updates** — \`arcbridge_propose_arc42_update\` to generate documentation update proposals
-
-## When to Use
-
-- After completing a significant feature or refactoring
-- Before running \`arcbridge_complete_phase\`
-- When you suspect architecture docs are out of date
-- Periodically during active development
-`;
-}
-
-function generateReviewSkill(): string {
-  return `---
-name: arcbridge-review
-description: Run ArcBridge phase boundary reviews — drift check, quality scenario verification, and practice review across 5 dimensions. Use before completing a phase.
----
-
-# ArcBridge Phase Review
-
-Run the full review suite before completing a phase gate.
-
-## Steps
-
-1. **Drift check** — \`arcbridge_check_drift\` to catch undeclared dependencies and boundary violations
-2. **Verify scenarios** — \`arcbridge_verify_scenarios\` to run linked tests for quality scenarios
-3. **Practice review** — \`arcbridge_get_practice_review\` to review changes across architecture, security, testing, docs, and complexity
-4. **Role checks** — optionally run \`arcbridge_run_role_check\` with specific roles (security-reviewer, quality-guardian)
-5. **Complete phase** — if all checks pass, run \`arcbridge_complete_phase\` to validate gates and transition
-
-## Review Roles
-
-| Role | When to consult |
-|------|----------------|
-| **code-reviewer** | Every phase |
-| **security-reviewer** | Phases with auth, uploads, API routes, user input |
-| **quality-guardian** | Every 2nd phase, or when quality scenarios are linked |
-| **architect** | When drift is detected or architecture evolved significantly |
-`;
-}
-
 export class CodexAdapter implements PlatformAdapter {
   platform = "codex";
 
@@ -178,7 +124,7 @@ export class CodexAdapter implements PlatformAdapter {
     }
   }
 
-  generateAgentConfigs(targetDir: string, roles: AgentRole[]): void {
+  generateAgentConfigs(targetDir: string, roles: AgentRole[], options?: AdapterOptions): void {
     // Append dynamic role table to AGENTS.md (replaces placeholder)
     const agentsMdPath = join(targetDir, "AGENTS.md");
     if (existsSync(agentsMdPath)) {
@@ -200,16 +146,7 @@ export class CodexAdapter implements PlatformAdapter {
       writeFileSync(agentsMdPath, content, "utf-8");
     }
 
-    // Generate skills (reusable workflows) instead of per-role agent files,
-    // since Codex agent definitions live in the global ~/.codex/config.toml
-    const skillsDir = join(targetDir, ".agents", "skills");
-
-    const syncDir = join(skillsDir, "arcbridge-sync");
-    mkdirSync(syncDir, { recursive: true });
-    writeFileSync(join(syncDir, "SKILL.md"), generateSyncSkill(), "utf-8");
-
-    const reviewDir = join(skillsDir, "arcbridge-review");
-    mkdirSync(reviewDir, { recursive: true });
-    writeFileSync(join(reviewDir, "SKILL.md"), generateReviewSkill(), "utf-8");
+    // Generate missing skills (shared with Gemini adapter — only writes if not present)
+    generateSkills(targetDir, options?.force);
   }
 }

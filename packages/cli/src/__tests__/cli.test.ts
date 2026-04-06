@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -15,6 +15,7 @@ import { drift } from "../commands/drift.js";
 import { sync } from "../commands/sync.js";
 import { updateTask } from "../commands/update-task.js";
 import { refresh } from "../commands/refresh.js";
+import { generateConfigs } from "../commands/generate-configs.js";
 
 const TEST_INPUT: InitProjectInput = {
   name: "cli-smoke-test",
@@ -207,5 +208,69 @@ describe("CLI smoke tests", () => {
       logSpy.mockRestore();
       errSpy.mockRestore();
     }
+  });
+});
+
+describe("generate-configs --force", () => {
+  let forceDir: string;
+
+  beforeAll(() => {
+    forceDir = mkdtempSync(join(tmpdir(), "arcbridge-force-test-"));
+    const input: InitProjectInput = {
+      ...TEST_INPUT,
+      platforms: ["codex"],
+    };
+    generateConfig(forceDir, input);
+    generateArc42(forceDir, input);
+    generatePlan(forceDir, input);
+    generateAgentRoles(forceDir);
+    const { db } = generateDatabase(forceDir, input);
+    db.close();
+  });
+
+  afterAll(() => {
+    rmSync(forceDir, { recursive: true, force: true });
+  });
+
+  it("generates skills on first run", async () => {
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await generateConfigs(forceDir, true);
+    } finally {
+      spy.mockRestore();
+    }
+
+    const syncPath = join(forceDir, ".agents", "skills", "arcbridge-sync", "SKILL.md");
+    expect(existsSync(syncPath)).toBe(true);
+  });
+
+  it("preserves existing skills without --force", async () => {
+    const syncPath = join(forceDir, ".agents", "skills", "arcbridge-sync", "SKILL.md");
+    writeFileSync(syncPath, "custom content", "utf-8");
+
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await generateConfigs(forceDir, true, false);
+    } finally {
+      spy.mockRestore();
+    }
+
+    expect(readFileSync(syncPath, "utf-8")).toBe("custom content");
+  });
+
+  it("overwrites existing skills with --force", async () => {
+    const syncPath = join(forceDir, ".agents", "skills", "arcbridge-sync", "SKILL.md");
+    writeFileSync(syncPath, "custom content", "utf-8");
+
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await generateConfigs(forceDir, true, true);
+    } finally {
+      spy.mockRestore();
+    }
+
+    const content = readFileSync(syncPath, "utf-8");
+    expect(content).not.toBe("custom content");
+    expect(content).toContain("arcbridge-sync");
   });
 });
