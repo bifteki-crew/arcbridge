@@ -39,9 +39,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@arcbridge/core": "workspace:*",
     "@arcbridge/adapters": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@arcbridge/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^3.24.0"
   },
   "engines": {
