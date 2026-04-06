@@ -452,4 +452,70 @@ describe("Vite project with tsconfig references", () => {
 
     viteDb.close();
   });
+
+  it("detects React components in Vite project", async () => {
+    const viteDb = openMemoryDatabase();
+    initializeSchema(viteDb);
+
+    const result = await indexProject(viteDb, { projectRoot: VITE_FIXTURE });
+
+    expect(result.componentsAnalyzed).toBeGreaterThan(0);
+
+    const components = viteDb
+      .prepare("SELECT c.symbol_id, c.is_client, c.has_state, s.name FROM components c JOIN symbols s ON c.symbol_id = s.id")
+      .all() as { symbol_id: string; is_client: number; has_state: number; name: string }[];
+
+    // Should find all 4 components: App, Counter, ThemeProvider, ThemedButton
+    const names = components.map((c) => c.name);
+    expect(names).toContain("App");
+    expect(names).toContain("Counter");
+    expect(names).toContain("ThemeProvider");
+    expect(names).toContain("ThemedButton");
+
+    // Counter uses useState
+    const counter = components.find((c) => c.name === "Counter");
+    expect(counter!.has_state).toBe(1);
+
+    viteDb.close();
+  });
+
+  it("marks all components as client when project_type is react-vite", async () => {
+    const viteDb = openMemoryDatabase();
+    initializeSchema(viteDb);
+    // Set project type so analyzeComponents knows this is client-only
+    viteDb.prepare("INSERT INTO arcbridge_meta (key, value) VALUES ('project_type', 'react-vite')").run();
+
+    await indexProject(viteDb, { projectRoot: VITE_FIXTURE });
+
+    const components = viteDb
+      .prepare("SELECT c.is_client, s.name FROM components c JOIN symbols s ON c.symbol_id = s.id")
+      .all() as { is_client: number; name: string }[];
+
+    // All components should be marked as client in a react-vite project
+    expect(components.length).toBeGreaterThan(0);
+    for (const c of components) {
+      expect(c.is_client).toBe(1);
+    }
+
+    viteDb.close();
+  });
+
+  it("marks components as non-client when no project_type is set", async () => {
+    const viteDb = openMemoryDatabase();
+    initializeSchema(viteDb);
+    // No project_type metadata — default behavior (no "use client" directive = not client)
+
+    await indexProject(viteDb, { projectRoot: VITE_FIXTURE });
+
+    const components = viteDb
+      .prepare("SELECT c.is_client, s.name FROM components c JOIN symbols s ON c.symbol_id = s.id")
+      .all() as { is_client: number; name: string }[];
+
+    // Without project_type, components without "use client" are not marked as client
+    expect(components.length).toBeGreaterThan(0);
+    const app = components.find((c) => c.name === "App");
+    expect(app!.is_client).toBe(0);
+
+    viteDb.close();
+  });
 });

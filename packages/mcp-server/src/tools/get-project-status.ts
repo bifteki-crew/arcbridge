@@ -36,13 +36,16 @@ export function registerGetProjectStatus(
       refreshFromDocs(db, params.target_dir);
 
       // Project name
-      const projectName = (
-        db
-          .prepare(
-            "SELECT value FROM arcbridge_meta WHERE key = 'project_name'",
-          )
-          .get() as MetaRow | undefined
-      )?.value ?? "Unknown";
+      // Fetch all meta values in a single query
+      const metaRows = db
+        .prepare(
+          "SELECT key, value FROM arcbridge_meta WHERE key IN ('project_name', 'project_type', 'platforms')",
+        )
+        .all() as { key: string; value: string }[];
+      const meta = Object.fromEntries(metaRows.map((r) => [r.key, r.value]));
+      const projectName = meta.project_name ?? "Unknown";
+      const projectType = meta.project_type;
+      const platforms = meta.platforms;
 
       // Phases
       const phases = db
@@ -112,6 +115,19 @@ export function registerGetProjectStatus(
       const lines: string[] = [
         `# Project Status: ${projectName}`,
         "",
+      ];
+
+      if (projectType) {
+        lines.push(`**Template:** ${projectType}`);
+      }
+      if (platforms) {
+        lines.push(`**Platforms:** ${platforms}`);
+      }
+      if (projectType || platforms) {
+        lines.push("");
+      }
+
+      lines.push(
         "## Current Phase",
         "",
         currentPhase
@@ -142,7 +158,7 @@ export function registerGetProjectStatus(
             `- ${s.status === "passing" ? "pass" : s.status === "failing" ? "FAIL" : s.status === "partial" ? "partial" : "untested"} ${s.id}: ${s.name} [${s.category}] (${s.priority})`,
         ),
         "",
-      ];
+      );
 
       // Code intelligence section
       lines.push("## Code Intelligence", "");

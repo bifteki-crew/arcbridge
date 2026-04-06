@@ -144,8 +144,8 @@ For local development, point your MCP config at the built output:
 
 | Tool | Description |
 |------|-------------|
-| `arcbridge_get_phase_plan` | All phases with tasks and acceptance criteria |
-| `arcbridge_get_current_tasks` | Tasks for the active phase |
+| `arcbridge_get_phase_plan` | Phase plan with tasks — filterable by phase_id, status, include_completed |
+| `arcbridge_get_current_tasks` | Tasks for the current or a specific phase (via phase_id) |
 | `arcbridge_update_task` | Mark tasks in-progress, done, or blocked |
 | `arcbridge_create_task` | Add a task to any phase |
 | `arcbridge_delete_task` | Remove one or more tasks permanently (batch via task_ids array) |
