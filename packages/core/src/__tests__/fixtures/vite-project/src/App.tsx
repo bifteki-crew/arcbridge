@@ -1,3 +1,14 @@
+import { Counter } from "./Counter";
+import { ThemeProvider, ThemedButton } from "./ThemeContext";
+
 export function App() {
-  return <div>Hello Vite</div>;
+  return (
+    <ThemeProvider>
+      <div>
+        <h1>Hello Vite</h1>
+        <Counter initial={0} />
+        <ThemedButton />
+      </div>
+    </ThemeProvider>
+  );
 }

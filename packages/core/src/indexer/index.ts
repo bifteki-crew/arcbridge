@@ -212,7 +212,12 @@ function indexTypeScriptProject(
   writeDependencies(db, allDeps);
 
   // 8. Analyze React components (populates components table)
-  const componentsAnalyzed = analyzeComponents(sourceFiles, checker, projectRoot, db);
+  // Client-only frameworks (react-vite) have no server component concept
+  const projectType = (
+    db.prepare("SELECT value FROM arcbridge_meta WHERE key = 'project_type'").get() as { value: string } | undefined
+  )?.value;
+  const allClient = projectType === "react-vite";
+  const componentsAnalyzed = analyzeComponents(sourceFiles, checker, projectRoot, db, allClient);
 
   // 9. Analyze Next.js routes (populates routes table)
   const routesAnalyzed = analyzeRoutes(projectRoot, db, service);

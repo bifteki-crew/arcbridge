@@ -136,19 +136,25 @@ function getPropsType(
 /**
  * Extract component information from source files and populate the components table.
  */
+/**
+ * @param allClient - When true, all components are treated as client-side
+ *   (e.g., react-vite where there's no server component concept).
+ */
 export function analyzeComponents(
   sourceFiles: readonly ts.SourceFile[],
   checker: ts.TypeChecker,
   projectRoot: string,
   db: Database,
+  allClient = false,
 ): number {
   const components: ComponentInfo[] = [];
 
   for (const sf of sourceFiles) {
     const relPath = relative(projectRoot, sf.fileName);
     const directive = getFileDirective(sf);
-    const isClient = directive === "use client";
-    const isServerAction = directive === "use server";
+    // In client-only frameworks (react-vite), all components are client
+    const isClient = allClient || directive === "use client";
+    const isServerAction = !allClient && directive === "use server";
 
     // Find component symbols in this file
     ts.forEachChild(sf, (node) => {
