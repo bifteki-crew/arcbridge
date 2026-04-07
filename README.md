@@ -265,7 +265,8 @@ packages/
 - **Phase 5** (done): Polish & hardening — roles loaded from files, CLI binary with sync/status/drift commands, test runner integration (`verify_scenarios`), 3 project templates (nextjs-app-router, react-vite, api-service) — 25 MCP tools
 - **Phase 5.5** (done): Release prep — `arcbridge init` CLI command, walkthrough docs, CI workflows, npm publish setup — 32 MCP tools
 - **v0.2.x** (done): Unity game template, `create_phase`/`delete_phase` tools, batch task deletion, post-init tailoring guidance — 33 MCP tools, 5 project templates
-- **v0.3.x** (done): Codex + Gemini adapters, `update_arc42_section` tool, arc42 sections 02+04, extensible quality categories, phase filtering, react-vite component graph fix, shared skills, `--force` flag — 34 MCP tools, 4 platform adapters, 432 tests
+- **v0.3.x** (done): Codex + Gemini adapters, `update_arc42_section` tool, arc42 sections 02+04, extensible quality categories, phase filtering, react-vite component graph fix, shared skills, `--force` flag — 34 MCP tools, 4 platform adapters
+- **v0.4.x** (done): Angular template, Angular `@Component` detection in indexer, dependency updates (all security vulnerabilities resolved) — 6 project templates, 439 tests
 
 See [`docs/arcbridge-project-plan.md`](docs/arcbridge-project-plan.md) for the full specification and [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
