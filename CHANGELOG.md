@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.4.0 (2026-04-07)
+
+### New Features
+
+- **Angular project template** (`angular-app`) — 6th project template targeting modern Angular with standalone components. Reuses the existing TypeScript indexer with Angular-specific templates, quality scenarios, and component detection.
+  - 6 building blocks: app-shell, core-services, shared-components, feature-modules, models, api-client
+  - Angular-specific quality scenarios: bundle size (<200KB gzipped), OnPush/signal change detection, lazy loading on feature routes, bypassSecurityTrust audit
+  - 4 phases: Project Setup, Foundation, Core Features, Polish & Launch
+  - Auto-detection via `angular.json` (prefers `defaultProject`)
+  - UX reviewer role included
+  - ADR: "Use Angular with Standalone Components" (documents component graph limitation)
+
+- **Angular `@Component` detection** — the TypeScript symbol extractor and component analyzer now detect Angular `@Component`-decorated classes:
+  - Classified as `kind: "component"` (consistent with React components)
+  - Extracts selector from decorator metadata
+  - Detects signal-based state (`signal()`, `computed()`) via AST
+  - Extracts standalone component `imports` array
+  - `arcbridge_get_component_graph` returns Angular components with selectors and state
+
+- **Dependency updates** — all 5 security vulnerabilities resolved:
+  - `@modelcontextprotocol/sdk` 1.27.1 → 1.29.0 (fixes path-to-regexp CVEs)
+  - `picomatch` forced to safe versions via pnpm overrides
+  - `yaml`, `web-tree-sitter`, `eslint`, `typescript-eslint` updated
+
+### Stats
+
+- 34 MCP tools, 439 tests passing, 0 lint errors, 0 type errors
+- 6 project templates, 4 platform adapters
+
 ## 0.3.3 (2026-04-06)
 
 ### New Features
