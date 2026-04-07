@@ -165,7 +165,7 @@ Use Angular with standalone components (default since Angular v17). Use the sign
 
 ## Current Limitations
 
-The TypeScript indexer fully indexes Angular symbols, dependencies, and services. However, **Angular-specific component graph analysis** (decorator metadata, template selector usage, parent/child component hierarchy) is not yet implemented. The \`arcbridge_get_component_graph\` tool works for React but returns empty for Angular projects. If your team needs component relationship tracking, let us know — it's a planned enhancement.
+The TypeScript indexer fully indexes Angular symbols, dependencies, services, and \`@Component\` declarations. The \`arcbridge_get_component_graph\` tool lists detected Angular components with their selectors and imports, but **template-based relationship analysis** (which component renders which via template selectors) is not yet implemented. Component listing works; hierarchy tracking is a planned enhancement.
 `,
   };
 }

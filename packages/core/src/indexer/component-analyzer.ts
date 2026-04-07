@@ -223,13 +223,20 @@ export function analyzeComponents(
       }
 
       // Angular @Component class detection
-      if (ts.isClassDeclaration(node) && node.name && node.modifiers) {
-        const componentDecorator = node.modifiers.find(
-          (mod): mod is ts.Decorator =>
-            ts.isDecorator(mod) &&
-            ts.isCallExpression(mod.expression) &&
-            ts.isIdentifier(mod.expression.expression) &&
-            mod.expression.expression.text === "Component",
+      if (ts.isClassDeclaration(node) && node.name) {
+        // Use ts.getDecorators for TS 5+ compatibility (decorators moved out of modifiers)
+        const decorators =
+          typeof ts.canHaveDecorators === "function" &&
+          typeof ts.getDecorators === "function" &&
+          ts.canHaveDecorators(node)
+            ? ts.getDecorators(node) ?? []
+            : (node.modifiers?.filter(ts.isDecorator) as ts.Decorator[] | undefined) ?? [];
+
+        const componentDecorator = decorators.find(
+          (decorator): decorator is ts.Decorator =>
+            ts.isCallExpression(decorator.expression) &&
+            ts.isIdentifier(decorator.expression.expression) &&
+            decorator.expression.expression.text === "Component",
         );
 
         if (componentDecorator && ts.isCallExpression(componentDecorator.expression)) {
@@ -266,8 +273,7 @@ export function analyzeComponents(
             }
           }
 
-          // Extract imports array (standalone component dependencies)
-          const componentImports: string[] = [];
+          // Extract imports array (standalone component dependencies) — append to propsType
           if (metaArg && ts.isObjectLiteralExpression(metaArg)) {
             const importsProp = metaArg.properties.find(
               (p): p is ts.PropertyAssignment =>
@@ -276,10 +282,16 @@ export function analyzeComponents(
                 p.name.text === "imports",
             );
             if (importsProp && ts.isArrayLiteralExpression(importsProp.initializer)) {
+              const importNames: string[] = [];
               for (const el of importsProp.initializer.elements) {
                 if (ts.isIdentifier(el)) {
-                  componentImports.push(el.text);
+                  importNames.push(el.text);
                 }
+              }
+              if (importNames.length > 0) {
+                propsType = propsType
+                  ? `${propsType} | imports: ${importNames.join(", ")}`
+                  : `imports: ${importNames.join(", ")}`;
               }
             }
           }
@@ -289,8 +301,8 @@ export function analyzeComponents(
             isClient: true, // Angular components are always client-side
             isServerAction: false,
             hasState,
-            contextProviders: [],
-            contextConsumers: componentImports, // Reuse field for Angular component imports
+            contextProviders: [], // Angular uses DI, not context
+            contextConsumers: [], // Not applicable for Angular
             propsType,
           });
         }
