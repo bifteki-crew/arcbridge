@@ -259,15 +259,25 @@ export function analyzeComponents(
             }
           }
 
-          // Check for signal-based state (signal(), computed())
+          // Check for signal-based state via AST (signal(), computed())
           let hasState = false;
           if (node.members) {
             for (const member of node.members) {
               if (ts.isPropertyDeclaration(member) && member.initializer) {
-                const initText = member.initializer.getText(sf);
-                if (/\bsignal\s*\(/.test(initText) || /\bcomputed\s*\(/.test(initText)) {
-                  hasState = true;
-                  break;
+                const init = ts.isParenthesizedExpression(member.initializer)
+                  ? member.initializer.expression
+                  : member.initializer;
+                if (ts.isCallExpression(init)) {
+                  const callee = init.expression;
+                  const calleeName = ts.isIdentifier(callee)
+                    ? callee.text
+                    : ts.isPropertyAccessExpression(callee)
+                      ? callee.name.text
+                      : null;
+                  if (calleeName === "signal" || calleeName === "computed") {
+                    hasState = true;
+                    break;
+                  }
                 }
               }
             }
