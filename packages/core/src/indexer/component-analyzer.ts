@@ -241,8 +241,8 @@ export function analyzeComponents(
 
         if (componentDecorator && ts.isCallExpression(componentDecorator.expression)) {
           const name = node.name.text;
-          // Align with TypeScript symbol extractor which indexes classes as #class
-          const symbolId = `${relPath}::${name}#class`;
+          // Symbol extractor classifies @Component classes as kind "component"
+          const symbolId = `${relPath}::${name}#component`;
 
           // Extract selector from @Component metadata
           let propsType: string | null = null;

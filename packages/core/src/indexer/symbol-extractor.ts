@@ -187,11 +187,25 @@ export function extractSymbols(
     // Class declarations
     if (ts.isClassDeclaration(node) && node.name) {
       const name = node.name.text;
+      // Detect Angular @Component decorator — classify as component instead of class
+      const decorators =
+        typeof ts.canHaveDecorators === "function" &&
+        typeof ts.getDecorators === "function" &&
+        ts.canHaveDecorators(node)
+          ? ts.getDecorators(node) ?? []
+          : (node.modifiers?.filter(ts.isDecorator) as ts.Decorator[] | undefined) ?? [];
+      const hasComponentDecorator = decorators.some(
+        (d) =>
+          ts.isCallExpression(d.expression) &&
+          ts.isIdentifier(d.expression.expression) &&
+          d.expression.expression.text === "Component",
+      );
+      const kind = hasComponentDecorator ? "component" : "class";
       symbols.push({
-        id: makeId(name, "class"),
+        id: makeId(name, kind),
         name,
         qualifiedName: name,
-        kind: "class",
+        kind,
         filePath: relativePath,
         ...getLocation(node),
         signature: null,
