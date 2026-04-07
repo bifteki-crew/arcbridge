@@ -28,12 +28,13 @@ export function registerInitProject(
     {
       name: z.string().min(1).describe("Project name"),
       template: z
-        .enum(["nextjs-app-router", "react-vite", "api-service", "dotnet-webapi", "unity-game"])
+        .enum(["nextjs-app-router", "react-vite", "api-service", "dotnet-webapi", "unity-game", "angular-app"])
         .default("nextjs-app-router")
         .describe(
           "Project template: " +
           "nextjs-app-router (Next.js with App Router, SSR/SSG), " +
           "react-vite (React SPA with Vite, client-only), " +
+          "angular-app (Angular with standalone components, TypeScript), " +
           "api-service (Node.js API with Express/Fastify/Hono), " +
           "dotnet-webapi (ASP.NET Core Web API, C#), " +
           "unity-game (Unity game project, C#, code-heavy)",

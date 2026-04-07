@@ -606,3 +606,115 @@ describe("unity-game template", () => {
     db.close();
   });
 });
+
+describe("angular-app template", () => {
+  const ANGULAR_INPUT: InitProjectInput = {
+    name: "my-angular-app",
+    template: "angular-app",
+    features: [],
+    quality_priorities: ["performance", "security", "accessibility", "maintainability"],
+    platforms: ["claude"],
+  };
+
+  it("generates valid config with angular service type", () => {
+    const config = generateConfig(tempDir, ANGULAR_INPUT);
+
+    expect(config.project_type).toBe("angular-app");
+    expect(config.services[0]!.type).toBe("angular");
+    expect(config.indexing.include).toContain("src/**/*");
+    expect(config.indexing.exclude).toContain(".angular");
+  });
+
+  it("generates angular-specific building blocks", () => {
+    generateArc42(tempDir, ANGULAR_INPUT);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      "utf-8",
+    );
+    const { data } = matter(raw);
+    const validated = BuildingBlocksFrontmatterSchema.parse(data);
+
+    const ids = validated.blocks.map((b) => b.id);
+    expect(ids).toContain("app-shell");
+    expect(ids).toContain("core-services");
+    expect(ids).toContain("shared-components");
+    expect(ids).toContain("feature-modules");
+    expect(ids).toContain("models");
+    expect(ids).toContain("api-client");
+    expect(ids).not.toContain("api-host");
+    expect(ids).not.toContain("game-core");
+  });
+
+  it("generates angular quality scenarios", () => {
+    generateArc42(tempDir, ANGULAR_INPUT);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "10-quality-scenarios.yaml"),
+      "utf-8",
+    );
+    const parsed = parse(raw);
+    const validated = QualityScenariosFileSchema.parse(parsed);
+
+    const ids = validated.scenarios.map((s) => s.id);
+    expect(ids).toContain("PERF-05");
+    expect(ids).toContain("SEC-04");
+
+    const perf05 = validated.scenarios.find((s) => s.id === "PERF-05");
+    expect(perf05!.name).toContain("Lazy loading");
+  });
+
+  it("generates Angular ADR", () => {
+    generateArc42(tempDir, ANGULAR_INPUT);
+    expect(
+      existsSync(join(tempDir, ".arcbridge", "arc42", "09-decisions", "001-angular-standalone.md")),
+    ).toBe(true);
+  });
+
+  it("generates angular phase plan", () => {
+    generatePlan(tempDir, ANGULAR_INPUT);
+    const planDir = join(tempDir, ".arcbridge", "plan");
+
+    const raw = readFileSync(join(planDir, "phases.yaml"), "utf-8");
+    const parsed = parse(raw);
+    const validated = PhasesFileSchema.parse(parsed);
+
+    expect(validated.phases).toHaveLength(4);
+    expect(validated.phases[0]!.description).toContain("Angular");
+
+    expect(existsSync(join(planDir, "tasks", "phase-0-setup.yaml"))).toBe(true);
+    expect(existsSync(join(planDir, "tasks", "phase-1-foundation.yaml"))).toBe(true);
+  });
+
+  it("includes ux-reviewer role", () => {
+    const roles = generateAgentRoles(tempDir, "angular-app");
+    expect(roles).toHaveLength(8);
+    expect(roles.some((r) => r.role_id === "ux-reviewer")).toBe(true);
+  });
+
+  it("full angular project generation with database", () => {
+    generateConfig(tempDir, ANGULAR_INPUT);
+    generateArc42(tempDir, ANGULAR_INPUT);
+    generatePlan(tempDir, ANGULAR_INPUT);
+    generateAgentRoles(tempDir, "angular-app");
+
+    const { db, warnings } = generateDatabase(tempDir, ANGULAR_INPUT);
+
+    expect(warnings).toHaveLength(0);
+
+    const blocks = db
+      .prepare("SELECT COUNT(*) as count FROM building_blocks")
+      .get() as { count: number };
+    expect(blocks.count).toBe(6);
+
+    const phases = db
+      .prepare("SELECT COUNT(*) as count FROM phases")
+      .get() as { count: number };
+    expect(phases.count).toBe(4);
+
+    const adrs = db
+      .prepare("SELECT id FROM adrs")
+      .all() as { id: string }[];
+    expect(adrs[0]!.id).toBe("001-angular-standalone");
+
+    db.close();
+  });
+});

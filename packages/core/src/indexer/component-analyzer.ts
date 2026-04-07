@@ -221,6 +221,102 @@ export function analyzeComponents(
           });
         }
       }
+
+      // Angular @Component class detection
+      if (ts.isClassDeclaration(node) && node.name) {
+        // Use ts.getDecorators for TS 5+ compatibility (decorators moved out of modifiers)
+        const decorators =
+          typeof ts.canHaveDecorators === "function" &&
+          typeof ts.getDecorators === "function" &&
+          ts.canHaveDecorators(node)
+            ? ts.getDecorators(node) ?? []
+            : (node.modifiers?.filter(ts.isDecorator) as ts.Decorator[] | undefined) ?? [];
+
+        const componentDecorator = decorators.find(
+          (decorator): decorator is ts.Decorator =>
+            ts.isCallExpression(decorator.expression) &&
+            ts.isIdentifier(decorator.expression.expression) &&
+            decorator.expression.expression.text === "Component",
+        );
+
+        if (componentDecorator && ts.isCallExpression(componentDecorator.expression)) {
+          const name = node.name.text;
+          // Symbol extractor classifies @Component classes as kind "component"
+          const symbolId = `${relPath}::${name}#component`;
+
+          // Extract selector from @Component metadata
+          let propsType: string | null = null;
+          const metaArg = componentDecorator.expression.arguments[0];
+          if (metaArg && ts.isObjectLiteralExpression(metaArg)) {
+            const selectorProp = metaArg.properties.find(
+              (p): p is ts.PropertyAssignment =>
+                ts.isPropertyAssignment(p) &&
+                ts.isIdentifier(p.name) &&
+                p.name.text === "selector",
+            );
+            if (selectorProp && ts.isStringLiteral(selectorProp.initializer)) {
+              propsType = `selector: ${selectorProp.initializer.text}`;
+            }
+          }
+
+          // Check for signal-based state via AST (signal(), computed())
+          let hasState = false;
+          if (node.members) {
+            for (const member of node.members) {
+              if (ts.isPropertyDeclaration(member) && member.initializer) {
+                const init = ts.isParenthesizedExpression(member.initializer)
+                  ? member.initializer.expression
+                  : member.initializer;
+                if (ts.isCallExpression(init)) {
+                  const callee = init.expression;
+                  const calleeName = ts.isIdentifier(callee)
+                    ? callee.text
+                    : ts.isPropertyAccessExpression(callee)
+                      ? callee.name.text
+                      : null;
+                  if (calleeName === "signal" || calleeName === "computed") {
+                    hasState = true;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+
+          // Extract imports array (standalone component dependencies) — append to propsType
+          if (metaArg && ts.isObjectLiteralExpression(metaArg)) {
+            const importsProp = metaArg.properties.find(
+              (p): p is ts.PropertyAssignment =>
+                ts.isPropertyAssignment(p) &&
+                ts.isIdentifier(p.name) &&
+                p.name.text === "imports",
+            );
+            if (importsProp && ts.isArrayLiteralExpression(importsProp.initializer)) {
+              const importNames: string[] = [];
+              for (const el of importsProp.initializer.elements) {
+                if (ts.isIdentifier(el)) {
+                  importNames.push(el.text);
+                }
+              }
+              if (importNames.length > 0) {
+                propsType = propsType
+                  ? `${propsType} | imports: ${importNames.join(", ")}`
+                  : `imports: ${importNames.join(", ")}`;
+              }
+            }
+          }
+
+          components.push({
+            symbolId,
+            isClient: true, // Angular components are always client-side
+            isServerAction: false,
+            hasState,
+            contextProviders: [], // Angular uses DI, not context
+            contextConsumers: [], // Not applicable for Angular
+            propsType,
+          });
+        }
+      }
     });
   }
 

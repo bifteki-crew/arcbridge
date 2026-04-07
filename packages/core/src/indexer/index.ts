@@ -211,9 +211,9 @@ function indexTypeScriptProject(
   db.prepare("DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE service = ?)").run(service);
   writeDependencies(db, allDeps);
 
-  // 8. Analyze React components (populates components table)
+  // 8. Analyze components — React (JSX) and Angular (@Component) detection
   // Client-only frameworks have no server component concept — all components are client
-  const CLIENT_ONLY_TEMPLATES = new Set(["react-vite"]);
+  const CLIENT_ONLY_TEMPLATES = new Set(["react-vite", "angular-app"]);
   const projectType = (
     db.prepare("SELECT value FROM arcbridge_meta WHERE key = 'project_type'").get() as { value: string } | undefined
   )?.value;

@@ -436,11 +436,132 @@ const UNITY_GAME_SCENARIOS: Record<string, ScenarioList> = {
   ],
 };
 
+// ─── Angular scenarios ─────────────────────────────────────────────────────
+
+const ANGULAR_SCENARIOS: Record<string, ScenarioList> = {
+  security: [
+    {
+      id: "SEC-02",
+      name: "No secrets in client bundles",
+      category: "security",
+      priority: "must",
+      scenario: "Production build output is analyzed",
+      expected:
+        "No API keys, tokens, or secrets found in client-side JavaScript bundles",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: [],
+      verification: "automatic",
+      status: "untested",
+    },
+    {
+      id: "SEC-04",
+      name: "No bypassSecurityTrust without review",
+      category: "security",
+      priority: "should",
+      scenario: "Source code is scanned for DomSanitizer bypass calls",
+      expected:
+        "All bypassSecurityTrust* calls have a documented justification in an ADR or code comment",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: [],
+      verification: "semi-automatic",
+      status: "untested",
+    },
+  ],
+  performance: [
+    {
+      id: "PERF-01",
+      name: "Initial page load under 3s",
+      category: "performance",
+      priority: "should",
+      scenario: "User loads the landing page on a 3G connection",
+      expected: "Largest Contentful Paint (LCP) is under 3 seconds",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: [],
+      verification: "semi-automatic",
+      status: "untested",
+    },
+    {
+      id: "PERF-03",
+      name: "Main bundle under 200KB gzipped",
+      category: "performance",
+      priority: "should",
+      scenario: "Production build is analyzed",
+      expected:
+        "Main JavaScript bundle is under 200KB gzipped",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: [],
+      verification: "semi-automatic",
+      status: "untested",
+    },
+    {
+      id: "PERF-04",
+      name: "OnPush or signal-based change detection",
+      category: "performance",
+      priority: "should",
+      scenario: "Components are reviewed for change detection strategy",
+      expected:
+        "All components use OnPush strategy or signal-based inputs — no default change detection",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: [],
+      verification: "semi-automatic",
+      status: "untested",
+    },
+    {
+      id: "PERF-05",
+      name: "Lazy loading on feature routes",
+      category: "performance",
+      priority: "must",
+      scenario: "Application routes are analyzed",
+      expected:
+        "All feature routes use loadComponent or loadChildren for lazy loading",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: ["feature-modules"],
+      verification: "automatic",
+      status: "untested",
+    },
+  ],
+  accessibility: [
+    {
+      id: "A11Y-01",
+      name: "WCAG 2.1 AA compliance",
+      category: "accessibility",
+      priority: "should",
+      scenario: "All pages are audited with axe-core",
+      expected: "No critical or serious accessibility violations",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: [],
+      verification: "semi-automatic",
+      status: "untested",
+    },
+    {
+      id: "A11Y-02",
+      name: "Keyboard navigation",
+      category: "accessibility",
+      priority: "should",
+      scenario: "User navigates the entire application using only keyboard",
+      expected: "All interactive elements are reachable and operable via keyboard",
+      linked_code: [],
+      linked_tests: [],
+      linked_blocks: [],
+      verification: "manual",
+      status: "untested",
+    },
+  ],
+};
+
 // ─── Template → scenario set mapping ────────────────────────────────────────
 
 const TEMPLATE_SCENARIOS: Record<string, Record<string, ScenarioList>> = {
   "nextjs-app-router": FRONTEND_SCENARIOS,
   "react-vite": FRONTEND_SCENARIOS,
+  "angular-app": ANGULAR_SCENARIOS,
   "api-service": API_SCENARIOS,
   "dotnet-webapi": DOTNET_SCENARIOS,
   "unity-game": UNITY_GAME_SCENARIOS,

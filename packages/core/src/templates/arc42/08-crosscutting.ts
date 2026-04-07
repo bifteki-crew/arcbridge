@@ -279,7 +279,7 @@ function unityConcepts(): string {
 
 export function crosscuttingTemplate(input: InitProjectInput): TemplateOutput {
   const isDotnet = input.template === "dotnet-webapi";
-  const isFrontend = input.template === "nextjs-app-router" || input.template === "react-vite";
+  const isFrontend = input.template === "nextjs-app-router" || input.template === "react-vite" || input.template === "angular-app";
   const isUnity = input.template === "unity-game";
 
   let concepts: string;

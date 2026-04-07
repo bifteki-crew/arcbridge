@@ -4,7 +4,7 @@ import { QualityCategorySchema, QUALITY_PRIORITIES_DESCRIPTION } from "./quality
 export const ServiceSchema = z.object({
   name: z.string().min(1),
   path: z.string().default("."),
-  type: z.enum(["nextjs", "react", "fastify", "express", "hono", "dotnet", "unity"]),
+  type: z.enum(["nextjs", "react", "fastify", "express", "hono", "dotnet", "unity", "angular"]),
   tsconfig: z.string().optional(),
   csproj: z.string().optional(),
 });
@@ -19,6 +19,7 @@ export const ArcBridgeConfigSchema = z.object({
       "api-service",
       "dotnet-webapi",
       "unity-game",
+      "angular-app",
     ])
     .default("nextjs-app-router"),
 

@@ -27,7 +27,9 @@ export function buildingBlocksTemplate(
       ? buildDotnetBlocks(input)
       : input.template === "unity-game"
         ? buildUnityBlocks()
-        : buildJsBlocks(input, layout);
+        : input.template === "angular-app"
+          ? buildAngularBlocks(layout)
+          : buildJsBlocks(input, layout);
 
   function buildJsBlocks(inp: InitProjectInput, lt: typeof layout): BlockDef[] {
     const src = lt.srcPrefix;
@@ -359,6 +361,84 @@ export function buildingBlocksTemplate(
         adrs: [],
         responsibility:
           "Custom inspectors, editor windows, debug overlays, and development tools",
+        service: "main",
+      },
+    ];
+  }
+
+  function buildAngularBlocks(lt: typeof layout): BlockDef[] {
+    const src = lt.srcPrefix;
+    return [
+      {
+        id: "app-shell",
+        name: "App Shell",
+        level: 1,
+        code_paths: [`${src}main.ts`, `${src}app/app.component.ts`, `${src}app/app.config.ts`, `${src}app/app.routes.ts`],
+        interfaces: [],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility:
+          "Application bootstrap, root component, top-level routing and providers",
+        service: "main",
+      },
+      {
+        id: "core-services",
+        name: "Core Services",
+        level: 1,
+        code_paths: [`${src}app/core/`],
+        interfaces: [],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility:
+          "Singleton services, guards, interceptors, and app-wide infrastructure",
+        service: "main",
+      },
+      {
+        id: "shared-components",
+        name: "Shared Components",
+        level: 1,
+        code_paths: [`${src}app/shared/`],
+        interfaces: [],
+        quality_scenarios: ["A11Y-01"],
+        adrs: [],
+        responsibility:
+          "Reusable components, directives, and pipes shared across features",
+        service: "main",
+      },
+      {
+        id: "feature-modules",
+        name: "Feature Modules",
+        level: 1,
+        code_paths: [`${src}app/features/`],
+        interfaces: ["core-services", "shared-components"],
+        quality_scenarios: ["PERF-05"],
+        adrs: [],
+        responsibility:
+          "Self-contained feature areas with own routes, components, and services",
+        service: "main",
+      },
+      {
+        id: "models",
+        name: "Models & Types",
+        level: 1,
+        code_paths: [`${src}app/models/`],
+        interfaces: [],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility:
+          "Shared interfaces, types, enums, and DTOs",
+        service: "main",
+      },
+      {
+        id: "api-client",
+        name: "API Client",
+        level: 1,
+        code_paths: [`${src}app/core/http/`, `${src}app/core/services/`],
+        interfaces: [],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility:
+          "HTTP client layer, interceptors, and API service abstractions",
         service: "main",
       },
     ];

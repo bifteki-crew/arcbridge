@@ -23,6 +23,10 @@ import {
   phasePlanTemplate as unityGamePlan,
   phaseTasksTemplate as unityGameTasks,
 } from "../templates/phases/unity-game.js";
+import {
+  phasePlanTemplate as angularAppPlan,
+  phaseTasksTemplate as angularAppTasks,
+} from "../templates/phases/angular-app.js";
 
 type PlanFn = (input: InitProjectInput) => PhasesFile;
 type TasksFn = (input: InitProjectInput, phaseId: string) => TaskFile | null;
@@ -33,6 +37,7 @@ const planTemplates: Record<string, { plan: PlanFn; tasks: TasksFn }> = {
   "api-service": { plan: apiServicePlan, tasks: apiServiceTasks },
   "dotnet-webapi": { plan: dotnetWebapiPlan, tasks: dotnetWebapiTasks },
   "unity-game": { plan: unityGamePlan, tasks: unityGameTasks },
+  "angular-app": { plan: angularAppPlan, tasks: angularAppTasks },
 };
 
 export function generatePlan(

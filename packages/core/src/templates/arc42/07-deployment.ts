@@ -14,7 +14,12 @@ export function deploymentTemplate(input: InitProjectInput): TemplateOutput {
 
 ### Deployment Options
 
-${input.template === "dotnet-webapi" ? `| Platform | Description | Notes |
+${input.template === "angular-app" ? `| Platform | Description | Notes |
+|----------|-------------|-------|
+| Vercel / Netlify | Static hosting | For SSG or prerendered apps |
+| Firebase Hosting | Google Cloud | Integrated with Angular Fire |
+| Docker | Container-based | For self-hosted environments |
+| Cloud Run / App Engine | Google Cloud PaaS | For SSR with Angular Universal |` : input.template === "dotnet-webapi" ? `| Platform | Description | Notes |
 |----------|-------------|-------|
 | Azure App Service | Managed PaaS for .NET | Recommended for ASP.NET Core |
 | Docker / Kubernetes | Container-based | For self-hosted or multi-cloud |
