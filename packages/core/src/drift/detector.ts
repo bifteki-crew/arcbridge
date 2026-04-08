@@ -213,7 +213,7 @@ function detectMissingModules(
       // Check if any symbol file_path matches this code_path
       const match = db
         .prepare("SELECT 1 FROM symbols WHERE file_path LIKE ? LIMIT 1")
-        .get(`${escapeLike(prefix)}%`) as unknown | undefined;
+        .get(`${escapeLike(prefix)}%`) as Record<string, unknown> | undefined;
 
       if (!match) {
         entries.push({
@@ -393,7 +393,7 @@ function detectStaleAdrs(
       const prefix = normalizePath(file);
       const match = db
         .prepare("SELECT 1 FROM symbols WHERE file_path LIKE ? LIMIT 1")
-        .get(`${escapeLike(prefix)}%`) as unknown | undefined;
+        .get(`${escapeLike(prefix)}%`) as Record<string, unknown> | undefined;
 
       if (!match) {
         entries.push({

@@ -211,7 +211,7 @@ function generateProposals(
           // Check if this was the only file under that code_path
           const remaining = db
             .prepare("SELECT 1 FROM symbols WHERE file_path LIKE ? LIMIT 1")
-            .get(`${prefix}%`) as unknown | undefined;
+            .get(`${prefix}%`) as Record<string, unknown> | undefined;
 
           if (!remaining) {
             proposals.push({
