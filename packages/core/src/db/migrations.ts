@@ -67,6 +67,15 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 4,
+    up: (db) => {
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_tasks_phase ON tasks(phase_id);
+        CREATE INDEX IF NOT EXISTS idx_phases_status ON phases(status);
+      `);
+    },
+  },
 ];
 
 export function migrate(db: Database): void {
