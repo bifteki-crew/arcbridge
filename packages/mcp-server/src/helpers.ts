@@ -39,10 +39,11 @@ export function textResult(text: string) {
 }
 
 /**
- * Escape SQL LIKE wildcards (%, _) in user-provided values.
+ * Escape SQL LIKE wildcards and the escape character itself.
+ * Must be used with ESCAPE '\\' in the LIKE clause.
  */
 export function escapeLike(value: string): string {
-  return value.replace(/%/g, "\\%").replace(/_/g, "\\_");
+  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
 /**
