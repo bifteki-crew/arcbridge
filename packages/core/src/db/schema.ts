@@ -1,6 +1,6 @@
 import type { Database } from "./connection.js";
 
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 const SCHEMA_SQL = `
 -- Metadata
@@ -155,6 +155,9 @@ CREATE TABLE IF NOT EXISTS tasks (
   created_at TEXT NOT NULL,
   completed_at TEXT
 );
+
+CREATE INDEX IF NOT EXISTS idx_tasks_phase ON tasks(phase_id);
+CREATE INDEX IF NOT EXISTS idx_phases_status ON phases(status);
 
 CREATE TABLE IF NOT EXISTS drift_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

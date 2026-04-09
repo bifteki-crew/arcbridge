@@ -99,7 +99,7 @@ See the [walkthrough](docs/walkthrough.md) for a full step-by-step guide.
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22.16+
 - pnpm 9+
 
 ### Build from source

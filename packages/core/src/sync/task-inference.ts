@@ -206,7 +206,7 @@ function inferSingleTask(
 }
 
 function escapeLike(value: string): string {
-  return value.replace(/%/g, "\\%").replace(/_/g, "\\_");
+  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
 function safeParseJson<T>(value: string | null, fallback: T): T {

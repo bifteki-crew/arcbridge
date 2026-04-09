@@ -4,9 +4,9 @@ This walkthrough takes you through the full **Plan → Build → Sync → Review
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22.16+
 - pnpm (or npm/yarn)
-- An AI coding agent (Claude Code, GitHub Copilot, etc.)
+- An AI coding agent (Claude Code, GitHub Copilot, Codex CLI, Gemini, etc.)
 - ArcBridge installed (`npm install -g arcbridge` or use `npx`)
 
 ## Step 1: Create Your Project

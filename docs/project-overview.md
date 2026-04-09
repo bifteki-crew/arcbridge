@@ -404,8 +404,8 @@ cd your-project && arcbridge init
 }}}
 ```
 
-Works with **TypeScript**, **React**, **Next.js**, and **.NET/C#**.
-Supports **Claude Code**, **GitHub Copilot**, and any MCP-compatible agent.
+Works with **TypeScript**, **React**, **Next.js**, **Angular**, **.NET/C#**, and **Unity**.
+Supports **Claude Code**, **GitHub Copilot**, **Codex CLI**, **Gemini**, and any MCP-compatible agent.
 
 ---
 

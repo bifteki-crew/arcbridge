@@ -233,8 +233,8 @@ export function registerInitProject(
               `- **Components analyzed:** ${indexResult.componentsAnalyzed}`,
               `- **Routes analyzed:** ${indexResult.routesAnalyzed}`,
             ]
-          : [input.template === "dotnet-webapi"
-              ? `- **Code indexing:** not available yet for .NET projects (C# indexer planned)`
+          : [input.template === "dotnet-webapi" || input.template === "unity-game"
+              ? `- **Code indexing:** run \`arcbridge_reindex\` to index C# symbols (tree-sitter or Roslyn)`
               : `- **Code indexing:** skipped (no tsconfig.json found — run \`arcbridge_reindex\` later)`]),
         "",
         "## Files",

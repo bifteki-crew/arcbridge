@@ -212,8 +212,8 @@ function detectMissingModules(
       const prefix = normalizePath(cp);
       // Check if any symbol file_path matches this code_path
       const match = db
-        .prepare("SELECT 1 FROM symbols WHERE file_path LIKE ? LIMIT 1")
-        .get(`${escapeLike(prefix)}%`) as unknown | undefined;
+        .prepare("SELECT 1 FROM symbols WHERE file_path LIKE ? ESCAPE '\\' LIMIT 1")
+        .get(`${escapeLike(prefix)}%`) as Record<string, unknown> | undefined;
 
       if (!match) {
         entries.push({
@@ -392,8 +392,8 @@ function detectStaleAdrs(
     for (const file of files) {
       const prefix = normalizePath(file);
       const match = db
-        .prepare("SELECT 1 FROM symbols WHERE file_path LIKE ? LIMIT 1")
-        .get(`${escapeLike(prefix)}%`) as unknown | undefined;
+        .prepare("SELECT 1 FROM symbols WHERE file_path LIKE ? ESCAPE '\\' LIMIT 1")
+        .get(`${escapeLike(prefix)}%`) as Record<string, unknown> | undefined;
 
       if (!match) {
         entries.push({
@@ -486,7 +486,7 @@ function fileMatchesPath(filePath: string, prefix: string): boolean {
 }
 
 function escapeLike(value: string): string {
-  return value.replace(/%/g, "\\%").replace(/_/g, "\\_");
+  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
 function safeParseJson<T>(value: string | null, fallback: T): T {

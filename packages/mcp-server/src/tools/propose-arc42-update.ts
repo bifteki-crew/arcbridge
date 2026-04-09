@@ -9,7 +9,7 @@ import {
 } from "@arcbridge/core";
 import type { Database } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath, escapeLike } from "../helpers.js";
 import type { BlockRow, SymbolRow } from "../db-types.js";
 
 export function registerProposeArc42Update(
@@ -210,8 +210,8 @@ function generateProposals(
         if (cf.path.startsWith(prefix)) {
           // Check if this was the only file under that code_path
           const remaining = db
-            .prepare("SELECT 1 FROM symbols WHERE file_path LIKE ? LIMIT 1")
-            .get(`${prefix}%`) as unknown | undefined;
+            .prepare("SELECT 1 FROM symbols WHERE file_path LIKE ? ESCAPE '\\' LIMIT 1")
+            .get(`${escapeLike(prefix)}%`) as Record<string, unknown> | undefined;
 
           if (!remaining) {
             proposals.push({
