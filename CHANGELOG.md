@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.1 (2026-04-09)
+
+### Security
+
+- **0 vulnerabilities** — added pnpm overrides for `hono >=4.12.12`, `@hono/node-server >=1.19.13`, `vite >=7.3.2`. `pnpm audit` now returns clean.
+
+### Fixes
+
+- **SQL ESCAPE clause** — all LIKE queries using `escapeLike()` now include `ESCAPE '\\'` and escape backslashes in addition to `%` and `_`
+- **DB migration v4** — existing installs get `idx_tasks_phase` and `idx_phases_status` indexes via `migrate()`
+- **Stale docs** — Node.js version 20+ → 22.16+, added Angular/Unity/Codex/Gemini to project-overview and walkthrough, fixed "C# indexer planned" message
+
+### Stats
+
+- 34 MCP tools, 439 tests passing, 0 vulnerabilities, 0 lint errors, 0 type errors
+
 ## 0.4.0 (2026-04-07)
 
 ### New Features
