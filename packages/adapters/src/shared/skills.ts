@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const SYNC_SKILL = `---
+export const SYNC_SKILL = `---
 name: arcbridge-sync
 description: Run the ArcBridge sync loop — reindex code, detect architecture drift, and update task statuses. Use after significant code changes or before completing a phase.
 ---
@@ -18,7 +18,7 @@ Run the full sync loop to keep architecture docs and task statuses in sync with 
 4. **Propose updates** — \`arcbridge_propose_arc42_update\` to generate documentation update proposals
 `;
 
-const REVIEW_SKILL = `---
+export const REVIEW_SKILL = `---
 name: arcbridge-review
 description: Run ArcBridge phase boundary reviews — drift check, quality scenario verification, and practice review across 5 dimensions. Use before completing a phase.
 ---
@@ -37,23 +37,24 @@ Run the full review suite before completing a phase gate.
 `;
 
 /**
- * Generate ArcBridge skills under .agents/skills/.
- * By default, only writes skills that don't already exist — preserves existing content.
+ * Generate ArcBridge skills under a skills directory.
+ * By default writes to `.agents/skills/` (shared convention for Codex/Gemini/OpenCode).
+ * Pass a custom skillsDir to write to a platform-specific location (e.g. `.opencode/skills/`).
+ * Only writes skills that don't already exist — preserves existing content.
  * Pass force=true to overwrite existing skills (e.g., after template updates).
- * Shared between Codex and Gemini adapters.
  */
-export function generateSkills(targetDir: string, force = false): void {
-  const skillsDir = join(targetDir, ".agents", "skills");
+export function generateSkills(targetDir: string, force = false, skillsDir?: string): void {
+  const dir = skillsDir ?? join(targetDir, ".agents", "skills");
 
-  const syncPath = join(skillsDir, "arcbridge-sync", "SKILL.md");
+  const syncPath = join(dir, "arcbridge-sync", "SKILL.md");
   if (force || !existsSync(syncPath)) {
-    mkdirSync(join(skillsDir, "arcbridge-sync"), { recursive: true });
+    mkdirSync(join(dir, "arcbridge-sync"), { recursive: true });
     writeFileSync(syncPath, SYNC_SKILL, "utf-8");
   }
 
-  const reviewPath = join(skillsDir, "arcbridge-review", "SKILL.md");
+  const reviewPath = join(dir, "arcbridge-review", "SKILL.md");
   if (force || !existsSync(reviewPath)) {
-    mkdirSync(join(skillsDir, "arcbridge-review"), { recursive: true });
+    mkdirSync(join(dir, "arcbridge-review"), { recursive: true });
     writeFileSync(reviewPath, REVIEW_SKILL, "utf-8");
   }
 }
