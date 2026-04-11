@@ -124,7 +124,7 @@ function generateAgentFile(role: AgentRole): string {
     `description: ${yamlQuote(role.description)}`,
   ];
 
-  // Set mode: subagent for on-demand roles, primary for core workflow roles
+  // All ArcBridge roles are invokable via @mention, so they use subagent mode
   lines.push(`mode: subagent`);
 
   // Tool permissions — deny write/edit for read-only roles
@@ -149,17 +149,39 @@ export class OpenCodeAdapter implements PlatformAdapter {
     if (!existsSync(configPath)) {
       writeFileSync(configPath, generateOpenCodeJson(), "utf-8");
     } else {
-      // Add arcbridge MCP server if not already present
+      // Merge arcbridge config into existing opencode.json without overwriting user settings
       try {
-        const existing = JSON.parse(readFileSync(configPath, "utf-8")) as {
-          mcp?: Record<string, unknown>;
-        };
-        if (!existing.mcp?.arcbridge) {
-          existing.mcp = existing.mcp ?? {};
-          existing.mcp.arcbridge = {
+        const existing = JSON.parse(readFileSync(configPath, "utf-8")) as Record<string, unknown>;
+        let changed = false;
+
+        // Ensure $schema is set
+        if (!existing.$schema) {
+          existing.$schema = "https://opencode.ai/config.json";
+          changed = true;
+        }
+
+        // Ensure instructions array includes OPENCODE.md
+        const instructions = existing.instructions as string[] | undefined;
+        if (!Array.isArray(instructions)) {
+          existing.instructions = ["OPENCODE.md"];
+          changed = true;
+        } else if (!instructions.includes("OPENCODE.md")) {
+          instructions.push("OPENCODE.md");
+          changed = true;
+        }
+
+        // Ensure mcp.arcbridge is present
+        const mcp = existing.mcp as Record<string, unknown> | undefined;
+        if (!mcp?.arcbridge) {
+          existing.mcp = mcp ?? {};
+          (existing.mcp as Record<string, unknown>).arcbridge = {
             type: "local",
             command: ["npx", "-y", "@arcbridge/mcp-server"],
           };
+          changed = true;
+        }
+
+        if (changed) {
           writeFileSync(configPath, JSON.stringify(existing, null, 2) + "\n", "utf-8");
         }
       } catch {

@@ -161,6 +161,34 @@ describe("OpenCodeAdapter", () => {
       const config = JSON.parse(readFileSync(join(tempDir, "opencode.json"), "utf-8"));
       expect(config.mcp.arcbridge.command).toEqual(["node", "custom-path.js"]);
     });
+
+    it("ensures $schema and instructions in existing opencode.json", () => {
+      writeFileSync(
+        join(tempDir, "opencode.json"),
+        JSON.stringify({ mcp: { arcbridge: { type: "local", command: ["npx"] } } }, null, 2),
+        "utf-8",
+      );
+
+      adapter.generateProjectConfig(tempDir, TEST_CONFIG);
+
+      const config = JSON.parse(readFileSync(join(tempDir, "opencode.json"), "utf-8"));
+      expect(config.$schema).toBe("https://opencode.ai/config.json");
+      expect(config.instructions).toEqual(["OPENCODE.md"]);
+    });
+
+    it("appends OPENCODE.md to existing instructions without duplicating", () => {
+      writeFileSync(
+        join(tempDir, "opencode.json"),
+        JSON.stringify({ instructions: ["CUSTOM.md"] }, null, 2),
+        "utf-8",
+      );
+
+      adapter.generateProjectConfig(tempDir, TEST_CONFIG);
+      adapter.generateProjectConfig(tempDir, TEST_CONFIG); // run twice
+
+      const config = JSON.parse(readFileSync(join(tempDir, "opencode.json"), "utf-8"));
+      expect(config.instructions).toEqual(["CUSTOM.md", "OPENCODE.md"]);
+    });
   });
 
   describe("generateAgentConfigs", () => {
