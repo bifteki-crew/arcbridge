@@ -31,6 +31,7 @@ export const AgentRoleSchema = z.object({
       claude: z.record(z.string(), z.unknown()).optional(),
       copilot: z.record(z.string(), z.unknown()).optional(),
       codex: z.record(z.string(), z.unknown()).optional(),
+      opencode: z.record(z.string(), z.unknown()).optional(),
     })
     .default({}),
 

@@ -48,9 +48,12 @@ export function registerInitProject(
         .default(["security", "performance", "accessibility", "maintainability"])
         .describe(QUALITY_PRIORITIES_DESCRIPTION),
       platforms: z
-        .array(z.enum(["claude", "copilot", "codex", "gemini"]))
+        .array(z.enum(["claude", "copilot", "codex", "gemini", "opencode"]))
         .default(["claude"])
-        .describe("Target platforms. Generates platform-specific instruction files and agent configs."),
+        .describe(
+          "Target platforms. Generates platform-specific instruction files and agent configs " +
+          "for Claude, Copilot, Codex, Gemini, and OpenCode.",
+        ),
       target_dir: z
         .string()
         .describe("Absolute path to the target project directory"),
@@ -245,10 +248,19 @@ export function registerInitProject(
         "- `.arcbridge/agents/` — Canonical agent role definitions",
         "- `.arcbridge/index.db` — SQLite database",
         ...params.platforms.includes("claude")
-          ? ["- `CLAUDE.md` — Claude Code project instructions", "- `.claude/agents/` — Claude agent configs"]
+          ? ["- `CLAUDE.md` — Claude Code project instructions", "- `.claude/agents/` — Claude agent configs", "- `.mcp.json` — MCP server config"]
           : [],
         ...params.platforms.includes("copilot")
           ? ["- `.github/copilot-instructions.md` — Copilot instructions", "- `.github/agents/` — Copilot agent configs"]
+          : [],
+        ...params.platforms.includes("codex")
+          ? ["- `AGENTS.md` — Codex project instructions", "- `.agents/skills/` — Codex skills"]
+          : [],
+        ...params.platforms.includes("gemini")
+          ? ["- `.gemini/settings.json` — Gemini MCP config", "- `.gemini/styleguide.md` — Gemini project instructions", "- `.gemini/agents/` — Gemini agent configs", "- `GEMINI.md` — Gemini CLI instructions"]
+          : [],
+        ...params.platforms.includes("opencode")
+          ? ["- `opencode.json` — OpenCode MCP config", "- `OPENCODE.md` — OpenCode project instructions", "- `.opencode/agents/` — OpenCode agent configs", "- `.opencode/skills/` — OpenCode skills"]
           : [],
         ...syncFiles.map((f) => `- \`${f}\` — Sync loop trigger`),
         ...(allWarnings.length > 0

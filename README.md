@@ -7,17 +7,83 @@ An MCP server that gives AI coding agents architectural awareness. It bridges ar
 [![npm version](https://img.shields.io/npm/v/@arcbridge/mcp-server)](https://www.npmjs.com/package/@arcbridge/mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Why
+## The Problem
 
-The biggest waste in AI-assisted development isn't token cost — it's the agent lacking *intent* about the system architecture and the developer lacking *visibility* into how architectural decisions accumulate. ArcBridge fixes both by:
+Your AI agent starts every coding session blind to your architecture. It sees the current file, maybe some imports — but it doesn't know which module it's in, what quality requirements apply, or whether the change it's about to make violates a boundary the team agreed on last week.
 
-- Making architecture, quality scenarios, and phase plans queryable via MCP tools
-- Defining a repeatable convention: **Plan → Build → Sync → Review**
-- Surfacing the right architectural context at the right time
+ArcBridge fixes this by giving the agent a structured mental model of your project: building blocks with declared boundaries, testable quality scenarios, phased task plans, and drift detection that catches when code and docs diverge.
 
-## What It Does
+## How It Works
 
-When you run `arcbridge_init_project`, it creates:
+ArcBridge follows a repeatable convention: **Plan → Build → Sync → Review**.
+
+```
+  ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌──────────┐
+  │  PLAN   │ ───▸ │  BUILD  │ ───▸ │  SYNC   │ ───▸ │  REVIEW  │
+  │         │      │         │      │         │      │          │
+  │ Init    │      │ Code    │      │ Reindex │      │ Phase    │
+  │ arc42   │      │ with    │      │ Detect  │      │ gates    │
+  │ docs,   │      │ arch    │      │ drift   │      │ Quality  │
+  │ phases, │      │ context │      │ Verify  │      │ checks   │
+  │ quality │      │         │      │ quality │      │ Arc42    │
+  │ goals   │      │         │      │         │      │ updates  │
+  └─────────┘      └─────────┘      └─────────┘      └──────────┘
+       ▲                                                    │
+       └────────────────────────────────────────────────────┘
+```
+
+### Plan — define your architecture and goals
+
+Run `arcbridge init` to scaffold a starting point tailored to your project type (Next.js, React, Angular, .NET, Unity, or API service). The generated building blocks, quality scenarios, and phase plans are **examples of the shape, not the plan to follow** — they show you the structure ArcBridge expects and give you something to iterate on immediately.
+
+The real value comes when you bring in your own specification — whether that's an existing design doc, a product brief, or a conversation with the Architect agent — and use it to create building blocks, phases, and quality scenarios that match *your* system. ArcBridge provides the tools to do this:
+
+- **Building blocks** — named architectural modules (e.g. `auth-module`, `api-layer`) with declared code paths and interfaces. These are the backbone of drift detection: if code imports across blocks without a declared interface, ArcBridge flags it.
+- **Quality scenarios** — testable requirements like "all API routes require authentication" or "no circular dependencies between modules", each linked to a building block and a category (security, performance, accessibility, reliability, maintainability).
+- **Phase plan** — phases with concrete tasks, each tied to building blocks and quality scenarios. You can create, reorder, and extend phases throughout the project's lifetime — not just at the start.
+- **Agent roles** — 7 specialized roles (Architect, Implementer, Security Reviewer, Quality Guardian, Phase Manager, Onboarding, Code Reviewer) plus a UX Reviewer for frontend projects. Each role has a system prompt, curated tool access, and quality focus.
+
+As the project grows, this architecture documentation grows with it. When you add a new feature, you plan it as a new phase with tasks, the Architect proposes building block and arc42 updates, and the code index expands — giving you a clear history of how the architecture evolved and why.
+
+### Build — code with architectural context
+
+During development, the AI agent has access to 34 MCP tools. Instead of working file-by-file, it knows:
+
+- Which **building block** a file belongs to, and what quality scenarios apply
+- What **tasks** are in the current phase and their acceptance criteria
+- Which **ADRs** (Architecture Decision Records) are relevant to the code being changed
+- What **patterns** are established (error handling, validation, logging) in crosscutting concerns
+
+When you add a new API route, the agent can tell you: *"This route is in the api-layer block. Quality scenario SEC-01 requires auth on all routes — should I add the middleware?"*
+
+### Sync — detect drift between docs and code
+
+After a coding session (or in CI via `arcbridge sync`), the sync loop runs in seconds:
+
+1. **Reindex** — scan source code for symbols, dependencies, components, routes
+2. **Detect drift** — compare architecture docs against code reality:
+   - *Undocumented module* — code exists but no building block claims it
+   - *Missing module* — a building block's code path is empty
+   - *Dependency violation* — cross-block import without a declared interface (this blocks phase completion)
+   - *Unlinked test* — a quality scenario points to a test file that doesn't exist
+   - *Stale ADR* — a decision references deleted files
+   - *New dependency* — a package was added without an ADR
+3. **Verify quality** — run tests linked to quality scenarios and update pass/fail status
+4. **Infer progress** — mark tasks as done when their acceptance criteria are met
+
+### Review — enforce quality at phase boundaries
+
+When you're ready to move to the next phase, the Phase Manager checks gates:
+
+- All tasks in the current phase must be done
+- No drift errors (warnings are OK, dependency violations are not)
+- Quality scenarios linked to the phase must have passing tests
+
+If gates pass, the Architect proposes arc42 updates based on what changed. You review them in seconds instead of writing docs from scratch. If gates fail, you get specific blockers — not vague warnings.
+
+## What Gets Created
+
+When you run `arcbridge init`, it generates:
 
 ```
 .arcbridge/
@@ -55,6 +121,7 @@ Plus platform-specific configs:
 - **GitHub Copilot:** `.github/copilot-instructions.md`, `.github/agents/`
 - **Codex CLI:** `AGENTS.md`, `.agents/skills/`
 - **Gemini:** `.gemini/settings.json`, `.gemini/styleguide.md`, `.gemini/agents/`, `GEMINI.md`, `.agents/skills/`
+- **OpenCode:** `opencode.json`, `OPENCODE.md`, `.opencode/agents/`, `.opencode/skills/`
 
 ## Quick Start
 
@@ -89,38 +156,45 @@ args = ["-y", "@arcbridge/mcp-server"]
 
 **Gemini** — runs automatically when `--platform gemini` is passed during init. Creates `.gemini/settings.json` with MCP config, `.gemini/styleguide.md` for project instructions, and `.gemini/agents/` for role-based subagents.
 
+**OpenCode** — runs automatically when `--platform opencode` is passed during init. Creates `opencode.json` with MCP config, `OPENCODE.md` for project instructions, and `.opencode/agents/` for role-based subagents.
+
 Restart your AI agent — approve the MCP server when prompted, and all 34 architecture tools become available.
 
 When running `arcbridge init`, use `--platform` to generate platform-specific instruction and configuration files for your selected AI agent(s). Multiple platforms can be combined (e.g., `--platform claude --platform codex`).
 
 See the [walkthrough](docs/walkthrough.md) for a full step-by-step guide.
 
-## Development
+## Project Templates
 
-### Prerequisites
+ArcBridge auto-detects your project type and tailors the scaffolded architecture, building blocks, quality scenarios, and phase plans accordingly.
 
-- Node.js 22.16+
-- pnpm 9+
+| Template | Building Blocks | Quality Scenarios | Detected By |
+|----------|----------------|-------------------|-------------|
+| **Next.js App Router** | auth, public-pages, api-layer, data-layer | 12-15 (incl. server/client boundary checks) | `next.config.*` |
+| **React + Vite** | ui-shell, feature-modules, api-client, state-management | 12-15 (incl. bundle size, accessibility) | `vite.config.*` + React |
+| **Angular** | app-shell, feature-modules, shared-lib, api-services | 12-15 (incl. change detection, lazy loading) | `angular.json` |
+| **API Service** | api-gateway, business-logic, data-access, integration | 10-12 (incl. latency, auth, rate limiting) | Express/Fastify/Hono |
+| **.NET Web API** | controllers, services, data-access, middleware | 10-12 (incl. DI, EF Core, middleware ordering) | `*.csproj` + ASP.NET |
+| **Unity Game** | game-core, player-systems, ui-system, scene-management | 10-12 (incl. frame budget, memory, input) | `ProjectSettings/` |
 
-### Build from source
+## Agent Roles
 
-```bash
-pnpm install
-pnpm build
-```
+ArcBridge ships with 7 core roles plus a UX Reviewer for frontend templates. Each role specializes AI behavior with a system prompt, tool access constraints, and quality focus areas. Platform adapters translate these into Claude Code agents, Copilot agents, Codex skills, or Gemini subagents.
 
-For local development, point your MCP config at the built output:
+| Role | Purpose | When It Runs |
+|------|---------|--------------|
+| **Architect** | Design decisions, building block decomposition, ADR creation | Phase gates |
+| **Implementer** | Feature development within established architecture | Phase gates |
+| **Security Reviewer** | OWASP checks, auth, secrets, boundaries | Phase gates |
+| **Quality Guardian** | Performance, accessibility, coverage, circular deps | Phase gates |
+| **Phase Manager** | Task progress, phase gate enforcement, sync triggers | Phase gates |
+| **Onboarding** | Explains the project to new or returning developers | On-demand |
+| **Code Reviewer** | Logic bugs, edge cases, pattern violations, simplicity | On-demand |
+| **UX Reviewer** | Usability, accessibility, design consistency (frontend only) | On-demand |
 
-```json
-{
-  "mcpServers": {
-    "arcbridge": {
-      "command": "node",
-      "args": ["/path/to/packages/mcp-server/dist/index.js"]
-    }
-  }
-}
-```
+The first 5 roles participate in the automatic Plan → Build → Sync → Review loop. Onboarding, Code Reviewer, and UX Reviewer are opt-in — invoke them when you want a second pair of eyes.
+
+Roles are loaded from `.arcbridge/agents/*.md` files. Edit the markdown frontmatter to customize tools, quality focus, and model preferences per role.
 
 ## MCP Tools (34)
 
@@ -198,41 +272,48 @@ For local development, point your MCP config at the built output:
 | `arcbridge_get_metrics` | Query and aggregate activity by model, task, phase, tool, or day |
 | `arcbridge_export_metrics` | Export metrics to JSON, CSV, or Markdown for git commits |
 
-## Agent Roles
-
-ArcBridge ships with 7 core agent roles plus a UX Reviewer for frontend templates, each specializing AI behavior for different tasks. Each role has a system prompt, tool access constraints, and quality focus areas. Platform adapters translate these canonical definitions into Claude Code agents (`.claude/agents/`) and Copilot agents (`.github/agents/`).
-
-| Role | Purpose | Automatic? |
-|------|---------|------------|
-| **Architect** | Design decisions, building block decomposition, ADR creation | Phase gates |
-| **Implementer** | Feature development within established architecture | Phase gates |
-| **Security Reviewer** | Security posture checks (OWASP, auth, secrets, boundaries) | Phase gates |
-| **Quality Guardian** | Enforces quality scenarios — performance, accessibility, coverage | Phase gates |
-| **Phase Manager** | Tracks progress, manages task transitions, triggers arc42 sync | Phase gates |
-| **Onboarding** | Explains the project to new team members or returning developers | On-demand |
-| **Code Reviewer** | Reviews code for correctness, patterns, edge cases, simplicity | On-demand |
-| **UX Reviewer** | Reviews frontend code for usability, accessibility, and design consistency | On-demand |
-
-The first 5 roles participate in the automatic Plan → Build → Sync → Review loop. The **Onboarding**, **Code Reviewer**, and **UX Reviewer** roles are opt-in — invoke them when you want a second pair of eyes or need to get up to speed.
-
-The Code Reviewer focuses on what a senior developer would catch in a pull request: logic bugs, unhandled edge cases, pattern violations, and over-engineering. It deliberately does not overlap with the Security Reviewer (OWASP, auth, secrets) or the Quality Guardian (metrics, coverage, accessibility).
-
-Roles are loaded from `.arcbridge/agents/*.md` files when available, falling back to built-in defaults. Edit the markdown frontmatter to customize tools, quality focus, and model preferences per role.
-
 ## CLI
 
 The `arcbridge` CLI enables CI integration and command-line workflows.
 
 ```bash
-arcbridge sync              # Reindex, detect drift, infer tasks, update sync point
-arcbridge status            # Show project status
-arcbridge drift             # Check for architecture drift
+arcbridge init                  # Initialize ArcBridge (auto-detects project type)
+arcbridge sync                  # Reindex, detect drift, infer tasks, update sync point
+arcbridge status                # Show project status
+arcbridge drift                 # Check for architecture drift
 
-arcbridge sync --json       # JSON output for CI pipelines
+arcbridge sync --json           # JSON output for CI pipelines
 arcbridge status --dir /path/to/project
 ```
 
-The `sync` command runs the full sync loop: reindex TypeScript symbols, detect drift, infer task statuses, and store a git sync point. The generated GitHub Action workflow (`.github/workflows/arcbridge-sync.yml`) uses this command automatically.
+The `sync` command runs the full sync loop: reindex symbols, detect drift, infer task statuses, and store a git sync point. The generated GitHub Action workflow (`.github/workflows/arcbridge-sync.yml`) uses this command automatically.
+
+## Development
+
+### Prerequisites
+
+- Node.js 22.16+
+- pnpm 9+
+
+### Build from source
+
+```bash
+pnpm install
+pnpm build
+```
+
+For local development, point your MCP config at the built output:
+
+```json
+{
+  "mcpServers": {
+    "arcbridge": {
+      "command": "node",
+      "args": ["/path/to/packages/mcp-server/dist/index.js"]
+    }
+  }
+}
+```
 
 ### Commands
 
@@ -249,8 +330,8 @@ pnpm build       # tsup (all packages)
 ```
 packages/
 ├── core/        # Schemas, DB, templates, generators, indexer, drift, git, sync (no MCP dependency)
-├── adapters/    # Claude + Copilot config generators
-├── cli/         # CLI binary (arcbridge sync, status, drift)
+├── adapters/    # Claude + Copilot + Codex + Gemini + OpenCode config generators
+├── cli/         # CLI binary (arcbridge init, sync, status, drift)
 └── mcp-server/  # MCP server with tool registration
 ```
 

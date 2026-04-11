@@ -36,7 +36,7 @@ Options:
 Init options:
   --name <name>      Project name (default: auto-detect from package.json)
   --template <type>  Project template: nextjs-app-router, react-vite, angular-app, api-service, dotnet-webapi, unity-game
-  --platform <name>  Target platform: claude, copilot, codex, gemini (can be repeated, default: claude)
+  --platform <name>  Target platform: claude, copilot, codex, gemini, opencode (can be repeated, default: claude)
   --spec <file>      Path to a requirements/spec file to include
 
 Generate-configs options:
