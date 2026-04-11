@@ -32,14 +32,18 @@ ArcBridge follows a repeatable convention: **Plan → Build → Sync → Review*
        └────────────────────────────────────────────────────┘
 ```
 
-### Plan — scaffold architecture and goals
+### Plan — define your architecture and goals
 
-Run `arcbridge init` and it generates a full arc42 documentation skeleton tailored to your project type (Next.js, React, Angular, .NET, Unity, or API service). This isn't blank files — it creates:
+Run `arcbridge init` to scaffold a starting point tailored to your project type (Next.js, React, Angular, .NET, Unity, or API service). The generated building blocks, quality scenarios, and phase plans are **examples of the shape, not the plan to follow** — they show you the structure ArcBridge expects and give you something to iterate on immediately.
+
+The real value comes when you bring in your own specification — whether that's an existing design doc, a product brief, or a conversation with the Architect agent — and use it to create building blocks, phases, and quality scenarios that match *your* system. ArcBridge provides the tools to do this:
 
 - **Building blocks** — named architectural modules (e.g. `auth-module`, `api-layer`) with declared code paths and interfaces. These are the backbone of drift detection: if code imports across blocks without a declared interface, ArcBridge flags it.
 - **Quality scenarios** — testable requirements like "all API routes require authentication" or "no circular dependencies between modules", each linked to a building block and a category (security, performance, accessibility, reliability, maintainability).
-- **Phase plan** — 4 phases with concrete tasks, each tied to building blocks and quality scenarios. Phase 0 is project setup; Phase 3 is polish and launch.
+- **Phase plan** — phases with concrete tasks, each tied to building blocks and quality scenarios. You can create, reorder, and extend phases throughout the project's lifetime — not just at the start.
 - **Agent roles** — 7 specialized roles (Architect, Implementer, Security Reviewer, Quality Guardian, Phase Manager, Onboarding, Code Reviewer) plus a UX Reviewer for frontend projects. Each role has a system prompt, curated tool access, and quality focus.
+
+As the project grows, this architecture documentation grows with it. When you add a new feature, you plan it as a new phase with tasks, the Architect proposes building block and arc42 updates, and the code index expands — giving you a clear history of how the architecture evolved and why.
 
 ### Build — code with architectural context
 
