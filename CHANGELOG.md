@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.4.2 (2026-04-11)
+
+### New Features
+
+- **OpenCode platform adapter** — 5th platform adapter, generated via `--platform opencode`. Creates `opencode.json` (MCP config with instructions reference), `OPENCODE.md` (project instructions), `.opencode/agents/` (role definitions with frontmatter: description, mode, permission), and `.opencode/skills/` (sync + review skills in OpenCode's native location).
+
+### Improvements
+
+- **README restructured** — new "The Problem" and "How It Works" sections explain the Plan → Build → Sync → Review workflow with an ASCII diagram, concrete definitions of building blocks, quality scenarios, drift detection, and phase gates. Clarifies that scaffolded architecture is a starting point to be tailored, not a fixed plan.
+- **Init tool summary** — completion output now lists generated files for all 5 platforms (previously only showed Claude and Copilot)
+- **Init tool description** — platforms param description now names all supported platforms
+
+### Refactoring
+
+- **Shared adapter utilities** — extracted `writeWithMarkerMerge` (marker-merge.ts), `generateInstructions` (instructions.ts with prefix/suffix options), and parameterized `generateSkills` (accepts custom base directory). Removes ~200 lines of duplication across Gemini, Codex, and OpenCode adapters.
+
+### Stats
+
+- 34 MCP tools, 457 tests passing, 0 lint errors, 0 type errors
+- 6 project templates, 5 platform adapters
+
 ## 0.4.1 (2026-04-09)
 
 ### Security
