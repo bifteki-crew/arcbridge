@@ -26,7 +26,7 @@ export const ArcBridgeConfigSchema = z.object({
   services: z.array(ServiceSchema).default([]),
 
   platforms: z
-    .array(z.enum(["claude", "copilot", "gemini", "codex"]))
+    .array(z.enum(["claude", "copilot", "gemini", "codex", "opencode"]))
     .default(["claude"]),
 
   quality_priorities: z
