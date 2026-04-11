@@ -48,7 +48,7 @@ export function registerInitProject(
         .default(["security", "performance", "accessibility", "maintainability"])
         .describe(QUALITY_PRIORITIES_DESCRIPTION),
       platforms: z
-        .array(z.enum(["claude", "copilot", "codex", "gemini"]))
+        .array(z.enum(["claude", "copilot", "codex", "gemini", "opencode"]))
         .default(["claude"])
         .describe("Target platforms. Generates platform-specific instruction files and agent configs."),
       target_dir: z

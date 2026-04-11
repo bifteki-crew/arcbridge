@@ -170,14 +170,18 @@ export class OpenCodeAdapter implements PlatformAdapter {
           changed = true;
         }
 
-        // Ensure mcp.arcbridge is present
-        const mcp = existing.mcp as Record<string, unknown> | undefined;
-        if (!mcp?.arcbridge) {
-          existing.mcp = mcp ?? {};
-          (existing.mcp as Record<string, unknown>).arcbridge = {
+        // Ensure mcp.arcbridge is present (reset mcp if it's not a plain object)
+        const mcp = existing.mcp;
+        const mcpObj: Record<string, unknown> =
+          typeof mcp === "object" && mcp !== null && !Array.isArray(mcp)
+            ? (mcp as Record<string, unknown>)
+            : {};
+        if (!mcpObj.arcbridge) {
+          mcpObj.arcbridge = {
             type: "local",
             command: ["npx", "-y", "@arcbridge/mcp-server"],
           };
+          existing.mcp = mcpObj;
           changed = true;
         }
 
