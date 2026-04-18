@@ -44,5 +44,7 @@ export interface IndexResult {
   filesSkipped: number;
   filesRemoved: number;
   durationMs: number;
+  /** Set when indexing was skipped entirely (e.g. no tsconfig.json found). */
+  skippedReason?: string;
 }
 

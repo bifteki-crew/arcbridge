@@ -5,7 +5,7 @@ import type { PlatformAdapter, AdapterOptions } from "../types.js";
 import { generateSkills } from "../shared/skills.js";
 import { writeWithMarkerMerge } from "../shared/marker-merge.js";
 import { generateInstructions } from "../shared/instructions.js";
-import { mcpCommand, mcpCommandArray } from "../shared/mcp-command.js";
+import { mcpCommandArray } from "../shared/mcp-command.js";
 
 function generateOpenCodeJson(): string {
   const config = {

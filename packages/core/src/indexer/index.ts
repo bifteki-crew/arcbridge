@@ -1,3 +1,4 @@
+import ts from "typescript";
 import { relative, join } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
@@ -80,12 +81,12 @@ export async function indexProject(
     });
   }
 
-  // Skip TypeScript indexing when no tsconfig.json is found (e.g. during init
-  // before the project has been set up). Without a tsconfig, createTsProgram
-  // would throw — returning a zero result avoids confusing error messages.
+  // Skip TypeScript indexing when no tsconfig.json can be resolved (e.g. during
+  // init before the project has been set up). Uses the same resolution logic as
+  // createTsProgram so the skip decision matches runtime behavior.
   if (
     !options.tsconfigPath &&
-    !existsSync(join(options.projectRoot, "tsconfig.json"))
+    !ts.findConfigFile(options.projectRoot, ts.sys.fileExists, "tsconfig.json")
   ) {
     return {
       symbolsIndexed: 0,
@@ -96,6 +97,7 @@ export async function indexProject(
       filesSkipped: 0,
       filesRemoved: 0,
       durationMs: 0,
+      skippedReason: "no tsconfig.json found",
     };
   }
 

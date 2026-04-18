@@ -180,7 +180,12 @@ export function registerInitProject(
       }
 
       // 9. Index code symbols (TypeScript, C#, or package dependencies)
-      const indexResult = await indexProject(db, { projectRoot: targetDir });
+      let indexResult: Awaited<ReturnType<typeof indexProject>> | null = null;
+      try {
+        indexResult = await indexProject(db, { projectRoot: targetDir });
+      } catch {
+        // Indexing is optional — surface the skip in the summary
+      }
 
       // Count what was created
       const blockCount = db
@@ -213,7 +218,7 @@ export function registerInitProject(
         `- **Phases:** ${phaseCount.count}`,
         `- **Tasks:** ${taskCount.count}`,
         `- **Agent roles:** ${roles.length}`,
-        ...(indexResult.symbolsIndexed > 0
+        ...(indexResult && !indexResult.skippedReason
           ? [
               `- **Symbols indexed:** ${indexResult.symbolsIndexed}`,
               `- **Dependencies indexed:** ${indexResult.dependenciesIndexed}`,
@@ -222,7 +227,7 @@ export function registerInitProject(
             ]
           : [input.template === "dotnet-webapi" || input.template === "unity-game"
               ? `- **Code indexing:** skipped — run \`arcbridge_reindex\` after project setup to index C# symbols`
-              : `- **Code indexing:** skipped — no tsconfig.json found yet. Run \`arcbridge_reindex\` once your project is set up`]),
+              : `- **Code indexing:** skipped — ${indexResult?.skippedReason ?? "indexing failed"}. Run \`arcbridge_reindex\` once your project is set up`]),
         "",
         "## Files",
         "",

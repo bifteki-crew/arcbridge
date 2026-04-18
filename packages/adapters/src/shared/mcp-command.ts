@@ -1,7 +1,5 @@
 import { platform } from "node:os";
 
-const isWindows = platform() === "win32";
-
 /**
  * Return the MCP server command and args for the current platform.
  * On Windows, `npx` is a `.cmd` script that cannot be spawned directly —
@@ -9,7 +7,7 @@ const isWindows = platform() === "win32";
  * with `cmd /c`.
  */
 export function mcpCommand(): { command: string; args: string[] } {
-  if (isWindows) {
+  if (platform() === "win32") {
     return {
       command: "cmd",
       args: ["/c", "npx", "-y", "@arcbridge/mcp-server"],
@@ -26,7 +24,7 @@ export function mcpCommand(): { command: string; args: string[] } {
  * that use `command: ["npx", ...]` instead of separate command + args).
  */
 export function mcpCommandArray(): string[] {
-  if (isWindows) {
+  if (platform() === "win32") {
     return ["cmd", "/c", "npx", "-y", "@arcbridge/mcp-server"];
   }
   return ["npx", "-y", "@arcbridge/mcp-server"];
