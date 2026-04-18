@@ -80,6 +80,25 @@ export async function indexProject(
     });
   }
 
+  // Skip TypeScript indexing when no tsconfig.json is found (e.g. during init
+  // before the project has been set up). Without a tsconfig, createTsProgram
+  // would throw — returning a zero result avoids confusing error messages.
+  if (
+    !options.tsconfigPath &&
+    !existsSync(join(options.projectRoot, "tsconfig.json"))
+  ) {
+    return {
+      symbolsIndexed: 0,
+      dependenciesIndexed: 0,
+      componentsAnalyzed: 0,
+      routesAnalyzed: 0,
+      filesProcessed: 0,
+      filesSkipped: 0,
+      filesRemoved: 0,
+      durationMs: 0,
+    };
+  }
+
   return indexTypeScriptProject(db, options);
 }
 

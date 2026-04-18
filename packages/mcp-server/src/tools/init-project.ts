@@ -179,24 +179,8 @@ export function registerInitProject(
         );
       }
 
-      // 9. Index TypeScript symbols (if tsconfig exists)
-      let indexResult: {
-        symbolsIndexed: number;
-        dependenciesIndexed: number;
-        componentsAnalyzed: number;
-        routesAnalyzed: number;
-      } | null = null;
-      try {
-        const result = await indexProject(db, { projectRoot: targetDir });
-        indexResult = {
-          symbolsIndexed: result.symbolsIndexed,
-          dependenciesIndexed: result.dependenciesIndexed,
-          componentsAnalyzed: result.componentsAnalyzed,
-          routesAnalyzed: result.routesAnalyzed,
-        };
-      } catch {
-        // Indexing is optional — project may not have tsconfig.json yet
-      }
+      // 9. Index code symbols (TypeScript, C#, or package dependencies)
+      const indexResult = await indexProject(db, { projectRoot: targetDir });
 
       // Count what was created
       const blockCount = db
@@ -229,7 +213,7 @@ export function registerInitProject(
         `- **Phases:** ${phaseCount.count}`,
         `- **Tasks:** ${taskCount.count}`,
         `- **Agent roles:** ${roles.length}`,
-        ...(indexResult
+        ...(indexResult.symbolsIndexed > 0
           ? [
               `- **Symbols indexed:** ${indexResult.symbolsIndexed}`,
               `- **Dependencies indexed:** ${indexResult.dependenciesIndexed}`,
@@ -237,8 +221,8 @@ export function registerInitProject(
               `- **Routes analyzed:** ${indexResult.routesAnalyzed}`,
             ]
           : [input.template === "dotnet-webapi" || input.template === "unity-game"
-              ? `- **Code indexing:** run \`arcbridge_reindex\` to index C# symbols (tree-sitter or Roslyn)`
-              : `- **Code indexing:** skipped (no tsconfig.json found — run \`arcbridge_reindex\` later)`]),
+              ? `- **Code indexing:** skipped — run \`arcbridge_reindex\` after project setup to index C# symbols`
+              : `- **Code indexing:** skipped — no tsconfig.json found yet. Run \`arcbridge_reindex\` once your project is set up`]),
         "",
         "## Files",
         "",

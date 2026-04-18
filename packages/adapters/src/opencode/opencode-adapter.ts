@@ -5,6 +5,7 @@ import type { PlatformAdapter, AdapterOptions } from "../types.js";
 import { generateSkills } from "../shared/skills.js";
 import { writeWithMarkerMerge } from "../shared/marker-merge.js";
 import { generateInstructions } from "../shared/instructions.js";
+import { mcpCommand, mcpCommandArray } from "../shared/mcp-command.js";
 
 function generateOpenCodeJson(): string {
   const config = {
@@ -13,7 +14,7 @@ function generateOpenCodeJson(): string {
     mcp: {
       arcbridge: {
         type: "local",
-        command: ["npx", "-y", "@arcbridge/mcp-server"],
+        command: mcpCommandArray(),
       },
     },
   };
@@ -88,7 +89,7 @@ export class OpenCodeAdapter implements PlatformAdapter {
         if (!mcpObj.arcbridge) {
           mcpObj.arcbridge = {
             type: "local",
-            command: ["npx", "-y", "@arcbridge/mcp-server"],
+            command: mcpCommandArray(),
           };
           existing.mcp = mcpObj;
           changed = true;

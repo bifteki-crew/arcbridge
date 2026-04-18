@@ -5,14 +5,12 @@ import type { PlatformAdapter, AdapterOptions } from "../types.js";
 import { generateSkills } from "../shared/skills.js";
 import { writeWithMarkerMerge } from "../shared/marker-merge.js";
 import { generateInstructions } from "../shared/instructions.js";
+import { mcpCommand } from "../shared/mcp-command.js";
 
 function generateSettingsJson(): string {
   const settings = {
     mcpServers: {
-      arcbridge: {
-        command: "npx",
-        args: ["-y", "@arcbridge/mcp-server"],
-      },
+      arcbridge: mcpCommand(),
     },
   };
   return JSON.stringify(settings, null, 2) + "\n";
@@ -79,10 +77,7 @@ export class GeminiAdapter implements PlatformAdapter {
         };
         if (!existing.mcpServers?.arcbridge) {
           existing.mcpServers = existing.mcpServers ?? {};
-          existing.mcpServers.arcbridge = {
-            command: "npx",
-            args: ["-y", "@arcbridge/mcp-server"],
-          };
+          existing.mcpServers.arcbridge = mcpCommand();
           writeFileSync(settingsPath, JSON.stringify(existing, null, 2) + "\n", "utf-8");
         }
       } catch {

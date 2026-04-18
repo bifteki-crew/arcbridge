@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
 import type { PlatformAdapter } from "../types.js";
+import { mcpCommand } from "../shared/mcp-command.js";
 
 function generateClaudeMd(config: ArcBridgeConfig): string {
   const lines: string[] = [
@@ -173,10 +174,7 @@ export class ClaudeAdapter implements PlatformAdapter {
     if (!existsSync(mcpJsonPath)) {
       const mcpConfig = {
         mcpServers: {
-          arcbridge: {
-            command: "npx",
-            args: ["@arcbridge/mcp-server"],
-          },
+          arcbridge: mcpCommand(),
         },
       };
       writeFileSync(mcpJsonPath, JSON.stringify(mcpConfig, null, 2) + "\n", "utf-8");
@@ -188,10 +186,7 @@ export class ClaudeAdapter implements PlatformAdapter {
         };
         if (!existing.mcpServers?.arcbridge) {
           existing.mcpServers = existing.mcpServers ?? {};
-          existing.mcpServers.arcbridge = {
-            command: "npx",
-            args: ["@arcbridge/mcp-server"],
-          };
+          existing.mcpServers.arcbridge = mcpCommand();
           writeFileSync(mcpJsonPath, JSON.stringify(existing, null, 2) + "\n", "utf-8");
         }
       } catch {
