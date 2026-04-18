@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
 import { ClaudeAdapter } from "../claude/claude-adapter.js";
 import { CopilotAdapter } from "../copilot/copilot-adapter.js";
+import { mcpCommand } from "../shared/mcp-command.js";
 
 const TEST_CONFIG: ArcBridgeConfig = {
   schema_version: 1,
@@ -158,6 +159,27 @@ describe("ClaudeAdapter", () => {
     expect(content).toContain("Quality Focus");
     expect(content).toContain("maintainability");
     expect(content).toContain("reliability");
+  });
+
+  it("creates .mcp.json with platform-aware MCP config", () => {
+    adapter.generateProjectConfig(tempDir, TEST_CONFIG);
+
+    const mcpJsonPath = join(tempDir, ".mcp.json");
+    expect(existsSync(mcpJsonPath)).toBe(true);
+
+    const config = JSON.parse(readFileSync(mcpJsonPath, "utf-8"));
+    expect(config.mcpServers.arcbridge).toEqual(mcpCommand());
+  });
+
+  it("adds arcbridge to existing .mcp.json without overwriting", () => {
+    const mcpJsonPath = join(tempDir, ".mcp.json");
+    writeFileSync(mcpJsonPath, JSON.stringify({ mcpServers: { other: { command: "node" } } }, null, 2), "utf-8");
+
+    adapter.generateProjectConfig(tempDir, TEST_CONFIG);
+
+    const config = JSON.parse(readFileSync(mcpJsonPath, "utf-8"));
+    expect(config.mcpServers.other).toEqual({ command: "node" });
+    expect(config.mcpServers.arcbridge).toEqual(mcpCommand());
   });
 });
 

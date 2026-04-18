@@ -81,13 +81,13 @@ export async function indexProject(
     });
   }
 
-  // Skip TypeScript indexing when no tsconfig.json can be resolved (e.g. during
-  // init before the project has been set up). Uses the same resolution logic as
-  // createTsProgram so the skip decision matches runtime behavior.
-  if (
-    !options.tsconfigPath &&
-    !ts.findConfigFile(options.projectRoot, ts.sys.fileExists, "tsconfig.json")
-  ) {
+  // Resolve tsconfig once — used for both the skip check and indexing itself,
+  // avoiding a redundant filesystem walk in createTsProgram.
+  const resolvedTsconfigPath =
+    options.tsconfigPath ??
+    ts.findConfigFile(options.projectRoot, ts.sys.fileExists, "tsconfig.json");
+
+  if (!resolvedTsconfigPath) {
     return {
       symbolsIndexed: 0,
       dependenciesIndexed: 0,
@@ -101,7 +101,10 @@ export async function indexProject(
     };
   }
 
-  return indexTypeScriptProject(db, options);
+  return indexTypeScriptProject(db, {
+    ...options,
+    tsconfigPath: resolvedTsconfigPath,
+  });
 }
 
 /**
