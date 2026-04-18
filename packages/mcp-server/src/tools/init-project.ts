@@ -181,10 +181,11 @@ export function registerInitProject(
 
       // 9. Index code symbols (TypeScript, C#, or package dependencies)
       let indexResult: Awaited<ReturnType<typeof indexProject>> | null = null;
+      let indexError: string | undefined;
       try {
         indexResult = await indexProject(db, { projectRoot: targetDir });
-      } catch {
-        // Indexing is optional — surface the skip in the summary
+      } catch (err) {
+        indexError = err instanceof Error ? err.message : String(err);
       }
 
       // Count what was created
@@ -225,9 +226,17 @@ export function registerInitProject(
               `- **Components analyzed:** ${indexResult.componentsAnalyzed}`,
               `- **Routes analyzed:** ${indexResult.routesAnalyzed}`,
             ]
-          : [input.template === "dotnet-webapi" || input.template === "unity-game"
-              ? `- **Code indexing:** skipped — run \`arcbridge_reindex\` after project setup to index C# symbols`
-              : `- **Code indexing:** skipped — ${indexResult?.skippedReason ?? "indexing failed"}. Run \`arcbridge_reindex\` once your project is set up`]),
+          : [(() => {
+              const reason = indexResult?.skippedReason ?? indexError;
+              const isCSharp = input.template === "dotnet-webapi" || input.template === "unity-game";
+              const reindexHint = isCSharp
+                ? "run `arcbridge_reindex` after project setup to index C# symbols"
+                : "run `arcbridge_reindex` once your project is set up";
+              if (reason) {
+                return `- **Code indexing:** skipped — ${reason}. ${reindexHint}`;
+              }
+              return `- **Code indexing:** failed. ${reindexHint}`;
+            })()]),
         "",
         "## Files",
         "",
