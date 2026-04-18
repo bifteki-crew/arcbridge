@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
 import { GeminiAdapter } from "../gemini/gemini-adapter.js";
+import { mcpCommand } from "../shared/mcp-command.js";
 
 const TEST_CONFIG: ArcBridgeConfig = {
   schema_version: 1,
@@ -78,7 +79,7 @@ describe("GeminiAdapter", () => {
 
       const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
       expect(settings.mcpServers.arcbridge).toBeDefined();
-      expect(settings.mcpServers.arcbridge.command).toBe("npx");
+      expect(settings.mcpServers.arcbridge).toEqual(mcpCommand());
     });
 
     it("creates .gemini/styleguide.md with project info", () => {

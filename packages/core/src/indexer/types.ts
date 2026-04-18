@@ -44,7 +44,10 @@ export interface IndexResult {
   filesSkipped: number;
   filesRemoved: number;
   durationMs: number;
-  /** Set when indexing was skipped entirely (e.g. no tsconfig.json found). */
+  /**
+   * Set when code-symbol indexing was skipped (e.g. no tsconfig.json found).
+   * Package dependency indexing may still have been performed.
+   */
   skippedReason?: string;
 }
 

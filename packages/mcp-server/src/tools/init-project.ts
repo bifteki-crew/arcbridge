@@ -227,13 +227,16 @@ export function registerInitProject(
               `- **Routes analyzed:** ${indexResult.routesAnalyzed}`,
             ]
           : [(() => {
-              const reason = indexResult?.skippedReason ?? indexError;
+              const skippedReason = indexResult?.skippedReason;
               const isCSharp = input.template === "dotnet-webapi" || input.template === "unity-game";
               const reindexHint = isCSharp
                 ? "run `arcbridge_reindex` after project setup to index C# symbols"
                 : "run `arcbridge_reindex` once your project is set up";
-              if (reason) {
-                return `- **Code indexing:** skipped — ${reason}. ${reindexHint}`;
+              if (skippedReason) {
+                return `- **Code indexing:** skipped — ${skippedReason}. ${reindexHint}`;
+              }
+              if (indexError) {
+                return `- **Code indexing:** failed — ${indexError}. ${reindexHint}`;
               }
               return `- **Code indexing:** failed. ${reindexHint}`;
             })()]),
