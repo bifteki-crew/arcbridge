@@ -179,23 +179,13 @@ export function registerInitProject(
         );
       }
 
-      // 9. Index TypeScript symbols (if tsconfig exists)
-      let indexResult: {
-        symbolsIndexed: number;
-        dependenciesIndexed: number;
-        componentsAnalyzed: number;
-        routesAnalyzed: number;
-      } | null = null;
+      // 9. Index code symbols (TypeScript, C#, or package dependencies)
+      let indexResult: Awaited<ReturnType<typeof indexProject>> | null = null;
+      let indexError: string | undefined;
       try {
-        const result = await indexProject(db, { projectRoot: targetDir });
-        indexResult = {
-          symbolsIndexed: result.symbolsIndexed,
-          dependenciesIndexed: result.dependenciesIndexed,
-          componentsAnalyzed: result.componentsAnalyzed,
-          routesAnalyzed: result.routesAnalyzed,
-        };
-      } catch {
-        // Indexing is optional — project may not have tsconfig.json yet
+        indexResult = await indexProject(db, { projectRoot: targetDir });
+      } catch (err) {
+        indexError = err instanceof Error ? err.message : String(err);
       }
 
       // Count what was created
@@ -229,16 +219,31 @@ export function registerInitProject(
         `- **Phases:** ${phaseCount.count}`,
         `- **Tasks:** ${taskCount.count}`,
         `- **Agent roles:** ${roles.length}`,
-        ...(indexResult
+        ...(indexResult && !indexResult.skippedReason
           ? [
               `- **Symbols indexed:** ${indexResult.symbolsIndexed}`,
               `- **Dependencies indexed:** ${indexResult.dependenciesIndexed}`,
               `- **Components analyzed:** ${indexResult.componentsAnalyzed}`,
               `- **Routes analyzed:** ${indexResult.routesAnalyzed}`,
             ]
-          : [input.template === "dotnet-webapi" || input.template === "unity-game"
-              ? `- **Code indexing:** run \`arcbridge_reindex\` to index C# symbols (tree-sitter or Roslyn)`
-              : `- **Code indexing:** skipped (no tsconfig.json found — run \`arcbridge_reindex\` later)`]),
+          : [(() => {
+              const oneLine = (msg: string) => {
+                const normalized = msg.replace(/\s*\r?\n\s*/g, " ").trim();
+                return normalized.length > 200 ? `${normalized.slice(0, 199)}…` : normalized;
+              };
+              const skippedReason = indexResult?.skippedReason;
+              const isCSharp = input.template === "dotnet-webapi" || input.template === "unity-game";
+              const reindexHint = isCSharp
+                ? "run `arcbridge_reindex` after project setup to index C# symbols"
+                : "run `arcbridge_reindex` once your project is set up";
+              if (skippedReason) {
+                return `- **Code indexing:** skipped — ${oneLine(skippedReason)}. ${reindexHint}`;
+              }
+              if (indexError) {
+                return `- **Code indexing:** failed — ${oneLine(indexError)}. ${reindexHint}`;
+              }
+              return `- **Code indexing:** failed. ${reindexHint}`;
+            })()]),
         "",
         "## Files",
         "",

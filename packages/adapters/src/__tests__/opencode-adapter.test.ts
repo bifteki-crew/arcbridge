@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
 import { OpenCodeAdapter } from "../opencode/opencode-adapter.js";
+import { mcpCommandArray } from "../shared/mcp-command.js";
 
 const TEST_CONFIG: ArcBridgeConfig = {
   schema_version: 1,
@@ -79,7 +80,7 @@ describe("OpenCodeAdapter", () => {
       const config = JSON.parse(readFileSync(configPath, "utf-8"));
       expect(config.mcp.arcbridge).toBeDefined();
       expect(config.mcp.arcbridge.type).toBe("local");
-      expect(config.mcp.arcbridge.command).toEqual(["npx", "-y", "@arcbridge/mcp-server"]);
+      expect(config.mcp.arcbridge.command).toEqual(mcpCommandArray());
     });
 
     it("includes $schema and instructions in opencode.json", () => {

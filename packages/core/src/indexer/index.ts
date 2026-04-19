@@ -1,3 +1,4 @@
+import ts from "typescript";
 import { relative, join } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
@@ -80,7 +81,30 @@ export async function indexProject(
     });
   }
 
-  return indexTypeScriptProject(db, options);
+  // Resolve tsconfig once — used for both the skip check and indexing itself,
+  // avoiding a redundant filesystem walk in createTsProgram.
+  const resolvedTsconfigPath =
+    options.tsconfigPath ??
+    ts.findConfigFile(options.projectRoot, ts.sys.fileExists, "tsconfig.json");
+
+  if (!resolvedTsconfigPath) {
+    return {
+      symbolsIndexed: 0,
+      dependenciesIndexed: 0,
+      componentsAnalyzed: 0,
+      routesAnalyzed: 0,
+      filesProcessed: 0,
+      filesSkipped: 0,
+      filesRemoved: 0,
+      durationMs: 0,
+      skippedReason: "no tsconfig.json found",
+    };
+  }
+
+  return indexTypeScriptProject(db, {
+    ...options,
+    tsconfigPath: resolvedTsconfigPath,
+  });
 }
 
 /**

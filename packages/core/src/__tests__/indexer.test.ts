@@ -179,6 +179,20 @@ describe("indexProject", () => {
     expect(count).toBe(first.symbolsIndexed);
   });
 
+  it("returns skippedReason instead of throwing when no tsconfig exists", async () => {
+    const { mkdtempSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const emptyDir = mkdtempSync(join(tmpdir(), "arcbridge-no-tsconfig-"));
+    try {
+      const result = await indexProject(db, { projectRoot: emptyDir });
+      expect(result.skippedReason).toBe("no tsconfig.json found");
+      expect(result.symbolsIndexed).toBe(0);
+      expect(result.filesProcessed).toBe(0);
+    } finally {
+      rmSync(emptyDir, { recursive: true, force: true });
+    }
+  });
+
   it("generates stable symbol IDs", async () => {
     await indexProject(db, { projectRoot: FIXTURE_DIR });
 
