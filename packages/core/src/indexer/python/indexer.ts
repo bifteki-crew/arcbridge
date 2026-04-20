@@ -59,7 +59,7 @@ export async function indexPythonTreeSitter(
   });
 
   // 2. Read all files once, hash, and parse — cache for reuse across phases
-  const existingHashes = getExistingHashes(db, service);
+  const existingHashes = getExistingHashes(db, service, "python");
   const currentPaths = new Set<string>();
   const fileCache = new Map<string, { content: string; tree: ReturnType<typeof parsePython> }>();
 

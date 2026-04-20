@@ -158,7 +158,8 @@ function extractAssignment(
   contentHash: string,
   symbols: ExtractedSymbol[],
 ): void {
-  // expression_statement contains an assignment or augmented_assignment
+  // expression_statement contains an assignment (we skip augmented_assignment
+  // like `FOO += 1` since those modify rather than define symbols)
   const assignment = findChild(node, "assignment");
   if (!assignment) return;
 

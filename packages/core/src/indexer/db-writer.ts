@@ -6,12 +6,13 @@ import type { ExtractedDependency } from "./dependency-extractor.js";
 export function getExistingHashes(
   db: Database,
   service: string,
+  language?: string,
 ): Map<string, string> {
-  const rows = db
-    .prepare(
-      "SELECT DISTINCT file_path, content_hash FROM symbols WHERE service = ?",
-    )
-    .all(service) as { file_path: string; content_hash: string }[];
+  const query = language
+    ? "SELECT DISTINCT file_path, content_hash FROM symbols WHERE service = ? AND language = ?"
+    : "SELECT DISTINCT file_path, content_hash FROM symbols WHERE service = ?";
+  const params = language ? [service, language] : [service];
+  const rows = db.prepare(query).all(...params) as { file_path: string; content_hash: string }[];
 
   const map = new Map<string, string>();
   for (const row of rows) {

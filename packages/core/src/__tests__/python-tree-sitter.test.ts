@@ -100,6 +100,23 @@ describe("Python tree-sitter indexer", () => {
       expect(authenticate!.isAsync).toBe(true);
     });
 
+    it("extracts return type annotations", () => {
+      const content = readFileSync(
+        join(FIXTURE_DIR, "src/models/user.py"),
+        "utf-8",
+      );
+      const tree = parsePython(content);
+      const symbols = extractPythonSymbols(tree, "src/models/user.py", content);
+
+      const displayName = symbols.find((s) => s.name === "display_name");
+      expect(displayName).toBeDefined();
+      expect(displayName!.returnType).toBe("str");
+
+      const isAdmin = symbols.find((s) => s.name === "is_admin");
+      expect(isAdmin).toBeDefined();
+      expect(isAdmin!.returnType).toBe("bool");
+    });
+
     it("extracts constants (ALL_CAPS)", () => {
       const utilsContent = readFileSync(
         join(FIXTURE_DIR, "src/utils.py"),
