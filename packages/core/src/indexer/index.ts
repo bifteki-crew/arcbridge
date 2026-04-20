@@ -203,7 +203,7 @@ function indexTypeScriptProject(
   const { checker, sourceFiles, projectRoot } = createTsProgram(options);
 
   // 2. Compute file hashes and compare with existing
-  const existingHashes = getExistingHashes(db, service);
+  const existingHashes = getExistingHashes(db, service, "typescript");
 
   const changed: Array<{
     sourceFile: (typeof sourceFiles)[number];

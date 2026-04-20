@@ -289,7 +289,7 @@ export function indexDotnetProjectRoslyn(
   }
 
   // Get existing hashes for incremental indexing
-  const existingHashes = getExistingHashes(db, service);
+  const existingHashes = getExistingHashes(db, service, "csharp");
   const hashesJson = JSON.stringify(Object.fromEntries(existingHashes));
 
   // Shell out to the .NET indexer — prefer global tool, fall back to monorepo source
