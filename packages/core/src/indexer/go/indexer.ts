@@ -109,9 +109,9 @@ export async function indexGoTreeSitter(
   // 6. Write symbols to DB
   writeSymbols(db, allNewSymbols, service, "go");
 
-  // 7. Build symbol lookup from ALL db symbols for this service
+  // 7. Build symbol lookup from Go symbols in this service
   const allDbSymbols = db
-    .prepare("SELECT id, file_path as filePath, name, kind, start_line as startLine, end_line as endLine FROM symbols WHERE service = ?")
+    .prepare("SELECT id, file_path as filePath, name, kind, start_line as startLine, end_line as endLine FROM symbols WHERE service = ? AND language = 'go'")
     .all(service) as SymbolForDeps[];
 
   const symbolLookup = buildGoSymbolLookup(allDbSymbols);

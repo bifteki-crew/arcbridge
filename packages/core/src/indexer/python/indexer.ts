@@ -111,9 +111,9 @@ export async function indexPythonTreeSitter(
   // 6. Write symbols to DB
   writeSymbols(db, allNewSymbols, service, "python");
 
-  // 7. Build symbol lookup from ALL db symbols for this service
+  // 7. Build symbol lookup from Python symbols in this service
   const allDbSymbols = db
-    .prepare("SELECT id, file_path as filePath, name, kind, start_line as startLine, end_line as endLine FROM symbols WHERE service = ?")
+    .prepare("SELECT id, file_path as filePath, name, kind, start_line as startLine, end_line as endLine FROM symbols WHERE service = ? AND language = 'python'")
     .all(service) as SymbolForDeps[];
 
   const symbolLookup = buildPythonSymbolLookup(allDbSymbols);
