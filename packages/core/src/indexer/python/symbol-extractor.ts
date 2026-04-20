@@ -60,7 +60,7 @@ function walkNode(
       return;
 
     case "expression_statement": {
-      // Module-level or class-level assignments
+      // Module-level assignments (constants/variables)
       if (!currentClassName) {
         extractAssignment(node, relativePath, contentHash, symbols);
       }

@@ -319,6 +319,16 @@ function collectTypeIdentifiers(node: TreeSitterNode): string[] {
 }
 
 function collectTypeIdentifiersRecursive(node: TreeSitterNode, names: string[]): void {
+  // For attribute nodes (e.g. pkg.Type), only collect the last segment
+  // to avoid spurious uses_type edges to the module/object name
+  if (node.type === "attribute") {
+    const attrNode = node.childForFieldName("attribute");
+    if (attrNode && attrNode.type === "identifier") {
+      names.push(attrNode.text);
+    }
+    return; // Don't recurse into the object side
+  }
+
   if (node.type === "identifier" && isTypeContext(node)) {
     names.push(node.text);
   }
@@ -334,7 +344,6 @@ function isTypeContext(node: TreeSitterNode): boolean {
   return (
     parent.type === "type" ||
     parent.type === "subscript" ||
-    parent.type === "attribute" ||
     // In typed_parameter, the type annotation is the second named child
     (parent.type === "typed_parameter" && node !== parent.childForFieldName("name")) ||
     (parent.type === "typed_default_parameter" && node !== parent.childForFieldName("name"))

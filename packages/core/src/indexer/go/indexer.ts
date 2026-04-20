@@ -91,6 +91,9 @@ export async function indexGoTreeSitter(
   }
 
   // 4. Remove stale symbols for changed + removed files
+  // TODO: removeSymbolsForFiles deletes by file_path without service scoping —
+  // safe when services use distinct file paths (typical), but could collide in
+  // edge cases. Same limitation exists in the TypeScript and C# indexers.
   const filesToClean = [...removed, ...changedFiles];
   removeSymbolsForFiles(db, filesToClean);
 

@@ -29,9 +29,11 @@ export type CSharpBackend = "roslyn" | "tree-sitter";
 
 /**
  * Detect the project language from files in the project root.
- * Checks Unity first (ProjectSettings/ + Assets/), then tsconfig.json/package.json
- * (TypeScript), then .csproj/.sln (.NET). Unity check comes first because Unity
- * auto-generates .sln files that would otherwise match .NET detection.
+ * Priority: Unity (C#) → tsconfig.json (TS) → .csproj/.sln (C#) → go.mod (Go)
+ * → pyproject.toml/requirements.txt/setup.py (Python) → package.json (TS) → default TS.
+ * Unity check comes first because Unity auto-generates .sln files.
+ * package.json without tsconfig is checked last to avoid misdetecting
+ * Go/Python projects that have ancillary Node.js tooling.
  */
 export function detectProjectLanguage(projectRoot: string): "typescript" | "csharp" | "python" | "go" {
   // Unity projects are always C# (check before TypeScript — Unity has no tsconfig/package.json)
