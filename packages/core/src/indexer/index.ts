@@ -19,10 +19,12 @@ import {
 } from "./db-writer.js";
 import { indexDotnetProjectRoslyn, findDotnetProject, hasIndexerProject, hasGlobalTool } from "./dotnet-indexer.js";
 import { indexCSharpTreeSitter } from "./csharp/indexer.js";
+import { indexPythonTreeSitter } from "./python/indexer.js";
+import { indexGoTreeSitter } from "./go/indexer.js";
 import { indexPackageDependencies } from "./package-deps.js";
 import { loadConfig } from "../config/loader.js";
 
-export type ProjectLanguage = "typescript" | "csharp" | "auto";
+export type ProjectLanguage = "typescript" | "csharp" | "python" | "go" | "auto";
 export type CSharpBackend = "roslyn" | "tree-sitter";
 
 /**
@@ -31,7 +33,7 @@ export type CSharpBackend = "roslyn" | "tree-sitter";
  * (TypeScript), then .csproj/.sln (.NET). Unity check comes first because Unity
  * auto-generates .sln files that would otherwise match .NET detection.
  */
-export function detectProjectLanguage(projectRoot: string): "typescript" | "csharp" {
+export function detectProjectLanguage(projectRoot: string): "typescript" | "csharp" | "python" | "go" {
   // Unity projects are always C# (check before TypeScript — Unity has no tsconfig/package.json)
   if (
     existsSync(join(projectRoot, "ProjectSettings")) &&
@@ -40,12 +42,28 @@ export function detectProjectLanguage(projectRoot: string): "typescript" | "csha
     return "csharp";
   }
 
-  // TypeScript signals take priority (package.json + tsconfig.json is the stronger signal)
+  // TypeScript: tsconfig.json is a strong, unambiguous signal
   if (existsSync(join(projectRoot, "tsconfig.json"))) return "typescript";
-  if (existsSync(join(projectRoot, "package.json"))) return "typescript";
 
   // .NET signals
   if (findDotnetProject(projectRoot)) return "csharp";
+
+  // Go signals
+  if (existsSync(join(projectRoot, "go.mod"))) return "go";
+
+  // Python signals
+  if (
+    existsSync(join(projectRoot, "pyproject.toml")) ||
+    existsSync(join(projectRoot, "requirements.txt")) ||
+    existsSync(join(projectRoot, "setup.py"))
+  ) {
+    return "python";
+  }
+
+  // package.json without tsconfig — could be a JS project or tooling-only;
+  // check after Go/Python so a Go/Python project with ancillary package.json
+  // isn't misdetected as TypeScript
+  if (existsSync(join(projectRoot, "package.json"))) return "typescript";
 
   // Default to TypeScript (existing behavior)
   return "typescript";
@@ -76,6 +94,20 @@ export async function indexProject(
       });
     }
     return await indexCSharpTreeSitter(db, {
+      projectRoot: options.projectRoot,
+      service: options.service,
+    });
+  }
+
+  if (resolvedLanguage === "python") {
+    return await indexPythonTreeSitter(db, {
+      projectRoot: options.projectRoot,
+      service: options.service,
+    });
+  }
+
+  if (resolvedLanguage === "go") {
+    return await indexGoTreeSitter(db, {
       projectRoot: options.projectRoot,
       service: options.service,
     });
