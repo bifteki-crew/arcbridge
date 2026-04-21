@@ -73,7 +73,7 @@ export function detectProjectLanguage(projectRoot: string): "typescript" | "csha
 
 /**
  * Index a project, auto-detecting the language unless explicitly specified.
- * Dispatches to the TypeScript or .NET indexer accordingly.
+ * Dispatches to the TypeScript, C# (Roslyn or tree-sitter), Python, or Go indexer.
  */
 export async function indexProject(
   db: Database,
@@ -253,7 +253,7 @@ function indexTypeScriptProject(
   // 7. Extract dependencies across ALL source files
   //    (dependencies can cross file boundaries, so we need all symbols for lookup)
   const allDbSymbols = db
-    .prepare("SELECT id, file_path as filePath, name FROM symbols WHERE service = ?")
+    .prepare("SELECT id, file_path as filePath, name FROM symbols WHERE service = ? AND language = 'typescript'")
     .all(service) as Array<{ id: string; filePath: string; name: string }>;
 
   const lookup = buildSymbolLookup(allDbSymbols);
@@ -266,7 +266,7 @@ function indexTypeScriptProject(
   });
 
   // Clear all deps and re-insert (simpler than incremental for cross-file edges)
-  db.prepare("DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE service = ?)").run(service);
+  db.prepare("DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE service = ? AND language = 'typescript')").run(service);
   writeDependencies(db, allDeps);
 
   // 8. Analyze components — React (JSX) and Angular (@Component) detection
