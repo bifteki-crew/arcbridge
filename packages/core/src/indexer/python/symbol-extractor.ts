@@ -269,13 +269,12 @@ function extractFunctionSignature(node: TreeSitterNode): string | null {
 
 /**
  * Extract return type annotation (the `-> Type` part).
+ * In tree-sitter-python, function_definition has a "return_type" field
+ * containing the type node from the `-> Type` annotation.
  */
 function extractReturnType(node: TreeSitterNode): string | null {
   const returnType = node.childForFieldName("return_type");
   if (returnType) return returnType.text;
-
-  // Fallback: look for type node after parameters
-  // In tree-sitter-python, the return type is the `type` field
   return null;
 }
 
