@@ -6,6 +6,7 @@ import { initializeSchema } from "../db/schema.js";
 import type { Database } from "../db/connection.js";
 import { ensurePythonParser, parsePython } from "../indexer/python/parser.js";
 import { extractPythonSymbols } from "../indexer/python/symbol-extractor.js";
+import { hashContent } from "../indexer/content-hash.js";
 import {
   extractPythonDependencies,
   buildPythonSymbolLookup,
@@ -39,7 +40,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parsePython(content);
-      const symbols = extractPythonSymbols(tree, "src/models/user.py", content);
+      const symbols = extractPythonSymbols(tree, "src/models/user.py", hashContent(content));
 
       const classes = symbols.filter((s) => s.kind === "class");
       const names = classes.map((c) => c.name);
@@ -53,7 +54,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parsePython(content);
-      const symbols = extractPythonSymbols(tree, "src/models/user.py", content);
+      const symbols = extractPythonSymbols(tree, "src/models/user.py", hashContent(content));
 
       const functions = symbols.filter((s) => s.kind === "function");
       const qualifiedNames = functions.map((f) => f.qualifiedName);
@@ -67,7 +68,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parsePython(content);
-      const symbols = extractPythonSymbols(tree, "src/utils.py", content);
+      const symbols = extractPythonSymbols(tree, "src/utils.py", hashContent(content));
 
       const functions = symbols.filter((s) => s.kind === "function");
       const names = functions.map((f) => f.name);
@@ -82,7 +83,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const utilsTree = parsePython(utilsContent);
-      const utilsSymbols = extractPythonSymbols(utilsTree, "src/utils.py", utilsContent);
+      const utilsSymbols = extractPythonSymbols(utilsTree, "src/utils.py", hashContent(utilsContent));
 
       const asyncHelper = utilsSymbols.find((s) => s.name === "async_helper");
       expect(asyncHelper).toBeDefined();
@@ -93,7 +94,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const authTree = parsePython(authContent);
-      const authSymbols = extractPythonSymbols(authTree, "src/services/auth.py", authContent);
+      const authSymbols = extractPythonSymbols(authTree, "src/services/auth.py", hashContent(authContent));
 
       const authenticate = authSymbols.find((s) => s.name === "authenticate");
       expect(authenticate).toBeDefined();
@@ -106,7 +107,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parsePython(content);
-      const symbols = extractPythonSymbols(tree, "src/models/user.py", content);
+      const symbols = extractPythonSymbols(tree, "src/models/user.py", hashContent(content));
 
       const displayName = symbols.find((s) => s.name === "display_name");
       expect(displayName).toBeDefined();
@@ -123,7 +124,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const utilsTree = parsePython(utilsContent);
-      const utilsSymbols = extractPythonSymbols(utilsTree, "src/utils.py", utilsContent);
+      const utilsSymbols = extractPythonSymbols(utilsTree, "src/utils.py", hashContent(utilsContent));
 
       const constants = utilsSymbols.filter((s) => s.kind === "constant");
       const names = constants.map((c) => c.name);
@@ -135,7 +136,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const userTree = parsePython(userContent);
-      const userSymbols = extractPythonSymbols(userTree, "src/models/user.py", userContent);
+      const userSymbols = extractPythonSymbols(userTree, "src/models/user.py", hashContent(userContent));
 
       const userConstants = userSymbols.filter((s) => s.kind === "constant");
       expect(userConstants.map((c) => c.name)).toContain("MAX_USERS");
@@ -147,7 +148,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const userTree = parsePython(userContent);
-      const userSymbols = extractPythonSymbols(userTree, "src/models/user.py", userContent);
+      const userSymbols = extractPythonSymbols(userTree, "src/models/user.py", hashContent(userContent));
 
       const internalCache = userSymbols.find((s) => s.name === "_internal_cache");
       expect(internalCache).toBeDefined();
@@ -158,7 +159,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const authTree = parsePython(authContent);
-      const authSymbols = extractPythonSymbols(authTree, "src/services/auth.py", authContent);
+      const authSymbols = extractPythonSymbols(authTree, "src/services/auth.py", hashContent(authContent));
 
       const hashPassword = authSymbols.find((s) => s.name === "_hash_password");
       expect(hashPassword).toBeDefined();
@@ -171,7 +172,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parsePython(content);
-      const symbols = extractPythonSymbols(tree, "src/models/user.py", content);
+      const symbols = extractPythonSymbols(tree, "src/models/user.py", hashContent(content));
 
       const user = symbols.find(
         (s) => s.name === "User" && s.kind === "class",
@@ -186,7 +187,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parsePython(content);
-      const symbols = extractPythonSymbols(tree, "src/utils.py", content);
+      const symbols = extractPythonSymbols(tree, "src/utils.py", hashContent(content));
 
       const formatName = symbols.find((s) => s.name === "format_name");
       expect(formatName).toBeDefined();
@@ -201,7 +202,7 @@ describe("Python tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parsePython(content);
-      const symbols = extractPythonSymbols(tree, "src/services/auth.py", content);
+      const symbols = extractPythonSymbols(tree, "src/services/auth.py", hashContent(content));
 
       // Add Exception as a known symbol so the extends dep can be resolved
       const allSymbols = [

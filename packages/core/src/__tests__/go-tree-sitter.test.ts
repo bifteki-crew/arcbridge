@@ -6,6 +6,7 @@ import { initializeSchema } from "../db/schema.js";
 import type { Database } from "../db/connection.js";
 import { ensureGoParser, parseGo } from "../indexer/go/parser.js";
 import { extractGoSymbols } from "../indexer/go/symbol-extractor.js";
+import { hashContent } from "../indexer/content-hash.js";
 import {
   extractGoDependencies,
   buildGoSymbolLookup,
@@ -41,7 +42,7 @@ describe("Go tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parseGo(content);
-      const symbols = extractGoSymbols(tree, "models/user.go", content);
+      const symbols = extractGoSymbols(tree, "models/user.go", hashContent(content));
 
       const classes = symbols.filter((s) => s.kind === "class");
       expect(classes.map((c) => c.name)).toContain("User");
@@ -53,7 +54,7 @@ describe("Go tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parseGo(content);
-      const symbols = extractGoSymbols(tree, "services/auth.go", content);
+      const symbols = extractGoSymbols(tree, "services/auth.go", hashContent(content));
 
       const classes = symbols.filter((s) => s.kind === "class");
       expect(classes.map((c) => c.name)).toContain("AuthError");
@@ -66,7 +67,7 @@ describe("Go tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parseGo(content);
-      const symbols = extractGoSymbols(tree, "models/user.go", content);
+      const symbols = extractGoSymbols(tree, "models/user.go", hashContent(content));
 
       const ifaces = symbols.filter((s) => s.kind === "interface");
       expect(ifaces.map((i) => i.name)).toContain("UserStore");
@@ -78,7 +79,7 @@ describe("Go tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parseGo(content);
-      const symbols = extractGoSymbols(tree, "models/user.go", content);
+      const symbols = extractGoSymbols(tree, "models/user.go", hashContent(content));
 
       const functions = symbols.filter((s) => s.kind === "function");
       const qualifiedNames = functions.map((f) => f.qualifiedName);
@@ -92,7 +93,7 @@ describe("Go tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parseGo(content);
-      const symbols = extractGoSymbols(tree, "utils/helpers.go", content);
+      const symbols = extractGoSymbols(tree, "utils/helpers.go", hashContent(content));
 
       const functions = symbols.filter((s) => s.kind === "function");
       const names = functions.map((f) => f.name);
@@ -106,7 +107,7 @@ describe("Go tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parseGo(content);
-      const symbols = extractGoSymbols(tree, "utils/helpers.go", content);
+      const symbols = extractGoSymbols(tree, "utils/helpers.go", hashContent(content));
 
       const formatName = symbols.find((s) => s.name === "FormatName");
       expect(formatName?.isExported).toBe(true);
@@ -123,7 +124,7 @@ describe("Go tree-sitter indexer", () => {
       const modelsSymbols = extractGoSymbols(
         modelsTree,
         "models/user.go",
-        modelsContent,
+        hashContent(modelsContent),
       );
 
       const internalCounter = modelsSymbols.find(
@@ -141,7 +142,7 @@ describe("Go tree-sitter indexer", () => {
       const helpersSymbols = extractGoSymbols(
         helpersTree,
         "utils/helpers.go",
-        helpersContent,
+        hashContent(helpersContent),
       );
 
       const constants = helpersSymbols.filter((s) => s.kind === "constant");
@@ -158,7 +159,7 @@ describe("Go tree-sitter indexer", () => {
       const modelsSymbols = extractGoSymbols(
         modelsTree,
         "models/user.go",
-        modelsContent,
+        hashContent(modelsContent),
       );
 
       const modelsConstants = modelsSymbols.filter(
@@ -176,7 +177,7 @@ describe("Go tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parseGo(content);
-      const symbols = extractGoSymbols(tree, "models/user.go", content);
+      const symbols = extractGoSymbols(tree, "models/user.go", hashContent(content));
 
       const user = symbols.find(
         (s) => s.name === "User" && s.kind === "class",
@@ -190,7 +191,7 @@ describe("Go tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parseGo(content);
-      const symbols = extractGoSymbols(tree, "utils/helpers.go", content);
+      const symbols = extractGoSymbols(tree, "utils/helpers.go", hashContent(content));
 
       const formatName = symbols.find((s) => s.name === "FormatName");
       expect(formatName?.id).toBe("utils/helpers.go::FormatName#function");
@@ -202,7 +203,7 @@ describe("Go tree-sitter indexer", () => {
         "utf-8",
       );
       const tree = parseGo(content);
-      const symbols = extractGoSymbols(tree, "services/auth.go", content);
+      const symbols = extractGoSymbols(tree, "services/auth.go", hashContent(content));
 
       expect(symbols.every((s) => s.isAsync === false)).toBe(true);
     });
@@ -218,7 +219,7 @@ describe("Go tree-sitter indexer", () => {
       const allSymbols = files.flatMap((f) => {
         const content = readFileSync(join(FIXTURE_DIR, f), "utf-8");
         const tree = parseGo(content);
-        return extractGoSymbols(tree, f, content);
+        return extractGoSymbols(tree, f, hashContent(content));
       });
 
       const lookup = buildGoSymbolLookup(allSymbols);

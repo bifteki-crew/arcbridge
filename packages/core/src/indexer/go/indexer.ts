@@ -62,7 +62,7 @@ export async function indexGoTreeSitter(
   // Consider storing per-file hashes independently.
   const existingHashes = getExistingHashes(db, service, "go");
   const currentPaths = new Set<string>();
-  const fileCache = new Map<string, { content: string; tree: ReturnType<typeof parseGo> }>();
+  const fileCache = new Map<string, { content: string; tree: ReturnType<typeof parseGo>; hash: string }>();
 
   const changedFiles: string[] = [];
   let filesSkipped = 0;
@@ -75,7 +75,7 @@ export async function indexGoTreeSitter(
     const content = readFileSync(fullPath, "utf-8");
     const hash = hashContent(content);
     const tree = parseGo(content);
-    fileCache.set(relPath, { content, tree });
+    fileCache.set(relPath, { content, tree, hash });
 
     const existingHash = existingHashes.get(relPath);
     if (existingHash === hash) {
@@ -102,7 +102,7 @@ export async function indexGoTreeSitter(
   for (const relPath of changedFiles) {
     const cached = fileCache.get(relPath);
     if (!cached) continue;
-    const symbols = extractGoSymbols(cached.tree, relPath, cached.content);
+    const symbols = extractGoSymbols(cached.tree, relPath, cached.hash);
     allNewSymbols.push(...symbols);
   }
 

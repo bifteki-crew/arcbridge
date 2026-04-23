@@ -1,5 +1,4 @@
 import type { ExtractedSymbol, SymbolKind } from "../types.js";
-import { hashContent } from "../content-hash.js";
 
 interface TreeSitterNode {
   type: string;
@@ -21,10 +20,9 @@ interface TreeSitterNode {
 export function extractPythonSymbols(
   tree: { rootNode: TreeSitterNode },
   relativePath: string,
-  fileContent: string,
+  contentHash: string,
 ): ExtractedSymbol[] {
   const symbols: ExtractedSymbol[] = [];
-  const contentHash = hashContent(fileContent);
 
   const root = tree.rootNode;
 

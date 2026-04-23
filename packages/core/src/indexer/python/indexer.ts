@@ -64,7 +64,7 @@ export async function indexPythonTreeSitter(
   // re-parsed on every run. Consider storing per-file hashes independently.
   const existingHashes = getExistingHashes(db, service, "python");
   const currentPaths = new Set<string>();
-  const fileCache = new Map<string, { content: string; tree: ReturnType<typeof parsePython> }>();
+  const fileCache = new Map<string, { content: string; tree: ReturnType<typeof parsePython>; hash: string }>();
 
   const changedFiles: string[] = [];
   let filesSkipped = 0;
@@ -77,7 +77,7 @@ export async function indexPythonTreeSitter(
     const content = readFileSync(fullPath, "utf-8");
     const hash = hashContent(content);
     const tree = parsePython(content);
-    fileCache.set(relPath, { content, tree });
+    fileCache.set(relPath, { content, tree, hash });
 
     const existingHash = existingHashes.get(relPath);
     if (existingHash === hash) {
@@ -104,7 +104,7 @@ export async function indexPythonTreeSitter(
   for (const relPath of changedFiles) {
     const cached = fileCache.get(relPath);
     if (!cached) continue;
-    const symbols = extractPythonSymbols(cached.tree, relPath, cached.content);
+    const symbols = extractPythonSymbols(cached.tree, relPath, cached.hash);
     allNewSymbols.push(...symbols);
   }
 
