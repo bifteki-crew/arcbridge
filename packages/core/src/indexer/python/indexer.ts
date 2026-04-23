@@ -59,6 +59,9 @@ export async function indexPythonTreeSitter(
   });
 
   // 2. Read all files once, hash, and parse — cache for reuse across phases
+  // TODO: existingHashes is derived from the symbols table, so files that produce
+  // zero symbols (e.g. empty __init__.py) will never have a stored hash and will be
+  // re-parsed on every run. Consider storing per-file hashes independently.
   const existingHashes = getExistingHashes(db, service, "python");
   const currentPaths = new Set<string>();
   const fileCache = new Map<string, { content: string; tree: ReturnType<typeof parsePython> }>();

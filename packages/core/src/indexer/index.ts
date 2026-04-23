@@ -293,6 +293,6 @@ function indexTypeScriptProject(
   };
 }
 
-export type { IndexerOptions, IndexResult, ExtractedSymbol, SymbolKind } from "./types.js";
+export type { IndexerOptions, IndexResult, ExtractedSymbol, SymbolKind, IndexerLanguage } from "./types.js";
 export { discoverDotnetServices, type DotnetProjectInfo } from "./dotnet-indexer.js";
 export { indexPackageDependencies } from "./package-deps.js";

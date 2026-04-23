@@ -1,12 +1,12 @@
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
-import type { ExtractedSymbol } from "./types.js";
+import type { ExtractedSymbol, IndexerLanguage } from "./types.js";
 import type { ExtractedDependency } from "./dependency-extractor.js";
 
 export function getExistingHashes(
   db: Database,
   service: string,
-  language?: string,
+  language?: IndexerLanguage,
 ): Map<string, string> {
   const query = language
     ? "SELECT DISTINCT file_path, content_hash FROM symbols WHERE service = ? AND language = ?"
