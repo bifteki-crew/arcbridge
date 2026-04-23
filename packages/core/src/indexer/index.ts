@@ -13,7 +13,7 @@ import { analyzeRoutes } from "./route-analyzer.js";
 import { hashContent } from "./content-hash.js";
 import {
   getExistingHashes,
-  removeSymbolsForFiles,
+  removeScopedSymbolsForFiles,
   writeSymbols,
   writeDependencies,
 } from "./db-writer.js";
@@ -235,12 +235,12 @@ function indexTypeScriptProject(
     }
   }
 
-  // 4. Remove stale symbols for changed + removed files
+  // 4. Remove stale symbols for changed + removed files (scoped by service + language)
   const filesToClean = [
     ...removed,
     ...changed.map((f) => f.relativePath),
   ];
-  removeSymbolsForFiles(db, filesToClean);
+  removeScopedSymbolsForFiles(db, filesToClean, service, "typescript");
 
   // 5. Extract symbols from changed files
   const allSymbols = changed.flatMap((f) =>
@@ -258,7 +258,7 @@ function indexTypeScriptProject(
 
   const lookup = buildSymbolLookup(allDbSymbols);
 
-  // Clear existing dependencies for changed files (already done in removeSymbolsForFiles)
+  // Clear existing dependencies for changed files (already done in removeScopedSymbolsForFiles)
   // Now extract fresh dependencies from all source files
   const allDeps = sourceFiles.flatMap((sf) => {
     const relPath = relative(projectRoot, sf.fileName);
