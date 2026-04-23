@@ -7,7 +7,7 @@ import type { ExtractedDependency } from "../dependency-extractor.js";
 import { hashContent } from "../content-hash.js";
 import {
   getExistingHashes,
-  removeSymbolsForFiles,
+  removeScopedSymbolsForFiles,
   writeSymbols,
   writeDependencies,
 } from "../db-writer.js";
@@ -95,12 +95,9 @@ export async function indexPythonTreeSitter(
     }
   }
 
-  // 4. Remove stale symbols for changed + removed files
-  // TODO: removeSymbolsForFiles deletes by file_path without service scoping —
-  // safe when services use distinct file paths (typical), but could collide in
-  // edge cases. Same limitation exists in the TypeScript and C# indexers.
+  // 4. Remove stale symbols for changed + removed files (scoped by service + language)
   const filesToClean = [...removed, ...changedFiles];
-  removeSymbolsForFiles(db, filesToClean);
+  removeScopedSymbolsForFiles(db, filesToClean, service, "python");
 
   // 5. Extract symbols from changed files
   const allNewSymbols: ExtractedSymbol[] = [];

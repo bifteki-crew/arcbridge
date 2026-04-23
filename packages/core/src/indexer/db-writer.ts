@@ -53,6 +53,44 @@ export function removeSymbolsForFiles(
 
 }
 
+/**
+ * Remove symbols and their dependencies/components for the given file paths,
+ * scoped to a specific service and language. Prevents cross-service/language
+ * data loss in monorepo setups with overlapping relative paths.
+ */
+export function removeScopedSymbolsForFiles(
+  db: Database,
+  filePaths: string[],
+  service: string,
+  language: IndexerLanguage,
+): void {
+  if (filePaths.length === 0) return;
+
+  const scope = "file_path = ? AND service = ? AND language = ?";
+
+  const deleteDepsSource = db.prepare(
+    `DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE ${scope})`,
+  );
+  const deleteDepsTarget = db.prepare(
+    `DELETE FROM dependencies WHERE target_symbol IN (SELECT id FROM symbols WHERE ${scope})`,
+  );
+  const deleteComponents = db.prepare(
+    `DELETE FROM components WHERE symbol_id IN (SELECT id FROM symbols WHERE ${scope})`,
+  );
+  const deleteSymbols = db.prepare(
+    `DELETE FROM symbols WHERE ${scope}`,
+  );
+
+  transaction(db, () => {
+    for (const fp of filePaths) {
+      deleteDepsSource.run(fp, service, language);
+      deleteDepsTarget.run(fp, service, language);
+      deleteComponents.run(fp, service, language);
+      deleteSymbols.run(fp, service, language);
+    }
+  });
+}
+
 export function writeSymbols(
   db: Database,
   symbols: ExtractedSymbol[],
