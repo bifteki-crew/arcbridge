@@ -1,8 +1,11 @@
+/** Concrete language identifiers stored in the DB and used for scoping queries. */
+export type IndexerLanguage = "typescript" | "csharp" | "python" | "go";
+
 export interface IndexerOptions {
   projectRoot: string;
   tsconfigPath?: string;
   service?: string;
-  language?: "typescript" | "csharp" | "auto";
+  language?: IndexerLanguage | "auto";
 }
 
 export type SymbolKind =

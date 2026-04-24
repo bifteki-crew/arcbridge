@@ -8,7 +8,7 @@ import type { IndexResult, ExtractedSymbol } from "./types.js";
 import type { ExtractedDependency } from "./dependency-extractor.js";
 import {
   getExistingHashes,
-  removeSymbolsForFiles,
+  removeScopedSymbolsForFiles,
   writeSymbols,
   writeDependencies,
 } from "./db-writer.js";
@@ -289,7 +289,7 @@ export function indexDotnetProjectRoslyn(
   }
 
   // Get existing hashes for incremental indexing
-  const existingHashes = getExistingHashes(db, service);
+  const existingHashes = getExistingHashes(db, service, "csharp");
   const hashesJson = JSON.stringify(Object.fromEntries(existingHashes));
 
   // Shell out to the .NET indexer — prefer global tool, fall back to monorepo source
@@ -311,9 +311,9 @@ export function indexDotnetProjectRoslyn(
     );
   }
 
-  // Remove stale symbols for changed + removed files
+  // Remove stale symbols for changed + removed files (scoped by service + language)
   const filesToClean = [...output.changedFiles, ...output.removedFiles];
-  removeSymbolsForFiles(db, filesToClean);
+  removeScopedSymbolsForFiles(db, filesToClean, service, "csharp");
 
   // All symbols from all projects in the solution go under one service.
   // In a typical .NET solution (MyApp.Api, MyApp.Domain, MyApp.Infrastructure),

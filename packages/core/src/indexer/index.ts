@@ -13,25 +13,29 @@ import { analyzeRoutes } from "./route-analyzer.js";
 import { hashContent } from "./content-hash.js";
 import {
   getExistingHashes,
-  removeSymbolsForFiles,
+  removeScopedSymbolsForFiles,
   writeSymbols,
   writeDependencies,
 } from "./db-writer.js";
 import { indexDotnetProjectRoslyn, findDotnetProject, hasIndexerProject, hasGlobalTool } from "./dotnet-indexer.js";
 import { indexCSharpTreeSitter } from "./csharp/indexer.js";
+import { indexPythonTreeSitter } from "./python/indexer.js";
+import { indexGoTreeSitter } from "./go/indexer.js";
 import { indexPackageDependencies } from "./package-deps.js";
 import { loadConfig } from "../config/loader.js";
 
-export type ProjectLanguage = "typescript" | "csharp" | "auto";
+export type ProjectLanguage = "typescript" | "csharp" | "python" | "go" | "auto";
 export type CSharpBackend = "roslyn" | "tree-sitter";
 
 /**
  * Detect the project language from files in the project root.
- * Checks Unity first (ProjectSettings/ + Assets/), then tsconfig.json/package.json
- * (TypeScript), then .csproj/.sln (.NET). Unity check comes first because Unity
- * auto-generates .sln files that would otherwise match .NET detection.
+ * Priority: Unity (C#) → tsconfig.json (TS) → .csproj/.sln (C#) → go.mod (Go)
+ * → pyproject.toml/requirements.txt/setup.py (Python) → package.json (TS) → default TS.
+ * Unity check comes first because Unity auto-generates .sln files.
+ * package.json without tsconfig is checked last to avoid misdetecting
+ * Go/Python projects that have ancillary Node.js tooling.
  */
-export function detectProjectLanguage(projectRoot: string): "typescript" | "csharp" {
+export function detectProjectLanguage(projectRoot: string): "typescript" | "csharp" | "python" | "go" {
   // Unity projects are always C# (check before TypeScript — Unity has no tsconfig/package.json)
   if (
     existsSync(join(projectRoot, "ProjectSettings")) &&
@@ -40,12 +44,28 @@ export function detectProjectLanguage(projectRoot: string): "typescript" | "csha
     return "csharp";
   }
 
-  // TypeScript signals take priority (package.json + tsconfig.json is the stronger signal)
+  // TypeScript: tsconfig.json is a strong, unambiguous signal
   if (existsSync(join(projectRoot, "tsconfig.json"))) return "typescript";
-  if (existsSync(join(projectRoot, "package.json"))) return "typescript";
 
   // .NET signals
   if (findDotnetProject(projectRoot)) return "csharp";
+
+  // Go signals
+  if (existsSync(join(projectRoot, "go.mod"))) return "go";
+
+  // Python signals
+  if (
+    existsSync(join(projectRoot, "pyproject.toml")) ||
+    existsSync(join(projectRoot, "requirements.txt")) ||
+    existsSync(join(projectRoot, "setup.py"))
+  ) {
+    return "python";
+  }
+
+  // package.json without tsconfig — could be a JS project or tooling-only;
+  // check after Go/Python so a Go/Python project with ancillary package.json
+  // isn't misdetected as TypeScript
+  if (existsSync(join(projectRoot, "package.json"))) return "typescript";
 
   // Default to TypeScript (existing behavior)
   return "typescript";
@@ -53,7 +73,7 @@ export function detectProjectLanguage(projectRoot: string): "typescript" | "csha
 
 /**
  * Index a project, auto-detecting the language unless explicitly specified.
- * Dispatches to the TypeScript or .NET indexer accordingly.
+ * Dispatches to the TypeScript, C# (Roslyn or tree-sitter), Python, or Go indexer.
  */
 export async function indexProject(
   db: Database,
@@ -76,6 +96,20 @@ export async function indexProject(
       });
     }
     return await indexCSharpTreeSitter(db, {
+      projectRoot: options.projectRoot,
+      service: options.service,
+    });
+  }
+
+  if (resolvedLanguage === "python") {
+    return await indexPythonTreeSitter(db, {
+      projectRoot: options.projectRoot,
+      service: options.service,
+    });
+  }
+
+  if (resolvedLanguage === "go") {
+    return await indexGoTreeSitter(db, {
       projectRoot: options.projectRoot,
       service: options.service,
     });
@@ -169,7 +203,7 @@ function indexTypeScriptProject(
   const { checker, sourceFiles, projectRoot } = createTsProgram(options);
 
   // 2. Compute file hashes and compare with existing
-  const existingHashes = getExistingHashes(db, service);
+  const existingHashes = getExistingHashes(db, service, "typescript");
 
   const changed: Array<{
     sourceFile: (typeof sourceFiles)[number];
@@ -201,12 +235,12 @@ function indexTypeScriptProject(
     }
   }
 
-  // 4. Remove stale symbols for changed + removed files
+  // 4. Remove stale symbols for changed + removed files (scoped by service + language)
   const filesToClean = [
     ...removed,
     ...changed.map((f) => f.relativePath),
   ];
-  removeSymbolsForFiles(db, filesToClean);
+  removeScopedSymbolsForFiles(db, filesToClean, service, "typescript");
 
   // 5. Extract symbols from changed files
   const allSymbols = changed.flatMap((f) =>
@@ -219,12 +253,12 @@ function indexTypeScriptProject(
   // 7. Extract dependencies across ALL source files
   //    (dependencies can cross file boundaries, so we need all symbols for lookup)
   const allDbSymbols = db
-    .prepare("SELECT id, file_path as filePath, name FROM symbols WHERE service = ?")
+    .prepare("SELECT id, file_path as filePath, name FROM symbols WHERE service = ? AND language = 'typescript'")
     .all(service) as Array<{ id: string; filePath: string; name: string }>;
 
   const lookup = buildSymbolLookup(allDbSymbols);
 
-  // Clear existing dependencies for changed files (already done in removeSymbolsForFiles)
+  // Clear existing dependencies for changed files (already done in removeScopedSymbolsForFiles)
   // Now extract fresh dependencies from all source files
   const allDeps = sourceFiles.flatMap((sf) => {
     const relPath = relative(projectRoot, sf.fileName);
@@ -232,7 +266,7 @@ function indexTypeScriptProject(
   });
 
   // Clear all deps and re-insert (simpler than incremental for cross-file edges)
-  db.prepare("DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE service = ?)").run(service);
+  db.prepare("DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE service = ? AND language = 'typescript')").run(service);
   writeDependencies(db, allDeps);
 
   // 8. Analyze components — React (JSX) and Angular (@Component) detection
@@ -259,6 +293,6 @@ function indexTypeScriptProject(
   };
 }
 
-export type { IndexerOptions, IndexResult, ExtractedSymbol, SymbolKind } from "./types.js";
+export type { IndexerOptions, IndexResult, ExtractedSymbol, SymbolKind, IndexerLanguage } from "./types.js";
 export { discoverDotnetServices, type DotnetProjectInfo } from "./dotnet-indexer.js";
 export { indexPackageDependencies } from "./package-deps.js";

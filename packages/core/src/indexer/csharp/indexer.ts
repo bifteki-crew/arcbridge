@@ -8,7 +8,7 @@ import type { ExtractedDependency } from "../dependency-extractor.js";
 import { hashContent } from "../content-hash.js";
 import {
   getExistingHashes,
-  removeSymbolsForFiles,
+  removeScopedSymbolsForFiles,
   writeSymbols,
   writeDependencies,
 } from "../db-writer.js";
@@ -56,7 +56,7 @@ export async function indexCSharpTreeSitter(
   });
 
   // 2. Read all files once, hash, and parse — cache for reuse across phases
-  const existingHashes = getExistingHashes(db, service);
+  const existingHashes = getExistingHashes(db, service, "csharp");
   const currentPaths = new Set<string>();
   const fileCache = new Map<string, { content: string; tree: ReturnType<typeof parseCSharp> }>();
 
@@ -90,11 +90,9 @@ export async function indexCSharpTreeSitter(
   }
 
   // 4. Remove stale symbols for changed + removed files
-  // TODO: removeSymbolsForFiles deletes by file_path without service scoping —
-  // safe when services use distinct file paths (typical), but could collide in
-  // edge cases. Same limitation exists in the TypeScript indexer.
+  // 4. Remove stale symbols for changed + removed files (scoped by service + language)
   const filesToClean = [...removed, ...changedFiles];
-  removeSymbolsForFiles(db, filesToClean);
+  removeScopedSymbolsForFiles(db, filesToClean, service, "csharp");
 
   // 5. Extract symbols from changed files
   const allNewSymbols: ExtractedSymbol[] = [];
@@ -108,9 +106,9 @@ export async function indexCSharpTreeSitter(
   // 6. Write symbols to DB
   writeSymbols(db, allNewSymbols, service, "csharp");
 
-  // 7. Build symbol lookup from ALL db symbols for this service
+  // 7. Build symbol lookup from C# symbols in this service
   const allDbSymbols = db
-    .prepare("SELECT id, file_path as filePath, name, kind, start_line as startLine, end_line as endLine FROM symbols WHERE service = ?")
+    .prepare("SELECT id, file_path as filePath, name, kind, start_line as startLine, end_line as endLine FROM symbols WHERE service = ? AND language = 'csharp'")
     .all(service) as SymbolForDeps[];
 
   const symbolLookup = buildCSharpSymbolLookup(allDbSymbols);

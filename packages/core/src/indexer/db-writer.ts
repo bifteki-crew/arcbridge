@@ -1,17 +1,18 @@
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
-import type { ExtractedSymbol } from "./types.js";
+import type { ExtractedSymbol, IndexerLanguage } from "./types.js";
 import type { ExtractedDependency } from "./dependency-extractor.js";
 
 export function getExistingHashes(
   db: Database,
   service: string,
+  language?: IndexerLanguage,
 ): Map<string, string> {
-  const rows = db
-    .prepare(
-      "SELECT DISTINCT file_path, content_hash FROM symbols WHERE service = ?",
-    )
-    .all(service) as { file_path: string; content_hash: string }[];
+  const query = language
+    ? "SELECT DISTINCT file_path, content_hash FROM symbols WHERE service = ? AND language = ?"
+    : "SELECT DISTINCT file_path, content_hash FROM symbols WHERE service = ?";
+  const params = language ? [service, language] : [service];
+  const rows = db.prepare(query).all(...params) as { file_path: string; content_hash: string }[];
 
   const map = new Map<string, string>();
   for (const row of rows) {
@@ -50,6 +51,44 @@ export function removeSymbolsForFiles(
     }
   });
 
+}
+
+/**
+ * Remove symbols and their dependencies/components for the given file paths,
+ * scoped to a specific service and language. Prevents cross-service/language
+ * data loss in monorepo setups with overlapping relative paths.
+ */
+export function removeScopedSymbolsForFiles(
+  db: Database,
+  filePaths: string[],
+  service: string,
+  language: IndexerLanguage,
+): void {
+  if (filePaths.length === 0) return;
+
+  const scope = "file_path = ? AND service = ? AND language = ?";
+
+  const deleteDepsSource = db.prepare(
+    `DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE ${scope})`,
+  );
+  const deleteDepsTarget = db.prepare(
+    `DELETE FROM dependencies WHERE target_symbol IN (SELECT id FROM symbols WHERE ${scope})`,
+  );
+  const deleteComponents = db.prepare(
+    `DELETE FROM components WHERE symbol_id IN (SELECT id FROM symbols WHERE ${scope})`,
+  );
+  const deleteSymbols = db.prepare(
+    `DELETE FROM symbols WHERE ${scope}`,
+  );
+
+  transaction(db, () => {
+    for (const fp of filePaths) {
+      deleteDepsSource.run(fp, service, language);
+      deleteDepsTarget.run(fp, service, language);
+      deleteComponents.run(fp, service, language);
+      deleteSymbols.run(fp, service, language);
+    }
+  });
 }
 
 export function writeSymbols(
