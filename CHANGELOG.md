@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.5.0 (2026-04-24)
+
+### New Features
+
+- **Python indexer (experimental)** — tree-sitter WASM-based indexer for Python projects. Extracts functions, classes, methods, async functions, constants (ALL_CAPS), variables, decorators, docstrings, and return type annotations. Dependency extraction covers calls, class inheritance, and type usage. Auto-detected via `pyproject.toml`, `requirements.txt`, or `setup.py`.
+- **Go indexer (experimental)** — tree-sitter WASM-based indexer for Go projects. Extracts functions, structs (as class kind), interfaces, methods with receiver qualification (e.g. `User.DisplayName`), constants, variables, and doc comments. Dependency extraction covers calls, struct/interface embedding, and type usage. Auto-detected via `go.mod`. Excludes test files (`*_test.go`) and generated code (`*_gen.go`, `*.pb.go`).
+- **Windows MCP configuration** — all platform adapters now generate Windows-compatible MCP config (`cmd /c npx`) when running on Windows.
+
+### Improvements
+
+- **Language-scoped incremental indexing** — all indexers (TypeScript, C#, Python, Go) now scope hash lookups, symbol queries, and dependency cleanup by language. Prevents cross-language data loss when multiple languages are indexed under the same service.
+- **`removeScopedSymbolsForFiles`** — new DB helper that scopes symbol deletion by service + language, replacing the unscoped `removeSymbolsForFiles` in all tree-sitter and TypeScript indexers.
+- **`arcbridge_reindex` accepts `python` and `go`** — the language parameter now includes all four supported languages.
+- **Init resilience** — `indexProject` returns a `skippedReason` instead of throwing when no tsconfig.json is found, with clear messaging in the init summary distinguishing "skipped" from "failed".
+- **Language detection reordered** — `package.json`-only check moved below Go/Python to avoid misdetecting polyglot projects. `tsconfig.json` still takes top priority.
+- **`IndexerLanguage` type** — new compile-time type for language parameters, preventing invalid values.
+
+### Stats
+
+- 34 MCP tools, 510 tests passing, 0 lint errors, 0 type errors
+- 6 project templates, 5 platform adapters, 4 language indexers
+
 ## 0.4.2 (2026-04-11)
 
 ### New Features

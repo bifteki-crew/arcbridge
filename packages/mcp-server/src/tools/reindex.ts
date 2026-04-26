@@ -11,7 +11,7 @@ export function registerReindex(
 ): void {
   server.tool(
     "arcbridge_reindex",
-    "Re-index the project: refreshes architecture docs from arc42/YAML files, then reindexes code symbols (TypeScript & C#/.NET). This is the first step of the sync pipeline — use it to pick up manual doc edits and code changes.",
+    "Re-index the project: refreshes architecture docs from arc42/YAML files, then reindexes code symbols (TypeScript, C#/.NET, Python, Go). This is the first step of the sync pipeline — use it to pick up manual doc edits and code changes.",
     {
       target_dir: z
         .string()
@@ -25,7 +25,7 @@ export function registerReindex(
         .optional()
         .describe("Service name for monorepo projects (default: 'main')"),
       language: z
-        .enum(["typescript", "csharp", "auto"])
+        .enum(["typescript", "csharp", "python", "go", "auto"])
         .optional()
         .describe("Project language. 'auto' detects from project files (default: 'auto')"),
     },

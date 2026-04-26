@@ -177,6 +177,19 @@ ArcBridge auto-detects your project type and tailors the scaffolded architecture
 | **.NET Web API** | controllers, services, data-access, middleware | 10-12 (incl. DI, EF Core, middleware ordering) | `*.csproj` + ASP.NET |
 | **Unity Game** | game-core, player-systems, ui-system, scene-management | 10-12 (incl. frame budget, memory, input) | `ProjectSettings/` |
 
+## Language Support
+
+ArcBridge indexes code symbols and dependencies to power `search_symbols`, `get_symbol`, and `get_dependency_graph`. Language is auto-detected from project files.
+
+| Language | Status | Detection | Symbols | Dependencies |
+|----------|--------|-----------|---------|--------------|
+| **TypeScript** | Stable | `tsconfig.json` | Full (TS compiler API) | imports, calls, extends, implements, type usage, JSX renders, context |
+| **C#/.NET** | Stable | `.csproj` / `.sln` / Unity markers | Full (Roslyn or tree-sitter) | imports, calls, extends, implements, type usage |
+| **Python** | Experimental | `pyproject.toml` / `requirements.txt` / `setup.py` | Functions, classes, methods, async, constants, docstrings | calls, extends, type usage |
+| **Go** | Experimental | `go.mod` | Functions, structs, interfaces, methods, constants, doc comments | calls, struct/interface embedding, type usage |
+
+> **Experimental** means the indexer works and is tested, but has not been validated on a wide range of real-world projects. No project templates or route analysis for Python/Go yet — use `arcbridge init` with an existing template and customize, or set up `.arcbridge/` manually.
+
 ## Agent Roles
 
 ArcBridge ships with 7 core roles plus a UX Reviewer for frontend templates. Each role specializes AI behavior with a system prompt, tool access constraints, and quality focus areas. Platform adapters translate these into Claude Code agents, Copilot agents, Codex skills, or Gemini subagents.
@@ -230,7 +243,7 @@ Roles are loaded from `.arcbridge/agents/*.md` files. Edit the markdown frontmat
 
 | Tool | Description |
 |------|-------------|
-| `arcbridge_reindex` | Index/re-index TypeScript symbols (incremental) |
+| `arcbridge_reindex` | Index/re-index code symbols — TypeScript, C#, Python (experimental), Go (experimental) |
 | `arcbridge_search_symbols` | Search symbols by name, kind, file path, or building block |
 | `arcbridge_get_symbol` | Full symbol detail: signature, source code, relationships |
 | `arcbridge_get_dependency_graph` | Import/dependency graph for a module |
@@ -348,6 +361,7 @@ packages/
 - **v0.2.x** (done): Unity game template, `create_phase`/`delete_phase` tools, batch task deletion, post-init tailoring guidance — 33 MCP tools, 5 project templates
 - **v0.3.x** (done): Codex + Gemini adapters, `update_arc42_section` tool, arc42 sections 02+04, extensible quality categories, phase filtering, react-vite component graph fix, shared skills, `--force` flag — 34 MCP tools, 4 platform adapters
 - **v0.4.x** (done): Angular template, Angular `@Component` detection in indexer, dependency updates (all security vulnerabilities resolved), OpenCode platform adapter, README restructure — 6 project templates, 5 platform adapters, 457 tests
+- **v0.5.0** (done): Python and Go indexer support (experimental) via tree-sitter WASM, Windows MCP config support, language-scoped incremental indexing, init resilience improvements — 510 tests
 
 See [`docs/arcbridge-project-plan.md`](docs/arcbridge-project-plan.md) for the full specification and [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
