@@ -179,7 +179,7 @@ ArcBridge auto-detects your project type and tailors the scaffolded architecture
 
 ## Language Support
 
-ArcBridge indexes code symbols and dependencies to power `search_symbols`, `get_symbol`, and `get_dependency_graph`. Language is auto-detected from project files.
+ArcBridge indexes code symbols and dependencies to power `arcbridge_search_symbols`, `arcbridge_get_symbol`, and `arcbridge_get_dependency_graph`. Language is auto-detected from project files.
 
 | Language | Status | Detection | Symbols | Dependencies |
 |----------|--------|-----------|---------|--------------|
