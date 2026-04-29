@@ -12,6 +12,7 @@ import {
   buildGoSymbolLookup,
 } from "../indexer/go/dependency-extractor.js";
 import { indexGoTreeSitter } from "../indexer/go/indexer.js";
+import { extractGoRoutes } from "../indexer/go/route-analyzer.js";
 
 const FIXTURE_DIR = resolve(__dirname, "fixtures/go-project");
 
@@ -390,6 +391,94 @@ describe("Go tree-sitter indexer", () => {
       expect(user).toBeDefined();
       expect(user!.id).toMatch(/^models\/user\.go::/);
       expect(user!.id).toMatch(/#class$/);
+    });
+  });
+
+  describe("route analysis", () => {
+    function parseFixture(relPath: string) {
+      const content = readFileSync(join(FIXTURE_DIR, relPath), "utf-8");
+      return parseGo(content);
+    }
+
+    it("extracts Gin GET routes", () => {
+      const tree = parseFixture("routes/handlers.go");
+      const routes = extractGoRoutes(tree, "routes/handlers.go");
+
+      const usersGet = routes.find(
+        (r) => r.routePath === "/users" && r.httpMethods.includes("GET"),
+      );
+      expect(usersGet).toBeDefined();
+      expect(usersGet!.kind).toBe("api-route");
+    });
+
+    it("extracts Gin POST routes", () => {
+      const tree = parseFixture("routes/handlers.go");
+      const routes = extractGoRoutes(tree, "routes/handlers.go");
+
+      const usersPost = routes.find(
+        (r) => r.routePath === "/users" && r.httpMethods.includes("POST"),
+      );
+      expect(usersPost).toBeDefined();
+    });
+
+    it("detects auth middleware in Gin", () => {
+      const tree = parseFixture("routes/handlers.go");
+      const routes = extractGoRoutes(tree, "routes/handlers.go");
+
+      const deleteRoute = routes.find(
+        (r) =>
+          r.routePath === "/users/:id" && r.httpMethods.includes("DELETE"),
+      );
+      expect(deleteRoute).toBeDefined();
+      expect(deleteRoute!.hasAuth).toBe(true);
+    });
+
+    it("extracts Gin group routes", () => {
+      const tree = parseFixture("routes/handlers.go");
+      const routes = extractGoRoutes(tree, "routes/handlers.go");
+
+      const apiHealth = routes.find(
+        (r) => r.routePath === "/api/health" && r.httpMethods.includes("GET"),
+      );
+      expect(apiHealth).toBeDefined();
+    });
+
+    it("extracts Chi routes", () => {
+      const tree = parseFixture("routes/handlers.go");
+      const routes = extractGoRoutes(tree, "routes/handlers.go");
+
+      const itemsGet = routes.find(
+        (r) => r.routePath === "/items" && r.httpMethods.includes("GET"),
+      );
+      expect(itemsGet).toBeDefined();
+
+      const itemsPost = routes.find(
+        (r) => r.routePath === "/items" && r.httpMethods.includes("POST"),
+      );
+      expect(itemsPost).toBeDefined();
+    });
+
+    it("extracts net/http routes", () => {
+      const tree = parseFixture("routes/handlers.go");
+      const routes = extractGoRoutes(tree, "routes/handlers.go");
+
+      const status = routes.find((r) => r.routePath === "/status");
+      expect(status).toBeDefined();
+      expect(status!.httpMethods).toContain("GET");
+    });
+
+    it("full integration includes routes", async () => {
+      const db = openMemoryDatabase();
+      initializeSchema(db);
+
+      try {
+        const result = await indexGoTreeSitter(db, {
+          projectRoot: FIXTURE_DIR,
+        });
+        expect(result.routesAnalyzed).toBeGreaterThan(0);
+      } finally {
+        db.close();
+      }
     });
   });
 });

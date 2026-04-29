@@ -20,6 +20,7 @@ export const ArcBridgeConfigSchema = z.object({
       "dotnet-webapi",
       "unity-game",
       "angular-app",
+      "fullstack-nextjs-dotnet",
     ])
     .default("nextjs-app-router"),
 

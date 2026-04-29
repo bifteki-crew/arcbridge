@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Database } from "../../db/connection.js";
+import { transaction, type Database } from "../../db/connection.js";
 import { globbySync } from "globby";
 import type { IndexResult, ExtractedSymbol } from "../types.js";
 import type { ExtractedDependency } from "../dependency-extractor.js";
@@ -18,6 +18,7 @@ import {
   buildGoSymbolLookup,
   type SymbolForDeps,
 } from "./dependency-extractor.js";
+import { extractGoRoutes, type GoRoute } from "./route-analyzer.js";
 
 export interface GoTreeSitterOptions {
   projectRoot: string;
@@ -129,11 +130,41 @@ export async function indexGoTreeSitter(
   ).run(service);
   writeDependencies(db, allDeps);
 
+  // 9. Extract routes from ALL files
+  const allRoutes: GoRoute[] = [];
+  for (const [relPath, cached] of fileCache) {
+    const routes = extractGoRoutes(cached.tree, relPath);
+    allRoutes.push(...routes);
+  }
+
+  // Clean up stale routes before inserting
+  db.prepare("DELETE FROM routes WHERE service = ?").run(service);
+
+  if (allRoutes.length > 0) {
+    const insertRoute = db.prepare(`
+      INSERT OR REPLACE INTO routes (id, route_path, kind, http_methods, has_auth, service)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    transaction(db, () => {
+      for (const route of allRoutes) {
+        insertRoute.run(
+          route.id,
+          route.routePath,
+          route.kind,
+          JSON.stringify(route.httpMethods),
+          route.hasAuth ? 1 : 0,
+          service,
+        );
+      }
+    });
+  }
+
   return {
     symbolsIndexed: allNewSymbols.length,
     dependenciesIndexed: allDeps.length,
     componentsAnalyzed: 0,
-    routesAnalyzed: 0,
+    routesAnalyzed: allRoutes.length,
     filesProcessed: changedFiles.length,
     filesSkipped,
     filesRemoved: removed.length,

@@ -7,6 +7,7 @@ import { configTemplate as apiServiceConfig } from "../templates/config/api-serv
 import { configTemplate as dotnetWebapiConfig } from "../templates/config/dotnet-webapi.js";
 import { configTemplate as unityGameConfig } from "../templates/config/unity-game.js";
 import { configTemplate as angularAppConfig } from "../templates/config/angular-app.js";
+import { configTemplate as fullstackNextjsDotnetConfig } from "../templates/config/fullstack-nextjs-dotnet.js";
 import type { InitProjectInput } from "../templates/types.js";
 import type { ArcBridgeConfig } from "../schemas/config.js";
 
@@ -17,6 +18,7 @@ const configTemplates: Record<string, (input: InitProjectInput) => ArcBridgeConf
   "dotnet-webapi": dotnetWebapiConfig,
   "unity-game": unityGameConfig,
   "angular-app": angularAppConfig,
+  "fullstack-nextjs-dotnet": fullstackNextjsDotnetConfig,
 };
 
 export function generateConfig(

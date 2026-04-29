@@ -176,19 +176,20 @@ ArcBridge auto-detects your project type and tailors the scaffolded architecture
 | **API Service** | api-gateway, business-logic, data-access, integration | 10-12 (incl. latency, auth, rate limiting) | Express/Fastify/Hono |
 | **.NET Web API** | controllers, services, data-access, middleware | 10-12 (incl. DI, EF Core, middleware ordering) | `*.csproj` + ASP.NET |
 | **Unity Game** | game-core, player-systems, ui-system, scene-management | 10-12 (incl. frame budget, memory, input) | `ProjectSettings/` |
+| **Fullstack Next.js + .NET** | frontend-shell, frontend-components, api-controllers, api-services, shared-contracts | 12+ (incl. API contract consistency, cross-service auth) | Manual selection |
 
 ## Language Support
 
 ArcBridge indexes code symbols and dependencies to power `arcbridge_search_symbols`, `arcbridge_get_symbol`, and `arcbridge_get_dependency_graph`. Language is auto-detected from project files.
 
-| Language | Status | Detection | Symbols | Dependencies |
-|----------|--------|-----------|---------|--------------|
-| **TypeScript** | Stable | `tsconfig.json` | Full (TS compiler API) | imports, calls, extends, implements, type usage, JSX renders, context |
-| **C#/.NET** | Stable | `.csproj` / `.sln` / Unity markers | Full (Roslyn or tree-sitter) | imports, calls, extends, implements, type usage |
-| **Python** | Experimental | `pyproject.toml` / `requirements.txt` / `setup.py` | Functions, classes, methods, async, constants, docstrings | calls, extends, type usage |
-| **Go** | Experimental | `go.mod` | Functions, structs, interfaces, methods, constants, doc comments | calls, struct/interface embedding, type usage |
+| Language | Status | Detection | Symbols | Dependencies | Routes |
+|----------|--------|-----------|---------|--------------|--------|
+| **TypeScript** | Stable | `tsconfig.json` | Full (TS compiler API) | imports, calls, extends, implements, type usage, JSX renders, context | Next.js App Router |
+| **C#/.NET** | Stable | `.csproj` / `.sln` / Unity markers | Full (Roslyn or tree-sitter) | imports, calls, extends, implements, type usage | ASP.NET Controllers, Minimal APIs |
+| **Python** | Experimental | `pyproject.toml` / `requirements.txt` / `setup.py` | Functions, classes, methods, async, constants, docstrings | calls, extends, type usage | FastAPI, Flask |
+| **Go** | Experimental | `go.mod` | Functions, structs, interfaces, methods, constants, doc comments | calls, struct/interface embedding, type usage | Gin, Chi, net/http |
 
-> **Experimental** means the indexer works and is tested, but has not been validated on a wide range of real-world projects. No project templates or route analysis for Python/Go yet — use `arcbridge init` with an existing template and customize, or set up `.arcbridge/` manually.
+> **Experimental** means the indexer works and is tested, but has not been validated on a wide range of real-world projects. No project templates for Python/Go yet — use `arcbridge init` with an existing template and customize, or set up `.arcbridge/` manually.
 
 ## Agent Roles
 

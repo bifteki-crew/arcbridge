@@ -23,13 +23,80 @@ export function buildingBlocksTemplate(
   };
 
   const defaultBlocks: BlockDef[] =
-    input.template === "dotnet-webapi"
-      ? buildDotnetBlocks(input)
-      : input.template === "unity-game"
-        ? buildUnityBlocks()
-        : input.template === "angular-app"
-          ? buildAngularBlocks(layout)
-          : buildJsBlocks(input, layout);
+    input.template === "fullstack-nextjs-dotnet"
+      ? buildFullstackBlocks()
+      : input.template === "dotnet-webapi"
+        ? buildDotnetBlocks(input)
+        : input.template === "unity-game"
+          ? buildUnityBlocks()
+          : input.template === "angular-app"
+            ? buildAngularBlocks(layout)
+            : buildJsBlocks(input, layout);
+
+  function buildFullstackBlocks(): BlockDef[] {
+    return [
+      {
+        id: "frontend-shell",
+        name: "Frontend Shell",
+        level: 1,
+        code_paths: ["frontend/app/", "frontend/src/app/"],
+        interfaces: [],
+        quality_scenarios: ["PERF-01"],
+        adrs: [],
+        responsibility:
+          "Next.js App Router layouts, pages, and top-level page structure",
+        service: "frontend",
+      },
+      {
+        id: "frontend-components",
+        name: "Frontend Components",
+        level: 1,
+        code_paths: ["frontend/src/components/", "frontend/components/"],
+        interfaces: [],
+        quality_scenarios: ["A11Y-01"],
+        adrs: [],
+        responsibility:
+          "Shared, reusable React UI components",
+        service: "frontend",
+      },
+      {
+        id: "api-controllers",
+        name: "API Controllers",
+        level: 1,
+        code_paths: ["api/Controllers/"],
+        interfaces: [],
+        quality_scenarios: ["SEC-03"],
+        adrs: [],
+        responsibility:
+          "ASP.NET Core API endpoint definitions and request handling",
+        service: "api",
+      },
+      {
+        id: "api-services",
+        name: "API Services",
+        level: 1,
+        code_paths: ["api/Services/"],
+        interfaces: ["api-controllers"],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility:
+          "Business logic, use cases, and orchestration between domain and infrastructure",
+        service: "api",
+      },
+      {
+        id: "shared-contracts",
+        name: "Shared Contracts",
+        level: 1,
+        code_paths: ["shared/", "contracts/"],
+        interfaces: ["frontend-shell", "api-controllers"],
+        quality_scenarios: ["MAINT-01"],
+        adrs: [],
+        responsibility:
+          "API types, schemas, and contracts shared between the Next.js frontend and .NET backend",
+        service: "main",
+      },
+    ];
+  }
 
   function buildJsBlocks(inp: InitProjectInput, lt: typeof layout): BlockDef[] {
     const src = lt.srcPrefix;
