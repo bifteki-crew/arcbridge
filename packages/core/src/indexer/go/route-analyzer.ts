@@ -72,19 +72,22 @@ export function extractGoRoutes(
     const receiverName = receiverNode?.type === "identifier" ? receiverNode.text : null;
 
     // Determine which framework and HTTP method
-    let httpMethod: string | null = null;
+    // For Gin/Chi, the method name maps to a specific HTTP method.
+    // For net/http (HandleFunc/Handle), the handler accepts any method —
+    // we use an empty array to signal "any/unknown" rather than misreporting.
+    let httpMethods: string[] | null = null;
     let isNetHttp = false;
 
     if (GIN_METHODS[methodName]) {
-      httpMethod = GIN_METHODS[methodName];
+      httpMethods = [GIN_METHODS[methodName]];
     } else if (CHI_METHODS[methodName]) {
-      httpMethod = CHI_METHODS[methodName];
+      httpMethods = [CHI_METHODS[methodName]];
     } else if (NET_HTTP_METHODS.has(methodName)) {
-      httpMethod = "GET"; // net/http doesn't specify method; convention is GET
+      httpMethods = [];
       isNetHttp = true;
     }
 
-    if (!httpMethod) continue;
+    if (httpMethods === null) continue;
 
     // Extract route path from first string argument
     const routeTemplate = getFirstStringArgument(call);
@@ -117,13 +120,14 @@ export function extractGoRoutes(
     }
 
     const cleanPath = routePath.slice(1) || "";
-    const id = `route::${cleanPath}::${httpMethod}`;
+    const idMethod = httpMethods.length > 0 ? httpMethods.join(",") : "ANY";
+    const id = `route::${cleanPath}::${idMethod}`;
 
     routes.push({
       id,
       routePath,
       kind: "api-route",
-      httpMethods: [httpMethod],
+      httpMethods,
       hasAuth,
     });
   }
@@ -335,8 +339,12 @@ function getFirstStringArgument(node: TreeSitterNode): string | null {
 
   for (const arg of argList.namedChildren) {
     if (arg.type === "interpreted_string_literal") {
-      // Remove surrounding quotes
+      // Remove surrounding double quotes
       return arg.text.replace(/^"|"$/g, "");
+    }
+    if (arg.type === "raw_string_literal") {
+      // Remove surrounding backticks
+      return arg.text.replace(/^`|`$/g, "");
     }
   }
   return null;

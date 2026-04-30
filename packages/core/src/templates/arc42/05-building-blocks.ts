@@ -93,7 +93,7 @@ export function buildingBlocksTemplate(
         adrs: [],
         responsibility:
           "API types, schemas, and contracts shared between the Next.js frontend and .NET backend",
-        service: "main",
+        service: "api",
       },
     ];
   }

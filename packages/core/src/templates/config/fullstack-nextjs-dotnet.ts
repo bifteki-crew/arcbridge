@@ -14,7 +14,13 @@ export function configTemplate(input: InitProjectInput): ArcBridgeConfig {
     quality_priorities:
       input.quality_priorities as ArcBridgeConfig["quality_priorities"],
     indexing: {
-      include: ["frontend/src/**/*", "frontend/app/**/*", "api/**/*.cs"],
+      include: [
+        "frontend/src/**/*",
+        "frontend/app/**/*",
+        "api/**/*.cs",
+        "shared/**/*",
+        "contracts/**/*",
+      ],
       exclude: ["node_modules", "dist", ".next", "bin", "obj", "coverage"],
       default_mode: "fast",
       csharp_indexer: "auto",

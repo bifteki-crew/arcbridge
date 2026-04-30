@@ -458,13 +458,14 @@ describe("Go tree-sitter indexer", () => {
       expect(itemsPost).toBeDefined();
     });
 
-    it("extracts net/http routes", () => {
+    it("extracts net/http routes (any method)", () => {
       const tree = parseFixture("routes/handlers.go");
       const routes = extractGoRoutes(tree, "routes/handlers.go");
 
       const status = routes.find((r) => r.routePath === "/status");
       expect(status).toBeDefined();
-      expect(status!.httpMethods).toContain("GET");
+      // net/http handlers accept any HTTP method — empty array signals "any"
+      expect(status!.httpMethods).toEqual([]);
     });
 
     it("full integration includes routes", async () => {

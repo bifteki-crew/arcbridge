@@ -38,6 +38,7 @@ const VALID_TEMPLATES: ProjectTemplate[] = [
   "dotnet-webapi",
   "unity-game",
   "angular-app",
+  "fullstack-nextjs-dotnet",
 ];
 
 /**

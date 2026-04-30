@@ -110,7 +110,8 @@ function parseDecorator(decorator: TreeSitterNode): DecoratorInfo | null {
     const path = getFirstStringArgument(callNode);
     if (path === null) return null;
 
-    const methods = getMethodsKeywordArgument(callNode);
+    // Normalize Flask methods to uppercase to match FastAPI/Go/C# output
+    const methods = getMethodsKeywordArgument(callNode).map((m) => m.toUpperCase());
     const hasAuth = detectAuthInCall(callNode);
 
     return {
