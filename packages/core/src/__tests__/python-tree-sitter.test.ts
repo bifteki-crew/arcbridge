@@ -375,7 +375,8 @@ describe("Python tree-sitter indexer", () => {
 
       expect(routeRows.length).toBeGreaterThan(0);
 
-      const usersGet = routeRows.find((r) => r.id === "route::users::GET");
+      // Route IDs are scoped by service to prevent cross-service collisions
+      const usersGet = routeRows.find((r) => r.id === "main::route::users::GET");
       expect(usersGet).toBeDefined();
       expect(usersGet!.route_path).toBe("/users");
     });

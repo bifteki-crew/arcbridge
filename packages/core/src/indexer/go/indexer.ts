@@ -148,8 +148,10 @@ export async function indexGoTreeSitter(
 
     transaction(db, () => {
       for (const route of allRoutes) {
+        // Scope route ID by service so different services with the same
+        // endpoint (e.g. /health) don't overwrite each other via INSERT OR REPLACE
         insertRoute.run(
-          route.id,
+          `${service}::${route.id}`,
           route.routePath,
           route.kind,
           JSON.stringify(route.httpMethods),

@@ -141,7 +141,9 @@ export function extractGoRoutes(
 interface ScopedPrefix {
   varName: string;
   prefix: string;
-  scope: TreeSitterNode | null; // func_literal node this prefix is valid in, null = file-level
+  // Scope node this prefix is valid in (func_literal, function_declaration,
+  // or method_declaration). null = truly file-level (e.g. package-scoped var).
+  scope: TreeSitterNode | null;
 }
 
 function extractGroupPrefixes(
@@ -172,7 +174,13 @@ function extractGroupPrefixes(
           ? left.namedChildren[0]
           : left;
         if (varNode?.type === "identifier") {
-          const scope = findAncestor(call, ["func_literal"]);
+          // Scope to the nearest enclosing function body — most Gin setups
+          // use a normal function_declaration, not a func_literal.
+          const scope = findAncestor(call, [
+            "func_literal",
+            "function_declaration",
+            "method_declaration",
+          ]);
           prefixes.push({ varName: varNode.text, prefix, scope });
         }
       }
@@ -276,9 +284,16 @@ function findAuthUseScopes(root: TreeSitterNode): TreeSitterNode[] {
 
     // Check if any argument references auth
     if (hasAuthArgument(call)) {
-      // The scope is the enclosing func_literal (or root)
+      // Scope is the nearest enclosing function/method body or func_literal.
+      // We deliberately do NOT fall back to source_file — a top-level Use()
+      // (which would be unusual) shouldn't mark every route in the file as auth.
       let scope: TreeSitterNode | null = call.parent;
-      while (scope && scope.type !== "func_literal" && scope.type !== "source_file") {
+      while (
+        scope &&
+        scope.type !== "func_literal" &&
+        scope.type !== "function_declaration" &&
+        scope.type !== "method_declaration"
+      ) {
         scope = scope.parent;
       }
       if (scope) {

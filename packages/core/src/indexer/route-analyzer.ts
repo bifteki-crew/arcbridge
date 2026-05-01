@@ -214,8 +214,10 @@ function writeRoutes(
 
   transaction(db, () => {
     for (const r of routes) {
+      // Scope route ID by service so different services don't collide on
+      // identical paths/methods via INSERT OR REPLACE/IGNORE
       insert.run(
-        r.id,
+        `${service}::${r.id}`,
         r.routePath,
         r.kind,
         JSON.stringify(r.httpMethods),
