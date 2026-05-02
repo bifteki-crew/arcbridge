@@ -6,6 +6,7 @@ import { initializeSchema } from "../db/schema.js";
 import type { Database } from "../db/connection.js";
 import { ensurePythonParser, parsePython } from "../indexer/python/parser.js";
 import { extractPythonSymbols } from "../indexer/python/symbol-extractor.js";
+import { extractPythonRoutes } from "../indexer/python/route-analyzer.js";
 import { hashContent } from "../indexer/content-hash.js";
 import {
   extractPythonDependencies,
@@ -230,6 +231,105 @@ describe("Python tree-sitter indexer", () => {
     });
   });
 
+  describe("route analysis", () => {
+    it("extracts FastAPI GET routes", () => {
+      const content = readFileSync(
+        join(FIXTURE_DIR, "src/routes.py"),
+        "utf-8",
+      );
+      const tree = parsePython(content);
+      const routes = extractPythonRoutes(tree, "src/routes.py");
+
+      const usersGet = routes.find(
+        (r) => r.routePath === "/users" && r.httpMethods[0] === "GET",
+      );
+      expect(usersGet).toBeDefined();
+      expect(usersGet!.kind).toBe("api-route");
+      expect(usersGet!.id).toBe("route::users::GET");
+    });
+
+    it("extracts FastAPI POST routes", () => {
+      const content = readFileSync(
+        join(FIXTURE_DIR, "src/routes.py"),
+        "utf-8",
+      );
+      const tree = parsePython(content);
+      const routes = extractPythonRoutes(tree, "src/routes.py");
+
+      const usersPost = routes.find(
+        (r) => r.routePath === "/users" && r.httpMethods[0] === "POST",
+      );
+      expect(usersPost).toBeDefined();
+      expect(usersPost!.hasAuth).toBe(false);
+    });
+
+    it("extracts FastAPI routes with path parameters", () => {
+      const content = readFileSync(
+        join(FIXTURE_DIR, "src/routes.py"),
+        "utf-8",
+      );
+      const tree = parsePython(content);
+      const routes = extractPythonRoutes(tree, "src/routes.py");
+
+      const userById = routes.find(
+        (r) =>
+          r.routePath === "/users/{user_id}" && r.httpMethods[0] === "GET",
+      );
+      expect(userById).toBeDefined();
+      expect(userById!.id).toBe("route::users/{user_id}::GET");
+    });
+
+    it("detects auth dependencies", () => {
+      const content = readFileSync(
+        join(FIXTURE_DIR, "src/routes.py"),
+        "utf-8",
+      );
+      const tree = parsePython(content);
+      const routes = extractPythonRoutes(tree, "src/routes.py");
+
+      const deleteUser = routes.find(
+        (r) =>
+          r.routePath === "/users/{user_id}" &&
+          r.httpMethods[0] === "DELETE",
+      );
+      expect(deleteUser).toBeDefined();
+      expect(deleteUser!.hasAuth).toBe(true);
+    });
+
+    it("extracts Flask routes", () => {
+      const content = readFileSync(
+        join(FIXTURE_DIR, "src/routes.py"),
+        "utf-8",
+      );
+      const tree = parsePython(content);
+      const routes = extractPythonRoutes(tree, "src/routes.py");
+
+      const health = routes.find(
+        (r) => r.routePath === "/health" && r.httpMethods[0] === "GET",
+      );
+      expect(health).toBeDefined();
+      expect(health!.kind).toBe("api-route");
+    });
+
+    it("extracts Flask routes with multiple methods", () => {
+      const content = readFileSync(
+        join(FIXTURE_DIR, "src/routes.py"),
+        "utf-8",
+      );
+      const tree = parsePython(content);
+      const routes = extractPythonRoutes(tree, "src/routes.py");
+
+      const readyGet = routes.find(
+        (r) => r.routePath === "/ready" && r.httpMethods[0] === "GET",
+      );
+      const readyPost = routes.find(
+        (r) => r.routePath === "/ready" && r.httpMethods[0] === "POST",
+      );
+      expect(readyGet).toBeDefined();
+      expect(readyPost).toBeDefined();
+    });
+  });
+
   describe("full integration", () => {
     let db: Database;
 
@@ -260,6 +360,25 @@ describe("Python tree-sitter indexer", () => {
 
       expect(result.filesSkipped).toBeGreaterThan(0);
       expect(result.symbolsIndexed).toBe(0);
+    });
+
+    it("full integration includes routes", async () => {
+      const result = await indexPythonTreeSitter(db, {
+        projectRoot: FIXTURE_DIR,
+      });
+
+      expect(result.routesAnalyzed).toBeGreaterThan(0);
+
+      const routeRows = db
+        .prepare("SELECT * FROM routes WHERE service = 'main'")
+        .all() as { id: string; route_path: string; http_methods: string }[];
+
+      expect(routeRows.length).toBeGreaterThan(0);
+
+      // Route IDs are scoped by service to prevent cross-service collisions
+      const usersGet = routeRows.find((r) => r.id === "main::route::users::GET");
+      expect(usersGet).toBeDefined();
+      expect(usersGet!.route_path).toBe("/users");
     });
 
     it("stores symbols with correct language", async () => {

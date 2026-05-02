@@ -28,7 +28,7 @@ export function registerInitProject(
     {
       name: z.string().min(1).describe("Project name"),
       template: z
-        .enum(["nextjs-app-router", "react-vite", "api-service", "dotnet-webapi", "unity-game", "angular-app"])
+        .enum(["nextjs-app-router", "react-vite", "api-service", "dotnet-webapi", "unity-game", "angular-app", "fullstack-nextjs-dotnet"])
         .default("nextjs-app-router")
         .describe(
           "Project template: " +
@@ -37,7 +37,8 @@ export function registerInitProject(
           "angular-app (Angular with standalone components, TypeScript), " +
           "api-service (Node.js API with Express/Fastify/Hono), " +
           "dotnet-webapi (ASP.NET Core Web API, C#), " +
-          "unity-game (Unity game project, C#, code-heavy)",
+          "unity-game (Unity game project, C#, code-heavy), " +
+          "fullstack-nextjs-dotnet (monorepo with Next.js frontend + .NET API backend)",
         ),
       features: z
         .array(z.enum(["auth", "database", "api"]))

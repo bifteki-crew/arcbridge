@@ -12,7 +12,7 @@ import { codeReviewerTemplate } from "../templates/agents/code-reviewer.js";
 import { uxReviewerTemplate } from "../templates/agents/ux-reviewer.js";
 
 /** Templates that have UI components and benefit from UX review */
-const UI_TEMPLATES = new Set(["nextjs-app-router", "react-vite", "angular-app", "unity-game"]);
+const UI_TEMPLATES = new Set(["nextjs-app-router", "react-vite", "angular-app", "unity-game", "fullstack-nextjs-dotnet"]);
 
 function writeAgentRole(dir: string, role: AgentRole): void {
   const { system_prompt, ...frontmatter } = role;

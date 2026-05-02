@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Database } from "../../db/connection.js";
+import { type Database, transaction } from "../../db/connection.js";
 import { globbySync } from "globby";
 import type { IndexResult, ExtractedSymbol } from "../types.js";
 import type { ExtractedDependency } from "../dependency-extractor.js";
@@ -18,6 +18,7 @@ import {
   buildPythonSymbolLookup,
   type SymbolForDeps,
 } from "./dependency-extractor.js";
+import { extractPythonRoutes, type PythonRoute } from "./route-analyzer.js";
 
 export interface PythonTreeSitterOptions {
   projectRoot: string;
@@ -131,11 +132,43 @@ export async function indexPythonTreeSitter(
   ).run(service);
   writeDependencies(db, allDeps);
 
+  // 9. Extract routes from ALL files
+  const allRoutes: PythonRoute[] = [];
+  for (const [relPath, cached] of fileCache) {
+    const routes = extractPythonRoutes(cached.tree, relPath);
+    allRoutes.push(...routes);
+  }
+
+  // Clean up stale routes before inserting
+  db.prepare("DELETE FROM routes WHERE service = ?").run(service);
+
+  if (allRoutes.length > 0) {
+    const insertRoute = db.prepare(`
+      INSERT OR REPLACE INTO routes (id, route_path, kind, http_methods, has_auth, service)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    transaction(db, () => {
+      for (const route of allRoutes) {
+        // Scope route ID by service so different services with the same
+        // endpoint (e.g. /health) don't overwrite each other via INSERT OR REPLACE
+        insertRoute.run(
+          `${service}::${route.id}`,
+          route.routePath,
+          route.kind,
+          JSON.stringify(route.httpMethods),
+          route.hasAuth ? 1 : 0,
+          service,
+        );
+      }
+    });
+  }
+
   return {
     symbolsIndexed: allNewSymbols.length,
     dependenciesIndexed: allDeps.length,
     componentsAnalyzed: 0,
-    routesAnalyzed: 0,
+    routesAnalyzed: allRoutes.length,
     filesProcessed: changedFiles.length,
     filesSkipped,
     filesRemoved: removed.length,

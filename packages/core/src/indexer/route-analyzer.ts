@@ -69,7 +69,7 @@ export function analyzeRoutes(
   walkAppDir(appDir, "/", routes, layoutStack, service, projectRoot);
 
   // Write to database
-  writeRoutes(db, routes);
+  writeRoutes(db, routes, service);
   return routes.length;
 }
 
@@ -199,11 +199,12 @@ function extractHttpMethods(filePath: string): string[] {
 function writeRoutes(
   db: Database,
   routes: ExtractedRoute[],
+  service: string,
 ): void {
-  if (routes.length === 0) return;
+  // Clear existing routes for this service and re-insert
+  db.prepare("DELETE FROM routes WHERE service = ?").run(service);
 
-  // Clear existing routes and re-insert
-  db.prepare("DELETE FROM routes").run();
+  if (routes.length === 0) return;
 
   const insert = db.prepare(`
     INSERT OR IGNORE INTO routes (
@@ -213,8 +214,10 @@ function writeRoutes(
 
   transaction(db, () => {
     for (const r of routes) {
+      // Scope route ID by service so different services don't collide on
+      // identical paths/methods via INSERT OR REPLACE/IGNORE
       insert.run(
-        r.id,
+        `${service}::${r.id}`,
         r.routePath,
         r.kind,
         JSON.stringify(r.httpMethods),

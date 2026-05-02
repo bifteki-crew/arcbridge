@@ -718,3 +718,108 @@ describe("angular-app template", () => {
     db.close();
   });
 });
+
+describe("fullstack-nextjs-dotnet template", () => {
+  const FULLSTACK_INPUT: InitProjectInput = {
+    name: "my-fullstack-app",
+    template: "fullstack-nextjs-dotnet",
+    features: ["auth", "database"],
+    quality_priorities: ["security", "performance", "accessibility", "maintainability"],
+    platforms: ["claude"],
+  };
+
+  it("generates config with two services", () => {
+    const config = generateConfig(tempDir, FULLSTACK_INPUT);
+
+    expect(config.project_type).toBe("fullstack-nextjs-dotnet");
+    expect(config.services).toHaveLength(2);
+
+    const frontend = config.services.find((s) => s.name === "frontend");
+    const api = config.services.find((s) => s.name === "api");
+    expect(frontend).toBeDefined();
+    expect(frontend!.type).toBe("nextjs");
+    expect(api).toBeDefined();
+    expect(api!.type).toBe("dotnet");
+  });
+
+  it("generates fullstack building blocks", () => {
+    generateArc42(tempDir, FULLSTACK_INPUT);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      "utf-8",
+    );
+    const { data } = matter(raw);
+    const validated = BuildingBlocksFrontmatterSchema.parse(data);
+
+    const ids = validated.blocks.map((b) => b.id);
+    expect(ids).toContain("frontend-shell");
+    expect(ids).toContain("frontend-components");
+    expect(ids).toContain("api-controllers");
+    expect(ids).toContain("api-services");
+    expect(ids).toContain("shared-contracts");
+  });
+
+  it("generates fullstack quality scenarios", () => {
+    generateArc42(tempDir, FULLSTACK_INPUT);
+    const raw = readFileSync(
+      join(tempDir, ".arcbridge", "arc42", "10-quality-scenarios.yaml"),
+      "utf-8",
+    );
+    const parsed = parse(raw);
+    const validated = QualityScenariosFileSchema.parse(parsed);
+
+    const ids = validated.scenarios.map((s) => s.id);
+    expect(ids).toContain("SEC-02");
+    expect(validated.scenarios.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it("generates fullstack phase plan with 5 phases", () => {
+    generatePlan(tempDir, FULLSTACK_INPUT);
+    const planDir = join(tempDir, ".arcbridge", "plan");
+
+    const raw = readFileSync(join(planDir, "phases.yaml"), "utf-8");
+    const parsed = parse(raw);
+    const validated = PhasesFileSchema.parse(parsed);
+
+    expect(validated.phases).toHaveLength(5);
+    expect(validated.phases[0]!.name).toContain("Setup");
+
+    expect(existsSync(join(planDir, "tasks", "phase-0-setup.yaml"))).toBe(true);
+    expect(existsSync(join(planDir, "tasks", "phase-1-api-foundation.yaml"))).toBe(true);
+    expect(existsSync(join(planDir, "tasks", "phase-2-frontend-foundation.yaml"))).toBe(true);
+  });
+
+  it("includes ux-reviewer role for fullstack template", () => {
+    const roles = generateAgentRoles(tempDir, "fullstack-nextjs-dotnet");
+    expect(roles).toHaveLength(8);
+    expect(roles.some((r) => r.role_id === "ux-reviewer")).toBe(true);
+  });
+
+  it("full project generation with database", () => {
+    generateConfig(tempDir, FULLSTACK_INPUT);
+    generateArc42(tempDir, FULLSTACK_INPUT);
+    generatePlan(tempDir, FULLSTACK_INPUT);
+    generateAgentRoles(tempDir, "fullstack-nextjs-dotnet");
+
+    const { db, warnings } = generateDatabase(tempDir, FULLSTACK_INPUT);
+
+    expect(warnings).toHaveLength(0);
+
+    const blocks = db
+      .prepare("SELECT COUNT(*) as count FROM building_blocks")
+      .get() as { count: number };
+    expect(blocks.count).toBe(5);
+
+    const phases = db
+      .prepare("SELECT COUNT(*) as count FROM phases")
+      .get() as { count: number };
+    expect(phases.count).toBe(5);
+
+    const scenarios = db
+      .prepare("SELECT COUNT(*) as count FROM quality_scenarios")
+      .get() as { count: number };
+    expect(scenarios.count).toBeGreaterThanOrEqual(10);
+
+    db.close();
+  });
+});

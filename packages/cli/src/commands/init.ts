@@ -20,7 +20,7 @@ interface InitOptions {
   spec?: string;
 }
 
-type ProjectTemplate = "nextjs-app-router" | "react-vite" | "api-service" | "dotnet-webapi" | "unity-game" | "angular-app";
+type ProjectTemplate = "nextjs-app-router" | "react-vite" | "api-service" | "dotnet-webapi" | "unity-game" | "angular-app" | "fullstack-nextjs-dotnet";
 
 interface DetectedInfo {
   name: string;
@@ -38,6 +38,7 @@ const VALID_TEMPLATES: ProjectTemplate[] = [
   "dotnet-webapi",
   "unity-game",
   "angular-app",
+  "fullstack-nextjs-dotnet",
 ];
 
 /**
