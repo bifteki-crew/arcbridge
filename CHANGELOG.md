@@ -2,6 +2,10 @@
 
 ## 0.6.0 (2026-05-02)
 
+### Security
+
+- **0 vulnerabilities** — bumped pnpm overrides for `hono >=4.12.14` (HTML injection in JSX SSR) and added `postcss >=8.5.10` (XSS in CSS stringify). `pnpm audit` returns clean.
+
 ### New Features
 
 - **Python route analysis** — FastAPI (`@app.get`, `@router.post`, etc.) and Flask (`@app.route`, `@bp.route` with `methods` kwarg). Auth detection via `Depends(auth_...)` patterns. Method names normalized to uppercase for cross-language consistency.
