@@ -18,7 +18,7 @@
 
 - 34 MCP tools, 530 tests passing, 0 lint errors, 0 type errors
 - 7 project templates, 5 platform adapters, 4 language indexers
-- Route analysis across 5 frameworks: Next.js, ASP.NET, FastAPI, Flask, Gin, Chi, net/http
+- Route analysis across 7 frameworks: Next.js, ASP.NET, FastAPI, Flask, Gin, Chi, net/http
 
 ## 0.5.0 (2026-04-24)
 
