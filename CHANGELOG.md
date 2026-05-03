@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.6.0 (2026-05-02)
+
+### Security
+
+- **0 vulnerabilities** — bumped pnpm overrides for `hono >=4.12.14` (HTML injection in JSX SSR) and added `postcss >=8.5.10` (XSS in CSS stringify). `pnpm audit` returns clean.
+
+### New Features
+
+- **Python route analysis** — FastAPI (`@app.get`, `@router.post`, etc.) and Flask (`@app.route`, `@bp.route` with `methods` kwarg). Auth detection via `Depends(auth_...)` patterns. Method names normalized to uppercase for cross-language consistency.
+- **Go route analysis** — Gin (`r.GET`, `r.POST`, `r.Group(...)` prefix tracking), Chi (`r.Get`, `r.Post`, `r.Route(...)` scoped prefixes, `r.Use()` auth middleware), and net/http (`HandleFunc`, `Handle` — empty `httpMethods` signals "any method"). Supports both interpreted and raw string literals for route paths.
+- **Fullstack Next.js + .NET template** — new `fullstack-nextjs-dotnet` template for monorepo projects with Next.js frontend + ASP.NET API backend. Two services (`frontend`, `api`), 5 building blocks (frontend-shell, frontend-components, api-controllers, api-services, shared-contracts), 5 phases (setup → API foundation → frontend foundation → feature integration → production), 12+ quality scenarios covering cross-service concerns.
+
+### Improvements
+
+- **Service-scoped route IDs** — all indexers now prefix route IDs with `service::` on insert, preventing cross-service collisions when two services have the same endpoint (e.g. `/health`).
+- **Service-scoped Next.js route cleanup** — Next.js route analyzer's `DELETE FROM routes` is now scoped by service, fixing data loss in multi-service projects.
+- **Go scope detection** — Gin `Group()` prefix tracking and Chi `r.Use()` auth scope now use the nearest enclosing function/method body, not just `func_literal`. No more leaking prefixes/auth flags across functions or to the whole file.
+
+### Stats
+
+- 34 MCP tools, 530 tests passing, 0 lint errors, 0 type errors
+- 7 project templates, 5 platform adapters, 4 language indexers
+- Route analysis across 7 frameworks: Next.js, ASP.NET, FastAPI, Flask, Gin, Chi, net/http
+
 ## 0.5.0 (2026-04-24)
 
 ### New Features

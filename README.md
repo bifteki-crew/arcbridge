@@ -363,6 +363,7 @@ packages/
 - **v0.3.x** (done): Codex + Gemini adapters, `update_arc42_section` tool, arc42 sections 02+04, extensible quality categories, phase filtering, react-vite component graph fix, shared skills, `--force` flag — 34 MCP tools, 4 platform adapters
 - **v0.4.x** (done): Angular template, Angular `@Component` detection in indexer, dependency updates (all security vulnerabilities resolved), OpenCode platform adapter, README restructure — 6 project templates, 5 platform adapters, 457 tests
 - **v0.5.0** (done): Python and Go indexer support (experimental) via tree-sitter WASM, Windows MCP config support, language-scoped incremental indexing, init resilience improvements — 510 tests
+- **v0.6.0** (done): Route analysis for Python (FastAPI, Flask) and Go (Gin, Chi, net/http), fullstack Next.js + .NET template, service-scoped route IDs to prevent cross-service collisions — 7 project templates, 530 tests
 
 See [`docs/arcbridge-project-plan.md`](docs/arcbridge-project-plan.md) for the full specification and [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 

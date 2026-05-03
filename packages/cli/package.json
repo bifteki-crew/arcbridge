@@ -1,6 +1,6 @@
 {
   "name": "arcbridge",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "CLI for ArcBridge — architectural awareness for AI coding agents",
   "license": "MIT",
   "type": "module",
