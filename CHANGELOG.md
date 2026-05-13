@@ -4,7 +4,7 @@
 
 ### Bug Fixes
 
-- **Auto-recreate index.db** — when `config.yaml` exists but `index.db` is missing (e.g. after a fresh clone, `git clean`, or accidental deletion), both the MCP server and CLI now automatically recreate the database from YAML source-of-truth files instead of erroring with "No ArcBridge project found".
+- **Auto-recreate index.db** — when `.arcbridge/config.yaml` exists but `.arcbridge/index.db` is missing (e.g. after a fresh clone, `git clean`, or accidental deletion), both the MCP server and CLI now automatically recreate the database from YAML source-of-truth files instead of erroring with "No ArcBridge project found".
 
 ### Stats
 
