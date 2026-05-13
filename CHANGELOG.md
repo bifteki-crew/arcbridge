@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.1 (2026-05-13)
+
+### Bug Fixes
+
+- **Auto-recreate index.db** — when `config.yaml` exists but `index.db` is missing (e.g. after a fresh clone, `git clean`, or accidental deletion), both the MCP server and CLI now automatically recreate the database from YAML source-of-truth files instead of erroring with "No ArcBridge project found".
+
+### Stats
+
+- 34 MCP tools, 534 tests passing, 0 lint errors, 0 type errors
+
 ## 0.6.0 (2026-05-02)
 
 ### Security
