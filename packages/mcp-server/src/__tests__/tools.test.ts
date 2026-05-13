@@ -13,7 +13,7 @@ import {
 } from "@arcbridge/core";
 import type { Database } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized } from "../helpers.js";
+import { ensureDb } from "../helpers.js";
 
 const TEST_INPUT: InitProjectInput = {
   name: "test-app",
