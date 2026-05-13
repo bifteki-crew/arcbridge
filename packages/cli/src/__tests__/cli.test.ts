@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -16,6 +16,7 @@ import { sync } from "../commands/sync.js";
 import { updateTask } from "../commands/update-task.js";
 import { refresh } from "../commands/refresh.js";
 import { generateConfigs } from "../commands/generate-configs.js";
+import { openProjectDb } from "../project.js";
 
 const TEST_INPUT: InitProjectInput = {
   name: "cli-smoke-test",
@@ -272,5 +273,50 @@ describe("generate-configs --force", () => {
     const content = readFileSync(syncPath, "utf-8");
     expect(content).not.toBe("custom content");
     expect(content).toContain("arcbridge-sync");
+  });
+});
+
+describe("openProjectDb auto-recreation", () => {
+  let autoDir: string;
+
+  beforeAll(() => {
+    autoDir = mkdtempSync(join(tmpdir(), "arcbridge-cli-autodb-"));
+    generateConfig(autoDir, TEST_INPUT);
+    generateArc42(autoDir, TEST_INPUT);
+    generatePlan(autoDir, TEST_INPUT);
+    generateAgentRoles(autoDir);
+    const { db } = generateDatabase(autoDir, TEST_INPUT);
+    db.close();
+  });
+
+  afterAll(() => {
+    rmSync(autoDir, { recursive: true, force: true });
+  });
+
+  it("throws when neither config.yaml nor index.db exist", () => {
+    const emptyDir = mkdtempSync(join(tmpdir(), "arcbridge-empty-"));
+    expect(() => openProjectDb(emptyDir)).toThrow("No ArcBridge project found");
+    rmSync(emptyDir, { recursive: true, force: true });
+  });
+
+  it("auto-creates index.db from YAML when config exists but DB is missing", () => {
+    const dbPath = join(autoDir, ".arcbridge", "index.db");
+    unlinkSync(dbPath);
+    expect(existsSync(dbPath)).toBe(false);
+
+    const db = openProjectDb(autoDir);
+    expect(existsSync(dbPath)).toBe(true);
+
+    const blocks = db
+      .prepare("SELECT id FROM building_blocks")
+      .all() as { id: string }[];
+    expect(blocks.length).toBeGreaterThan(0);
+
+    const phases = db
+      .prepare("SELECT id FROM phases")
+      .all() as { id: string }[];
+    expect(phases.length).toBeGreaterThan(0);
+
+    db.close();
   });
 });

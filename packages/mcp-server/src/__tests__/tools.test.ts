@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@arcbridge/core";
 import type { Database } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
+import { ensureDb } from "../helpers.js";
 
 const TEST_INPUT: InitProjectInput = {
   name: "test-app",
@@ -350,5 +351,57 @@ describe("ADR queries", () => {
       .all("%app/%") as { id: string }[];
 
     expect(adrs.length).toBeGreaterThan(0);
+  });
+});
+
+describe("ensureDb auto-recreation", () => {
+  let autoDir: string;
+
+  beforeEach(() => {
+    autoDir = mkdtempSync(join(tmpdir(), "arcbridge-ensuredb-test-"));
+    mkdirSync(join(autoDir, "src"), { recursive: true });
+    generateConfig(autoDir, TEST_INPUT);
+    generateArc42(autoDir, TEST_INPUT);
+    generatePlan(autoDir, TEST_INPUT);
+    generateAgentRoles(autoDir);
+    const { db: origDb } = generateDatabase(autoDir, TEST_INPUT);
+    origDb.close();
+  });
+
+  afterEach(() => {
+    rmSync(autoDir, { recursive: true, force: true });
+  });
+
+  it("returns null when neither config.yaml nor index.db exist", () => {
+    const emptyDir = mkdtempSync(join(tmpdir(), "arcbridge-empty-"));
+    const ctx: ServerContext = { db: null, projectRoot: null };
+    expect(ensureDb(ctx, emptyDir)).toBeNull();
+    rmSync(emptyDir, { recursive: true, force: true });
+  });
+
+  it("auto-creates index.db from YAML when config exists but DB is missing", () => {
+    const dbPath = join(autoDir, ".arcbridge", "index.db");
+    unlinkSync(dbPath);
+    expect(existsSync(dbPath)).toBe(false);
+
+    const ctx: ServerContext = { db: null, projectRoot: null };
+    const recreatedDb = ensureDb(ctx, autoDir);
+
+    expect(recreatedDb).not.toBeNull();
+    expect(existsSync(dbPath)).toBe(true);
+    expect(ctx.db).toBe(recreatedDb);
+    expect(ctx.projectRoot).toBe(autoDir);
+
+    const blocks = recreatedDb!
+      .prepare("SELECT id FROM building_blocks")
+      .all() as { id: string }[];
+    expect(blocks.length).toBeGreaterThan(0);
+
+    const phases = recreatedDb!
+      .prepare("SELECT id FROM phases")
+      .all() as { id: string }[];
+    expect(phases.length).toBeGreaterThan(0);
+
+    recreatedDb!.close();
   });
 });

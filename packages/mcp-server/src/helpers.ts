@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import type { Database } from "@arcbridge/core";
-import { openDatabase, migrate } from "@arcbridge/core";
+import { openDatabase, migrate, initializeSchema, refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "./context.js";
 
 export function ensureDb(
@@ -12,7 +12,16 @@ export function ensureDb(
 
   const dbPath = join(targetDir, ".arcbridge", "index.db");
   if (!existsSync(dbPath)) {
-    return null;
+    const configPath = join(targetDir, ".arcbridge", "config.yaml");
+    if (!existsSync(configPath)) return null;
+
+    const db = openDatabase(dbPath);
+    initializeSchema(db);
+    migrate(db);
+    refreshFromDocs(db, targetDir);
+    ctx.db = db;
+    ctx.projectRoot = targetDir;
+    return db;
   }
 
   ctx.db = openDatabase(dbPath);
