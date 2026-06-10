@@ -57,7 +57,8 @@ describe("atomicWriteFileSync", () => {
     expect(readdirSync(tempDir)).toEqual(["target"]);
   });
 
-  it("leaves the original file untouched when the write fails", () => {
+  // chmod can't make a directory read-only on Windows
+  it.skipIf(process.platform === "win32")("leaves the original file untouched when the write fails", () => {
     const subDir = join(tempDir, "readonly");
     mkdirSync(subDir);
     const filePath = join(subDir, "data.yaml");

@@ -255,9 +255,9 @@ function runDotnetIndexer(
       ["run", "--project", indexerProject, "--no-build", "--", ...args],
       { ...EXEC_OPTIONS, cwd },
     );
-  } catch {
+  } catch (err) {
     // Retry with build (first run may not have been built)
-    logWarn(".NET indexer --no-build run failed, retrying with build (expected on first run)");
+    logWarn(".NET indexer --no-build run failed, retrying with build (expected on first run)", err);
     try {
       return execFileSync(
         "dotnet",
