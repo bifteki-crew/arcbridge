@@ -52,6 +52,7 @@ export { generateAgentRoles } from "./generators/agent-generator.js";
 export {
   generateDatabase,
   refreshFromDocs,
+  RefreshValidationError,
   type GenerateDatabaseResult,
 } from "./generators/db-generator.js";
 
@@ -143,6 +144,12 @@ export {
 
 // Config loader
 export { loadConfig } from "./config/loader.js";
+
+// Filesystem utils
+export { atomicWriteFileSync } from "./utils/fs.js";
+
+// Logging
+export { logWarn } from "./utils/log.js";
 
 // Template types
 export type { InitProjectInput } from "./templates/types.js";

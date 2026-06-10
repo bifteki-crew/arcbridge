@@ -1,6 +1,7 @@
 import { join } from "node:path";
-import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
+import { existsSync, readFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { parse, stringify } from "yaml";
+import { atomicWriteFileSync } from "../utils/fs.js";
 import { TaskFileSchema, PhasesFileSchema } from "../schemas/phases.js";
 import type { TaskFile, PhasesFile } from "../schemas/phases.js";
 import { QualityScenariosFileSchema } from "../schemas/quality-scenarios.js";
@@ -54,7 +55,7 @@ export function syncTaskToYaml(
     delete task.completed_at;
   }
 
-  writeFileSync(taskPath, stringify(taskFile), "utf-8");
+  atomicWriteFileSync(taskPath, stringify(taskFile));
 }
 
 /**
@@ -87,7 +88,7 @@ export function addTaskToYaml(
   }
 
   const taskPath = join(tasksDir, `${phaseId}.yaml`);
-  writeFileSync(taskPath, stringify(taskFile), "utf-8");
+  atomicWriteFileSync(taskPath, stringify(taskFile));
 }
 
 /**
@@ -111,7 +112,7 @@ export function syncPhaseToYaml(
   if (startedAt) phase.started_at = startedAt;
   if (completedAt) phase.completed_at = completedAt;
 
-  writeFileSync(phasesPath, stringify(phasesFile), "utf-8");
+  atomicWriteFileSync(phasesPath, stringify(phasesFile));
 }
 
 /**
@@ -157,10 +158,9 @@ export function addPhaseToYaml(
     mkdirSync(tasksDir, { recursive: true });
     const taskFilePath = join(tasksDir, `${phase.id}.yaml`);
     if (!existsSync(taskFilePath)) {
-      writeFileSync(
+      atomicWriteFileSync(
         taskFilePath,
         stringify({ schema_version: 1, phase_id: phase.id, tasks: [] }),
-        "utf-8",
       );
     }
 
@@ -178,7 +178,7 @@ export function addPhaseToYaml(
     });
 
     phasesFile.phases.sort((a, b) => a.phase_number - b.phase_number);
-    writeFileSync(phasesPath, stringify(phasesFile), "utf-8");
+    atomicWriteFileSync(phasesPath, stringify(phasesFile));
 
     return { success: true };
   } catch (err) {
@@ -225,7 +225,7 @@ export function syncScenarioToYaml(
     scenario.verification = verification as typeof scenario.verification;
   }
 
-  writeFileSync(scenarioPath, stringify(scenariosFile), "utf-8");
+  atomicWriteFileSync(scenarioPath, stringify(scenariosFile));
 }
 
 /**
@@ -256,7 +256,7 @@ export function deleteTaskFromYaml(
       return { success: true }; // Task wasn't in YAML (created via MCP only)
     }
 
-    writeFileSync(taskPath, stringify(taskFile), "utf-8");
+    atomicWriteFileSync(taskPath, stringify(taskFile));
     return { success: true };
   } catch (err) {
     return {
@@ -292,7 +292,7 @@ export function deletePhaseFromYaml(
       return { success: false, warning: `Phase '${phaseId}' not found in phases.yaml` };
     }
 
-    writeFileSync(phasesPath, stringify(phasesFile), "utf-8");
+    atomicWriteFileSync(phasesPath, stringify(phasesFile));
 
     // Remove the associated task file
     const taskFilePath = join(projectRoot, ".arcbridge", "plan", "tasks", `${phaseId}.yaml`);

@@ -1,4 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
+import { logWarn } from "../utils/log.js";
 
 /** Re-export DatabaseSync as Database for use across the codebase. */
 export type Database = DatabaseSync;
@@ -102,7 +103,13 @@ export function transaction<T>(db: Database, fn: () => T): T {
       db.exec("COMMIT");
       return result;
     } catch (err) {
-      try { db.exec("ROLLBACK"); } catch { /* ignore rollback errors */ }
+      try {
+        db.exec("ROLLBACK");
+      } catch (rollbackErr) {
+        // Original error is rethrown below; the rollback failure is secondary
+        // but means the connection may be in an inconsistent state
+        logWarn("Transaction rollback failed", rollbackErr);
+      }
       throw err;
     } finally {
       txDepth.set(db, 0);
@@ -121,7 +128,10 @@ export function transaction<T>(db: Database, fn: () => T): T {
     try {
       db.exec(`ROLLBACK TO ${name}`);
       db.exec(`RELEASE ${name}`);
-    } catch { /* ignore rollback errors */ }
+    } catch (rollbackErr) {
+      // Original error is rethrown below; the rollback failure is secondary
+      logWarn(`Savepoint ${name} rollback failed`, rollbackErr);
+    }
     throw err;
   } finally {
     txDepth.set(db, depth);

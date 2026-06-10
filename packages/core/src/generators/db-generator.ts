@@ -17,6 +17,28 @@ export interface GenerateDatabaseResult {
   warnings: string[];
 }
 
+/**
+ * Thrown when a top-level source file exists but fails parsing or schema
+ * validation during populate/refresh. Aborting (instead of warning) lets the
+ * surrounding transaction roll back, so the database keeps its previous
+ * state rather than committing with the corresponding tables wiped.
+ */
+export class RefreshValidationError extends Error {
+  constructor(
+    public readonly file: string,
+    detail: string,
+  ) {
+    super(`${file} failed validation: ${detail} — refresh aborted, fix the file and re-run.`);
+    this.name = "RefreshValidationError";
+  }
+}
+
+function formatZodIssues(error: { issues: { path: (string | number | symbol)[]; message: string }[] }): string {
+  return error.issues
+    .map((i) => (i.path.length ? `${i.path.join(".")}: ${i.message}` : i.message))
+    .join(", ");
+}
+
 function populateBuildingBlocks(
   db: Database,
   targetDir: string,
@@ -35,14 +57,22 @@ function populateBuildingBlocks(
   }
 
   const raw = readFileSync(filePath, "utf-8");
-  const { data } = matter(raw);
+  let data: unknown;
+  try {
+    ({ data } = matter(raw));
+  } catch (err) {
+    throw new RefreshValidationError(
+      ".arcbridge/arc42/05-building-blocks.md",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
   const result = BuildingBlocksFrontmatterSchema.safeParse(data);
 
   if (!result.success) {
-    warnings.push(
-      `Invalid building blocks frontmatter: ${result.error.issues.map((i) => i.path.length ? `${i.path.join(".")}: ${i.message}` : i.message).join(", ")}`,
+    throw new RefreshValidationError(
+      ".arcbridge/arc42/05-building-blocks.md",
+      formatZodIssues(result.error),
     );
-    return warnings;
   }
 
   const fm = result.data;
@@ -87,14 +117,22 @@ function populateQualityScenarios(
   }
 
   const raw = readFileSync(filePath, "utf-8");
-  const parsed = parse(raw);
+  let parsed: unknown;
+  try {
+    parsed = parse(raw);
+  } catch (err) {
+    throw new RefreshValidationError(
+      ".arcbridge/arc42/10-quality-scenarios.yaml",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
   const result = QualityScenariosFileSchema.safeParse(parsed);
 
   if (!result.success) {
-    warnings.push(
-      `Invalid quality scenarios: ${result.error.issues.map((i) => i.path.length ? `${i.path.join(".")}: ${i.message}` : i.message).join(", ")}`,
+    throw new RefreshValidationError(
+      ".arcbridge/arc42/10-quality-scenarios.yaml",
+      formatZodIssues(result.error),
     );
-    return warnings;
   }
 
   const insert = db.prepare(`
@@ -134,14 +172,22 @@ function populatePhases(
   }
 
   const raw = readFileSync(phasesPath, "utf-8");
-  const parsed = parse(raw);
+  let parsed: unknown;
+  try {
+    parsed = parse(raw);
+  } catch (err) {
+    throw new RefreshValidationError(
+      ".arcbridge/plan/phases.yaml",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
   const result = PhasesFileSchema.safeParse(parsed);
 
   if (!result.success) {
-    warnings.push(
-      `Invalid phases file: ${result.error.issues.map((i) => i.path.length ? `${i.path.join(".")}: ${i.message}` : i.message).join(", ")}`,
+    throw new RefreshValidationError(
+      ".arcbridge/plan/phases.yaml",
+      formatZodIssues(result.error),
     );
-    return warnings;
   }
 
   const insertPhase = db.prepare(`
@@ -180,7 +226,15 @@ function populatePhases(
     if (!existsSync(taskPath)) continue;
 
     const taskRaw = readFileSync(taskPath, "utf-8");
-    const taskParsed = parse(taskRaw);
+    let taskParsed: unknown;
+    try {
+      taskParsed = parse(taskRaw);
+    } catch (err) {
+      warnings.push(
+        `Invalid task file for ${phase.id}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      continue;
+    }
     const taskResult = TaskFileSchema.safeParse(taskParsed);
 
     if (!taskResult.success) {
@@ -233,7 +287,16 @@ function populateAdrs(
 
   for (const file of files) {
     const raw = readFileSync(join(decisionsDir, file), "utf-8");
-    const { data, content } = matter(raw);
+    let data: Record<string, unknown>;
+    let content: string;
+    try {
+      ({ data, content } = matter(raw));
+    } catch (err) {
+      warnings.push(
+        `Invalid ADR ${file}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      continue;
+    }
     const result = AdrFrontmatterSchema.safeParse(data);
 
     if (!result.success) {
@@ -264,6 +327,11 @@ function populateAdrs(
 /**
  * Re-read arc42 files from disk and update the database.
  * Uses INSERT OR REPLACE to pick up changes made since initial generation.
+ *
+ * Throws RefreshValidationError (rolling back the transaction, leaving the
+ * database unchanged) when a top-level source file exists but is malformed:
+ * 05-building-blocks.md, 10-quality-scenarios.yaml, or phases.yaml.
+ * Missing files and invalid individual task/ADR files only produce warnings.
  */
 export function refreshFromDocs(
   db: Database,

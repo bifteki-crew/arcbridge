@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { InitProjectInput } from "../templates/types.js";
 import { generateConfig } from "../generators/config-generator.js";
 import { generateArc42 } from "../generators/arc42-generator.js";
 import { generatePlan } from "../generators/plan-generator.js";
-import { generateDatabase, refreshFromDocs } from "../generators/db-generator.js";
+import { generateDatabase, refreshFromDocs, RefreshValidationError } from "../generators/db-generator.js";
 
 const TEST_INPUT: InitProjectInput = {
   name: "test-app",
@@ -155,6 +155,102 @@ describe("refreshFromDocs", () => {
 
     expect(blocksAfter).toBe(blockCount);
     expect(tasksAfter).toBe(taskCount);
+    db.close();
+  });
+
+  it("aborts and leaves the database unchanged when phases.yaml is invalid", () => {
+    const { db } = setupProject();
+
+    // Set a non-default status so we can verify the rollback preserves it
+    const task = db.prepare("SELECT id FROM tasks LIMIT 1").get() as { id: string };
+    db.prepare("UPDATE tasks SET status = 'done' WHERE id = ?").run(task.id);
+    const taskCount = (
+      db.prepare("SELECT COUNT(*) as count FROM tasks").get() as { count: number }
+    ).count;
+
+    writeFileSync(
+      join(tempDir, ".arcbridge", "plan", "phases.yaml"),
+      "phases: [unclosed\n",
+      "utf-8",
+    );
+
+    expect(() => refreshFromDocs(db, tempDir)).toThrow(RefreshValidationError);
+
+    const tasksAfter = (
+      db.prepare("SELECT COUNT(*) as count FROM tasks").get() as { count: number }
+    ).count;
+    const statusAfter = (
+      db.prepare("SELECT status FROM tasks WHERE id = ?").get(task.id) as { status: string }
+    ).status;
+    expect(tasksAfter).toBe(taskCount);
+    expect(statusAfter).toBe("done");
+
+    // FK enforcement must be restored even after an aborted refresh
+    const fk = db.prepare("PRAGMA foreign_keys").get() as { foreign_keys: number };
+    expect(fk.foreign_keys).toBe(1);
+    db.close();
+  });
+
+  it("aborts when building blocks frontmatter fails validation", () => {
+    const { db } = setupProject();
+    const blockCount = (
+      db.prepare("SELECT COUNT(*) as count FROM building_blocks").get() as { count: number }
+    ).count;
+
+    writeFileSync(
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      "---\nsection: building-blocks\nlast_synced: now\nblocks: not-an-array\n---\nBody\n",
+      "utf-8",
+    );
+
+    expect(() => refreshFromDocs(db, tempDir)).toThrow(RefreshValidationError);
+    expect(() => refreshFromDocs(db, tempDir)).toThrow(/05-building-blocks/);
+
+    const blocksAfter = (
+      db.prepare("SELECT COUNT(*) as count FROM building_blocks").get() as { count: number }
+    ).count;
+    expect(blocksAfter).toBe(blockCount);
+    db.close();
+  });
+
+  it("aborts when quality scenarios YAML is malformed", () => {
+    const { db } = setupProject();
+    const scenarioCount = (
+      db.prepare("SELECT COUNT(*) as count FROM quality_scenarios").get() as { count: number }
+    ).count;
+
+    writeFileSync(
+      join(tempDir, ".arcbridge", "arc42", "10-quality-scenarios.yaml"),
+      "scenarios: [\n",
+      "utf-8",
+    );
+
+    expect(() => refreshFromDocs(db, tempDir)).toThrow(RefreshValidationError);
+
+    const scenariosAfter = (
+      db.prepare("SELECT COUNT(*) as count FROM quality_scenarios").get() as { count: number }
+    ).count;
+    expect(scenariosAfter).toBe(scenarioCount);
+    db.close();
+  });
+
+  it("warns but continues when a single task file is invalid", () => {
+    const { db } = setupProject();
+    const phaseCount = (
+      db.prepare("SELECT COUNT(*) as count FROM phases").get() as { count: number }
+    ).count;
+
+    const tasksDir = join(tempDir, ".arcbridge", "plan", "tasks");
+    const taskFile = readdirSync(tasksDir).find((f) => f.endsWith(".yaml"))!;
+    writeFileSync(join(tasksDir, taskFile), "tasks: [broken\n", "utf-8");
+
+    const warnings = refreshFromDocs(db, tempDir);
+
+    expect(warnings.some((w) => w.includes("Invalid task file"))).toBe(true);
+    const phasesAfter = (
+      db.prepare("SELECT COUNT(*) as count FROM phases").get() as { count: number }
+    ).count;
+    expect(phasesAfter).toBe(phaseCount);
     db.close();
   });
 
