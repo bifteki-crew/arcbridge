@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, readdirSync, chmodSync } from "node:fs";
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, readdirSync, chmodSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { atomicWriteFileSync } from "../utils/fs.js";
@@ -33,6 +33,20 @@ describe("atomicWriteFileSync", () => {
     atomicWriteFileSync(join(tempDir, "b.yaml"), "b: 2\n");
     expect(readdirSync(tempDir).sort()).toEqual(["a.yaml", "b.yaml"]);
   });
+
+  it.skipIf(process.platform === "win32")(
+    "preserves the existing file's permission bits",
+    () => {
+      const filePath = join(tempDir, "secret.yaml");
+      writeFileSync(filePath, "token: old\n", { encoding: "utf-8", mode: 0o600 });
+      chmodSync(filePath, 0o600);
+
+      atomicWriteFileSync(filePath, "token: new\n");
+
+      expect(readFileSync(filePath, "utf-8")).toBe("token: new\n");
+      expect(statSync(filePath).mode & 0o777).toBe(0o600);
+    },
+  );
 
   it("throws and cleans up the temp file when rename fails", () => {
     // Renaming a file over an existing directory fails
