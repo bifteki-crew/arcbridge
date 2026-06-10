@@ -1,4 +1,12 @@
-import { writeFileSync, renameSync, unlinkSync, statSync, chmodSync } from "node:fs";
+import {
+  writeFileSync,
+  renameSync,
+  unlinkSync,
+  statSync,
+  chmodSync,
+  lstatSync,
+  realpathSync,
+} from "node:fs";
 import { dirname, basename, join } from "node:path";
 
 let tmpCounter = 0;
@@ -8,28 +16,47 @@ let tmpCounter = 0;
  * then rename over the target. A crash or full disk mid-write leaves the
  * original file untouched instead of truncated or half-written.
  *
- * The temp file must live in the same directory — rename is only atomic
- * within a filesystem. An existing target's permission bits are preserved
- * (the rename would otherwise replace them with the temp file's default).
+ * Matches writeFileSync semantics that a bare rename would break:
+ * - symlinks are resolved first, so the rename replaces the link's target,
+ *   not the link itself
+ * - an existing target's permission bits are preserved
+ *
+ * The temp file lives next to the resolved target — rename is only atomic
+ * within a filesystem.
  */
 export function atomicWriteFileSync(filePath: string, content: string): void {
+  let target: string;
   let mode: number | undefined;
   try {
-    mode = statSync(filePath).mode & 0o777;
+    target = realpathSync(filePath);
+    mode = statSync(target).mode & 0o777;
   } catch {
-    /* target doesn't exist yet — keep default mode */
+    // Path doesn't exist. A dangling symlink still needs write-through
+    // semantics (writeFileSync would create the link's target) — atomicity
+    // is moot since there's no existing data to protect.
+    let isDanglingLink = false;
+    try {
+      isDanglingLink = lstatSync(filePath).isSymbolicLink();
+    } catch {
+      /* nothing at this path */
+    }
+    if (isDanglingLink) {
+      writeFileSync(filePath, content, "utf-8");
+      return;
+    }
+    target = filePath;
   }
 
   const tmpPath = join(
-    dirname(filePath),
-    `.${basename(filePath)}.${process.pid}.${tmpCounter++}.tmp`,
+    dirname(target),
+    `.${basename(target)}.${process.pid}.${tmpCounter++}.tmp`,
   );
   try {
     writeFileSync(tmpPath, content, "utf-8");
     // chmod rather than writeFileSync's mode option — the latter is masked
     // by the process umask, chmod applies the bits exactly
     if (mode !== undefined) chmodSync(tmpPath, mode);
-    renameSync(tmpPath, filePath);
+    renameSync(tmpPath, target);
   } catch (err) {
     try {
       unlinkSync(tmpPath);

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, readdirSync, chmodSync, statSync } from "node:fs";
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, readdirSync, chmodSync, statSync, symlinkSync, lstatSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { atomicWriteFileSync } from "../utils/fs.js";
@@ -56,6 +56,38 @@ describe("atomicWriteFileSync", () => {
     expect(() => atomicWriteFileSync(dirPath, "content")).toThrow();
     expect(readdirSync(tempDir)).toEqual(["target"]);
   });
+
+  // Creating symlinks on Windows requires elevated privileges
+  it.skipIf(process.platform === "win32")(
+    "writes through a symlink instead of replacing it",
+    () => {
+      const realDir = join(tempDir, "real");
+      mkdirSync(realDir);
+      const realFile = join(realDir, "data.yaml");
+      writeFileSync(realFile, "value: old\n", "utf-8");
+      const linkPath = join(tempDir, "link.yaml");
+      symlinkSync(realFile, linkPath);
+
+      atomicWriteFileSync(linkPath, "value: new\n");
+
+      expect(lstatSync(linkPath).isSymbolicLink()).toBe(true);
+      expect(readFileSync(realFile, "utf-8")).toBe("value: new\n");
+    },
+  );
+
+  it.skipIf(process.platform === "win32")(
+    "creates the target of a dangling symlink like writeFileSync would",
+    () => {
+      const targetPath = join(tempDir, "not-yet.yaml");
+      const linkPath = join(tempDir, "dangling.yaml");
+      symlinkSync(targetPath, linkPath);
+
+      atomicWriteFileSync(linkPath, "created: true\n");
+
+      expect(lstatSync(linkPath).isSymbolicLink()).toBe(true);
+      expect(readFileSync(targetPath, "utf-8")).toBe("created: true\n");
+    },
+  );
 
   // chmod can't make a directory read-only on Windows
   it.skipIf(process.platform === "win32")("leaves the original file untouched when the write fails", () => {
