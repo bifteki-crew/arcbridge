@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.6.2 (2026-06-11)
+
+### Bug Fixes
+
+- **Atomic writes for source-of-truth files** — all writes to `.arcbridge/` YAML and markdown sources (task/phase/scenario sync, arc42 generation, `update_arc42_section`) now go through a temp-file-plus-rename, so a crash or full disk mid-write can no longer truncate or corrupt them. Symlinked files keep their link structure (writes go through to the target), and existing permission bits are preserved.
+- **Service-scoped component cleanup** — component re-analysis previously ran a global `DELETE FROM components`, wiping other services' rows in multi-service projects (e.g. the `fullstack-nextjs-dotnet` template). The delete is now scoped to the indexed service, runs inside the insert transaction, and stale rows are cleared even when a service's components drop to zero.
+- **Error visibility** — previously silent failure paths now log diagnostics to stderr (stdout stays clean for `--json` and MCP stdio): .NET project discovery errors, global-tool fallback, and transaction rollback failures. `get_symbol` reports unreadable source files in its output instead of silently omitting the snippet.
+
+### Behavior Changes
+
+- **`refreshFromDocs` aborts on malformed top-level files** — when `05-building-blocks.md`, `10-quality-scenarios.yaml`, or `phases.yaml` exists but fails to parse or validate, the refresh now throws `RefreshValidationError` (exported from `@arcbridge/core`) and rolls back, leaving the database unchanged. Previously the failure was reported as a warning while the refresh committed with the corresponding tables emptied. Missing files and invalid individual task/ADR files still only produce warnings.
+
+### Stats
+
+- 34 MCP tools, 547 tests passing, 0 lint errors, 0 type errors
+
 ## 0.6.1 (2026-05-13)
 
 ### Bug Fixes
