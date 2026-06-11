@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
-import { logWarn } from "@arcbridge/core";
+import { logWarn, resolveWithin } from "@arcbridge/core";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson } from "../helpers.js";
@@ -76,9 +75,10 @@ export function registerGetSymbol(
 
       // Source code snippet
       if (params.include_source) {
-        const absPath = join(params.target_dir, symbol.file_path);
-        if (existsSync(absPath)) {
-          try {
+        try {
+          // file_path comes from the database — keep reads inside the project
+          const absPath = resolveWithin(params.target_dir, symbol.file_path);
+          if (existsSync(absPath)) {
             const content = readFileSync(absPath, "utf-8");
             const fileLines = content.split("\n");
 
@@ -99,15 +99,15 @@ export function registerGetSymbol(
               .join("\n");
 
             lines.push("## Source", "", "```typescript", snippet, "```", "");
-          } catch (err) {
-            logWarn(`Could not read source for symbol ${symbol.id} (${symbol.file_path})`, err);
-            lines.push(
-              "## Source",
-              "",
-              `_Source unavailable: could not read \`${symbol.file_path}\` (${err instanceof Error ? err.message : String(err)})._`,
-              "",
-            );
           }
+        } catch (err) {
+          logWarn(`Could not read source for symbol ${symbol.id} (${symbol.file_path})`, err);
+          lines.push(
+            "## Source",
+            "",
+            `_Source unavailable: could not read \`${symbol.file_path}\` (${err instanceof Error ? err.message : String(err)})._`,
+            "",
+          );
         }
       }
 

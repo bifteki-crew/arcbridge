@@ -146,7 +146,7 @@ export {
 export { loadConfig } from "./config/loader.js";
 
 // Filesystem utils
-export { atomicWriteFileSync } from "./utils/fs.js";
+export { atomicWriteFileSync, resolveWithin } from "./utils/fs.js";
 
 // Logging
 export { logWarn } from "./utils/log.js";

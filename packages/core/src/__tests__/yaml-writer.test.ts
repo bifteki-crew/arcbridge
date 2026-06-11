@@ -589,3 +589,52 @@ describe("deletePhaseFromYaml", () => {
     expect(result.warning).toContain("not found");
   });
 });
+
+describe("path traversal protection", () => {
+  it("addTaskToYaml rejects a phaseId that escapes the project", () => {
+    expect(() =>
+      addTaskToYaml(tempDir, "../../escape", {
+        id: "task-x",
+        title: "Evil",
+        status: "todo",
+        quality_scenarios: [],
+        acceptance_criteria: [],
+      }),
+    ).toThrow(/escapes project root/);
+    expect(existsSync(join(tempDir, "..", "escape.yaml"))).toBe(false);
+  });
+
+  it("syncTaskToYaml rejects a traversal phaseId", () => {
+    expect(() => syncTaskToYaml(tempDir, "../../escape", "task-1", "done")).toThrow(
+      /escapes project root/,
+    );
+  });
+
+  it("rejects a phaseId that stays in the project but escapes the tasks dir", () => {
+    // "../phases" would resolve to .arcbridge/plan/phases.yaml — containment
+    // is the tasks directory, not just the project root
+    expect(() => syncTaskToYaml(tempDir, "../phases", "task-1", "done")).toThrow(
+      /escapes project root/,
+    );
+  });
+
+  it("addPhaseToYaml reports traversal ids as a warning, not a write", () => {
+    mkdirSync(join(tempDir, ".arcbridge", "plan"), { recursive: true });
+    writeFileSync(
+      join(tempDir, ".arcbridge", "plan", "phases.yaml"),
+      stringify({ schema_version: 1, phases: [] }),
+      "utf-8",
+    );
+
+    const result = addPhaseToYaml(tempDir, {
+      id: "../../escape",
+      name: "Evil",
+      phase_number: 99,
+      description: "x",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.warning).toMatch(/escapes project root/);
+    expect(existsSync(join(tempDir, "..", "escape.yaml"))).toBe(false);
+  });
+});
