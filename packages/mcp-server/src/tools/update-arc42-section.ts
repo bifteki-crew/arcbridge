@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { join } from "node:path";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { atomicWriteFileSync } from "@arcbridge/core";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
@@ -125,7 +126,7 @@ export function registerUpdateArc42Section(
       const updated = frontmatterBlock
         ? `${frontmatterBlock}\n${params.content}\n`
         : `${params.content}\n`;
-      writeFileSync(filePath, updated, "utf-8");
+      atomicWriteFileSync(filePath, updated);
 
       const label = SECTION_LABELS[params.section];
       return textResult(

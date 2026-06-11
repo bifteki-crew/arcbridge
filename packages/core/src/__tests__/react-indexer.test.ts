@@ -345,3 +345,32 @@ describe("route analysis", () => {
     expect(dashPage!.parent_layout).toBeTruthy();
   });
 });
+
+describe("component table service scoping", () => {
+  function seedComponentSymbol(id: string, service: string): void {
+    db.prepare(
+      `INSERT INTO symbols (id, name, qualified_name, kind, file_path, start_line, end_line, is_exported, service, language, indexed_at)
+       VALUES (?, 'Widget', 'Widget', 'component', 'src/widget.tsx', 1, 10, 1, ?, 'typescript', '2026-01-01')`,
+    ).run(id, service);
+    db.prepare(
+      `INSERT INTO components (symbol_id, is_client, is_server_action, has_state, context_providers, context_consumers, props_type)
+       VALUES (?, 1, 0, 0, '[]', '[]', NULL)`,
+    ).run(id);
+  }
+
+  it("re-analyzing one service preserves other services' components", async () => {
+    const { analyzeComponents } = await import("../indexer/component-analyzer.js");
+
+    seedComponentSymbol("frontend-widget", "frontend");
+    seedComponentSymbol("admin-widget", "admin");
+
+    // Re-analyze 'admin' with no source files — its components were all removed
+    analyzeComponents([], {} as unknown as import("typescript").TypeChecker, "/tmp", db, false, "admin");
+
+    const remaining = db
+      .prepare("SELECT symbol_id FROM components ORDER BY symbol_id")
+      .all() as { symbol_id: string }[];
+
+    expect(remaining.map((r) => r.symbol_id)).toEqual(["frontend-widget"]);
+  });
+});

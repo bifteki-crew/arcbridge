@@ -144,6 +144,7 @@ export function analyzeComponents(
   projectRoot: string,
   db: Database,
   allClient = false,
+  service = "main",
 ): number {
   const components: ComponentInfo[] = [];
 
@@ -321,32 +322,37 @@ export function analyzeComponents(
   }
 
   // Write to database
-  writeComponents(db, components);
+  writeComponents(db, components, service);
   return components.length;
 }
 
 function writeComponents(
   db: Database,
   components: ComponentInfo[],
+  service: string,
 ): void {
-  if (components.length === 0) return;
-
-  // Clear existing components and re-insert
-  db.prepare("DELETE FROM components").run();
-
-  const insert = db.prepare(`
-    INSERT OR IGNORE INTO components (
-      symbol_id, is_client, is_server_action, has_state,
-      context_providers, context_consumers, props_type
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  // Build set of existing symbol IDs for bulk lookup (avoids N+1 queries)
-  const existingIds = new Set(
-    (db.prepare("SELECT id FROM symbols").all() as { id: string }[]).map((r) => r.id),
-  );
-
   transaction(db, () => {
+    // Clear only this service's components — other services share the table
+    db.prepare(
+      "DELETE FROM components WHERE symbol_id IN (SELECT id FROM symbols WHERE service = ?)",
+    ).run(service);
+
+    if (components.length === 0) return;
+
+    const insert = db.prepare(`
+      INSERT OR IGNORE INTO components (
+        symbol_id, is_client, is_server_action, has_state,
+        context_providers, context_consumers, props_type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    // Build set of existing symbol IDs for bulk lookup (avoids N+1 queries);
+    // analyzed components always belong to the service being indexed
+    const existingIds = new Set(
+      (db.prepare("SELECT id FROM symbols WHERE service = ?").all(service) as { id: string }[])
+        .map((r) => r.id),
+    );
+
     for (const c of components) {
       if (!existingIds.has(c.symbolId)) continue;
 
@@ -361,5 +367,4 @@ function writeComponents(
       );
     }
   });
-
 }

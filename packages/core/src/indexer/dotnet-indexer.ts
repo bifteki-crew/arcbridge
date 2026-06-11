@@ -4,6 +4,7 @@ import { readdirSync, readFileSync, existsSync, accessSync, constants } from "no
 import { fileURLToPath } from "node:url";
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
+import { logWarn } from "../utils/log.js";
 import type { IndexResult, ExtractedSymbol } from "./types.js";
 import type { ExtractedDependency } from "./dependency-extractor.js";
 import {
@@ -72,7 +73,8 @@ export function findDotnetProject(projectRoot: string): string | null {
     const csproj = entries.find((e) => e.endsWith(".csproj"));
     if (csproj) return join(projectRoot, csproj);
     return null;
-  } catch {
+  } catch (err) {
+    logWarn(`Could not scan ${projectRoot} for .sln/.csproj`, err);
     return null;
   }
 }
@@ -230,6 +232,7 @@ function runDotnetIndexer(
       return execFileSync("arcbridge-dotnet-indexer", args, { ...EXEC_OPTIONS, cwd });
     } catch (err) {
       globalToolError = err;
+      logWarn("Global tool arcbridge-dotnet-indexer failed, trying monorepo source fallback", err);
     }
   }
 
@@ -252,8 +255,9 @@ function runDotnetIndexer(
       ["run", "--project", indexerProject, "--no-build", "--", ...args],
       { ...EXEC_OPTIONS, cwd },
     );
-  } catch {
+  } catch (err) {
     // Retry with build (first run may not have been built)
+    logWarn(".NET indexer --no-build run failed, retrying with build (expected on first run)", err);
     try {
       return execFileSync(
         "dotnet",

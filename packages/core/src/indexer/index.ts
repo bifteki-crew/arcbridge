@@ -276,7 +276,7 @@ function indexTypeScriptProject(
     db.prepare("SELECT value FROM arcbridge_meta WHERE key = 'project_type'").get() as { value: string } | undefined
   )?.value;
   const allClient = projectType ? CLIENT_ONLY_TEMPLATES.has(projectType) : false;
-  const componentsAnalyzed = analyzeComponents(sourceFiles, checker, projectRoot, db, allClient);
+  const componentsAnalyzed = analyzeComponents(sourceFiles, checker, projectRoot, db, allClient, service);
 
   // 9. Analyze Next.js routes (populates routes table)
   const routesAnalyzed = analyzeRoutes(projectRoot, db, service);

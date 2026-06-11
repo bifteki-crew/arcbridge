@@ -1,4 +1,5 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
+import { atomicWriteFileSync } from "../utils/fs.js";
 import { join } from "node:path";
 import matter from "gray-matter";
 import { stringify } from "yaml";
@@ -21,7 +22,7 @@ function writeMarkdownWithFrontmatter(
   body: string,
 ): void {
   const content = matter.stringify(body, frontmatter);
-  writeFileSync(filePath, content, "utf-8");
+  atomicWriteFileSync(filePath, content);
 }
 
 export function generateArc42(
@@ -63,9 +64,8 @@ export function generateArc42(
 
   // Quality scenarios (YAML, not markdown)
   const qualityScenarios = qualityScenariosTemplate(input);
-  writeFileSync(
+  atomicWriteFileSync(
     join(arc42Dir, "10-quality-scenarios.yaml"),
     stringify(qualityScenarios),
-    "utf-8",
   );
 }

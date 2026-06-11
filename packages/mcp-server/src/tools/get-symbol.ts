@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { logWarn } from "@arcbridge/core";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, safeParseJson } from "../helpers.js";
@@ -98,8 +99,14 @@ export function registerGetSymbol(
               .join("\n");
 
             lines.push("## Source", "", "```typescript", snippet, "```", "");
-          } catch {
-            // File read failed — skip source
+          } catch (err) {
+            logWarn(`Could not read source for symbol ${symbol.id} (${symbol.file_path})`, err);
+            lines.push(
+              "## Source",
+              "",
+              `_Source unavailable: could not read \`${symbol.file_path}\` (${err instanceof Error ? err.message : String(err)})._`,
+              "",
+            );
           }
         }
       }
