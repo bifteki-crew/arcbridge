@@ -226,6 +226,13 @@ export function buildingBlocksTemplate(
     // building_block references in templates/phases/api-service.ts —
     // a task pointing at a non-existent block fails the FK check during
     // initial database population.
+    //
+    // `interfaces` lists the blocks a block is ALLOWED to depend on, so the
+    // declarations follow the layering direction: api-core → data-access →
+    // lib-utilities (and api-core → auth-module when present). Reversing these
+    // would make drift flag the real dependencies as violations.
+    const apiCoreInterfaces = ["data-access", "lib-utilities"];
+
     const blocks: BlockDef[] = [
       {
         id: "api-core",
@@ -237,7 +244,7 @@ export function buildingBlocksTemplate(
           `${src}api/`,
           `${src}middleware/`,
         ],
-        interfaces: [],
+        interfaces: apiCoreInterfaces,
         quality_scenarios: ["SEC-03"],
         adrs: [],
         responsibility:
@@ -249,7 +256,7 @@ export function buildingBlocksTemplate(
         name: "Data Access",
         level: 1,
         code_paths: [`${src}lib/db/`, `${src}db/`, `${src}models/`, `${src}repositories/`],
-        interfaces: ["api-core"],
+        interfaces: ["lib-utilities"],
         quality_scenarios: [],
         adrs: [],
         responsibility: "Database connections, queries, data models, and persistence",
@@ -269,12 +276,14 @@ export function buildingBlocksTemplate(
     ];
 
     if (inp.features.includes("auth")) {
+      // api-core depends on auth (middleware); auth depends on the data/util layers
+      apiCoreInterfaces.push("auth-module");
       blocks.push({
         id: "auth-module",
         name: "Authentication",
         level: 1,
         code_paths: [`${src}lib/auth/`, `${src}auth/`],
-        interfaces: ["api-core"],
+        interfaces: ["data-access", "lib-utilities"],
         quality_scenarios: ["SEC-01"],
         adrs: [],
         responsibility:

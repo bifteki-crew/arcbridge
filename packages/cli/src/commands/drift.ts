@@ -18,8 +18,15 @@ export async function drift(dir: string, json: boolean, reindex = false): Promis
     // committed): refresh blocks/scenarios from docs and re-scan the code so
     // symbol-based checks (undocumented modules, dependency violations) are real.
     if (reindex) {
-      refreshFromDocs(db, dir);
-      await indexConfiguredProject(db, dir, { services: configResult.config?.services ?? [] });
+      const refreshWarnings = refreshFromDocs(db, dir);
+      const { warnings: indexWarnings } = await indexConfiguredProject(db, dir, {
+        services: configResult.config?.services ?? [],
+      });
+      // Surface reindex warnings (e.g. skipped non-TS services, missing
+      // tsconfig) so CI output shows what was and wasn't indexed.
+      for (const w of [...refreshWarnings, ...indexWarnings]) {
+        console.warn(`  [reindex] ${w}`);
+      }
     }
 
     const driftOpts: DriftOptions = {

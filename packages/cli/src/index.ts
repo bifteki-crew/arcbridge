@@ -22,7 +22,7 @@ Commands:
   init              Initialize ArcBridge in a project directory
   sync              Run the sync loop: reindex, detect drift, infer tasks, propose updates
   status            Show project status (phase, tasks, drift)
-  drift             Check for architecture drift
+  drift             Check for architecture drift (add --reindex to refresh + reindex first)
   refresh           Rebuild the database from YAML/markdown sources
   update-task       Update a task's status (e.g. arcbridge update-task task-1.1 done)
   generate-configs  Regenerate platform agent configs from .arcbridge/agents/
@@ -38,6 +38,9 @@ Init options:
   --template <type>  Project template: nextjs-app-router, react-vite, angular-app, api-service, dotnet-webapi, unity-game, fullstack-nextjs-dotnet
   --platform <name>  Target platform: claude, copilot, codex, gemini, opencode (can be repeated, default: claude)
   --spec <file>      Path to a requirements/spec file to include
+
+Drift options:
+  --reindex          Refresh from docs and reindex before checking (use in CI, where index.db is not committed)
 
 Generate-configs options:
   --force            Force-regenerate files that would normally be preserved (e.g. skills)
