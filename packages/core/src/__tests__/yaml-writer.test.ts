@@ -600,13 +600,13 @@ describe("path traversal protection", () => {
         quality_scenarios: [],
         acceptance_criteria: [],
       }),
-    ).toThrow(/escapes project root/);
+    ).toThrow(/escapes containment root/);
     expect(existsSync(join(tempDir, "..", "escape.yaml"))).toBe(false);
   });
 
   it("syncTaskToYaml rejects a traversal phaseId", () => {
     expect(() => syncTaskToYaml(tempDir, "../../escape", "task-1", "done")).toThrow(
-      /escapes project root/,
+      /escapes containment root/,
     );
   });
 
@@ -614,7 +614,7 @@ describe("path traversal protection", () => {
     // "../phases" would resolve to .arcbridge/plan/phases.yaml — containment
     // is the tasks directory, not just the project root
     expect(() => syncTaskToYaml(tempDir, "../phases", "task-1", "done")).toThrow(
-      /escapes project root/,
+      /escapes containment root/,
     );
   });
 
@@ -634,7 +634,7 @@ describe("path traversal protection", () => {
     });
 
     expect(result.success).toBe(false);
-    expect(result.warning).toMatch(/escapes project root/);
+    expect(result.warning).toMatch(/escapes containment root/);
     expect(existsSync(join(tempDir, "..", "escape.yaml"))).toBe(false);
   });
 });

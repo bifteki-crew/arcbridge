@@ -20,16 +20,16 @@ describe("resolveWithin", () => {
   });
 
   it("throws on traversal escaping the root", () => {
-    expect(() => resolveWithin(ROOT, "..", "other")).toThrow(/escapes project root/);
-    expect(() => resolveWithin(ROOT, "../../etc/passwd")).toThrow(/escapes project root/);
+    expect(() => resolveWithin(ROOT, "..", "other")).toThrow(/escapes containment root/);
+    expect(() => resolveWithin(ROOT, "../../etc/passwd")).toThrow(/escapes containment root/);
     expect(() =>
       resolveWithin(ROOT, ".arcbridge", "plan", "tasks", "../../../../escape.yaml"),
-    ).toThrow(/escapes project root/);
+    ).toThrow(/escapes containment root/);
   });
 
   it("throws on absolute path segments", () => {
     expect(() => resolveWithin(ROOT, resolve(sep, "etc", "passwd"))).toThrow(
-      /escapes project root/,
+      /escapes containment root/,
     );
   });
 

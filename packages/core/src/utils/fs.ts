@@ -25,7 +25,7 @@ export function resolveWithin(root: string, ...segments: string[]): string {
   const rel = relative(resolvedRoot, resolved);
   if (rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
     throw new Error(
-      `Path escapes project root: ${segments.join("/")} resolves outside ${resolvedRoot}`,
+      `Path escapes containment root: ${segments.join("/")} resolves outside ${resolvedRoot}`,
     );
   }
   return resolved;
