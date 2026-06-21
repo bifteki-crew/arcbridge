@@ -31,7 +31,9 @@ export function buildingBlocksTemplate(
           ? buildUnityBlocks()
           : input.template === "angular-app"
             ? buildAngularBlocks(layout)
-            : buildJsBlocks(input, layout);
+            : input.template === "api-service"
+              ? buildApiServiceBlocks(input, layout)
+              : buildJsBlocks(input, layout);
 
   function buildFullstackBlocks(): BlockDef[] {
     return [
@@ -208,6 +210,75 @@ export function buildingBlocksTemplate(
         adrs: [],
         responsibility:
           "API client layer for communicating with backend services. Defines request/response types, handles errors, and manages the contract with consumed APIs.",
+        service: "main",
+      });
+    }
+
+    return blocks;
+  }
+
+  function buildApiServiceBlocks(
+    inp: InitProjectInput,
+    lt: typeof layout,
+  ): BlockDef[] {
+    const src = lt.srcPrefix;
+    // Backend service blocks. The ids here MUST stay in sync with the
+    // building_block references in templates/phases/api-service.ts —
+    // a task pointing at a non-existent block fails the FK check during
+    // initial database population.
+    const blocks: BlockDef[] = [
+      {
+        id: "api-core",
+        name: "API Core",
+        level: 1,
+        code_paths: [
+          ...lt.entrypoints,
+          `${src}routes/`,
+          `${src}api/`,
+          `${src}middleware/`,
+        ],
+        interfaces: [],
+        quality_scenarios: ["SEC-03"],
+        adrs: [],
+        responsibility:
+          "Server entry point, route registration, middleware pipeline, and request handling",
+        service: "main",
+      },
+      {
+        id: "data-access",
+        name: "Data Access",
+        level: 1,
+        code_paths: [`${src}lib/db/`, `${src}db/`, `${src}models/`, `${src}repositories/`],
+        interfaces: ["api-core"],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility: "Database connections, queries, data models, and persistence",
+        service: "main",
+      },
+      {
+        id: "lib-utilities",
+        name: "Library & Utilities",
+        level: 1,
+        code_paths: [`${src}lib/`, `${src}utils/`],
+        interfaces: [],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility: "Shared utilities, helpers, and cross-cutting business logic",
+        service: "main",
+      },
+    ];
+
+    if (inp.features.includes("auth")) {
+      blocks.push({
+        id: "auth-module",
+        name: "Authentication",
+        level: 1,
+        code_paths: [`${src}lib/auth/`, `${src}auth/`],
+        interfaces: ["api-core"],
+        quality_scenarios: ["SEC-01"],
+        adrs: [],
+        responsibility:
+          "User authentication, session management, and authorization",
         service: "main",
       });
     }

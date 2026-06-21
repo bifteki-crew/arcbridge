@@ -53,6 +53,7 @@ interface ParsedArgs {
   platforms?: string[];
   spec?: string;
   force: boolean;
+  reindex: boolean;
 }
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -65,6 +66,7 @@ function parseArgs(args: string[]): ParsedArgs {
   const platforms: string[] = [];
   let spec: string | undefined;
   let force = false;
+  let reindex = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
@@ -82,6 +84,8 @@ function parseArgs(args: string[]): ParsedArgs {
       spec = args[++i]!;
     } else if (arg === "--force") {
       force = true;
+    } else if (arg === "--reindex") {
+      reindex = true;
     } else if (arg === "--help" || arg === "-h") {
       console.log(USAGE);
       process.exit(0);
@@ -105,6 +109,7 @@ function parseArgs(args: string[]): ParsedArgs {
     platforms: platforms.length > 0 ? platforms : undefined,
     spec,
     force,
+    reindex,
   };
 }
 
@@ -134,7 +139,7 @@ async function main(): Promise<void> {
         await status(dir, json);
         break;
       case "drift":
-        await drift(dir, json);
+        await drift(dir, json, parsed.reindex);
         break;
       case "refresh":
         await refresh(dir, json);

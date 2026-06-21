@@ -1,0 +1,35 @@
+schema_version: 1
+phase_id: phase-dogfood
+tasks:
+  - id: task-dogfood.1-fix-api-service-template
+    title: Fix api-service template FK crash (tasks referenced undefined blocks)
+    status: done
+    building_block: core
+    quality_scenarios: []
+    acceptance_criteria:
+      - api-service generates api-core/data-access/lib-utilities blocks
+      - generateDatabase succeeds for all templates (regression test)
+  - id: task-dogfood.2-per-service-indexing
+    title: Per-service TypeScript indexing honouring config.services
+    status: done
+    building_block: cli
+    quality_scenarios: []
+    acceptance_criteria:
+      - createTsProgram resolves includes against the tsconfig directory
+      - indexConfiguredProject indexes each service and merges into one DB
+      - init and sync use it; manifests scanned per package
+  - id: task-dogfood.3-self-index
+    title: Index ArcBridge's own four TypeScript packages
+    status: done
+    building_block: core
+    quality_scenarios: []
+    acceptance_criteria:
+      - Building blocks map every indexed file (no undocumented_module)
+      - arcbridge drift runs clean on this repo
+  - id: task-dogfood.4-ci-drift
+    title: Enforce drift in CI
+    status: todo
+    building_block: cli
+    quality_scenarios: []
+    acceptance_criteria:
+      - CI runs arcbridge drift and fails on error-severity drift

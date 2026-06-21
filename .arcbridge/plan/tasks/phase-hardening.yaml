@@ -1,0 +1,27 @@
+schema_version: 1
+phase_id: phase-hardening
+tasks:
+  - id: task-hardening.1-atomic-writes
+    title: Atomic writes for source-of-truth YAML/markdown
+    status: done
+    building_block: core
+    quality_scenarios: []
+    acceptance_criteria:
+      - All .arcbridge writes go through atomicWriteFileSync (temp + rename)
+      - Symlink structure and permission bits preserved
+  - id: task-hardening.2-refresh-abort
+    title: refreshFromDocs aborts and rolls back on malformed top-level files
+    status: done
+    building_block: core
+    quality_scenarios: []
+    acceptance_criteria:
+      - RefreshValidationError thrown on invalid building-blocks/scenarios/phases
+      - Database left unchanged after an aborted refresh
+  - id: task-hardening.3-path-containment
+    title: Contain externally-sourced paths within the project
+    status: done
+    building_block: core
+    quality_scenarios: []
+    acceptance_criteria:
+      - resolveWithin rejects traversal and absolute segments
+      - Applied at yaml-writer, get_symbol, and update_arc42_section

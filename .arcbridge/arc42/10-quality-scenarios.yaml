@@ -1,0 +1,83 @@
+schema_version: 1
+last_updated: 2026-06-21T15:52:50.305Z
+quality_goals:
+  - id: security
+    priority: 1
+    description: Security is a priority for arcbridge
+  - id: performance
+    priority: 2
+    description: Performance is a priority for arcbridge
+  - id: accessibility
+    priority: 3
+    description: Accessibility is a priority for arcbridge
+  - id: maintainability
+    priority: 4
+    description: Maintainability is a priority for arcbridge
+scenarios:
+  - id: SEC-01
+    name: Auth on all API routes
+    category: security
+    priority: must
+    scenario: An unauthenticated request hits any API route that requires auth
+    expected: Returns 401 Unauthorized without leaking data
+    linked_code: []
+    linked_tests: []
+    linked_blocks: []
+    verification: automatic
+    status: untested
+  - id: SEC-03
+    name: Input validation on mutations
+    category: security
+    priority: must
+    scenario: A malformed or malicious payload is sent to any mutation endpoint
+    expected: Input is validated and rejected with a descriptive error
+    linked_code: []
+    linked_tests: []
+    linked_blocks: []
+    verification: automatic
+    status: untested
+  - id: SEC-02
+    name: No secrets in environment or source
+    category: security
+    priority: must
+    scenario: Source code and config files are scanned
+    expected: No API keys, tokens, or secrets are hardcoded; all come from
+      environment variables
+    linked_code: []
+    linked_tests: []
+    linked_blocks: []
+    verification: automatic
+    status: untested
+  - id: PERF-02
+    name: API responses under 200ms
+    category: performance
+    priority: should
+    scenario: Any API endpoint is called under normal load
+    expected: p95 response time is under 200ms
+    linked_code: []
+    linked_tests: []
+    linked_blocks: []
+    verification: automatic
+    status: untested
+  - id: MAINT-01
+    name: No circular dependencies
+    category: maintainability
+    priority: must
+    scenario: Dependency graph is analyzed
+    expected: No circular import chains exist
+    linked_code: []
+    linked_tests: []
+    linked_blocks: []
+    verification: automatic
+    status: untested
+  - id: MAINT-02
+    name: Test coverage on business logic
+    category: maintainability
+    priority: should
+    scenario: Test coverage report is generated
+    expected: Business logic modules have >80% line coverage
+    linked_code: []
+    linked_tests: []
+    linked_blocks: []
+    verification: automatic
+    status: untested

@@ -823,3 +823,57 @@ describe("fullstack-nextjs-dotnet template", () => {
     db.close();
   });
 });
+
+describe("generateDatabase referential integrity (all templates)", () => {
+  // FK checks are ON during initial generateDatabase, so any task whose
+  // building_block is not a defined block aborts init. This regression test
+  // exercises every template's generated docs through generateDatabase and
+  // asserts every task references a block that exists. Guards against the
+  // api-service FK bug (tasks referenced api-core/data-access that the
+  // building-blocks template never produced) recurring in any template.
+  const TEMPLATES: InitProjectInput["template"][] = [
+    "nextjs-app-router",
+    "react-vite",
+    "api-service",
+    "dotnet-webapi",
+    "unity-game",
+    "angular-app",
+    "fullstack-nextjs-dotnet",
+  ];
+
+  for (const template of TEMPLATES) {
+    it(`populates the database without FK violations: ${template}`, () => {
+      const input: InitProjectInput = {
+        name: `test-${template}`,
+        template,
+        features: [],
+        quality_priorities: ["security", "performance", "maintainability"],
+        platforms: ["claude"],
+      };
+
+      generateConfig(tempDir, input);
+      generateArc42(tempDir, input);
+      generatePlan(tempDir, input);
+
+      // Throws on FK violation (e.g. a task pointing at a missing block)
+      const { db } = generateDatabase(tempDir, input);
+
+      const blockIds = new Set(
+        (db.prepare("SELECT id FROM building_blocks").all() as { id: string }[]).map((r) => r.id),
+      );
+      const tasks = db
+        .prepare("SELECT id, building_block FROM tasks WHERE building_block IS NOT NULL")
+        .all() as { id: string; building_block: string }[];
+
+      const dangling = tasks.filter((t) => !blockIds.has(t.building_block));
+      expect(
+        dangling,
+        `tasks reference undefined building blocks: ${dangling.map((t) => `${t.id}→${t.building_block}`).join(", ")}`,
+      ).toEqual([]);
+
+      // At least one task should actually be linked, or the check is vacuous
+      expect(tasks.length).toBeGreaterThan(0);
+      db.close();
+    });
+  }
+});

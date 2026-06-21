@@ -1,10 +1,11 @@
 import ts from "typescript";
-import { relative, join } from "node:path";
+import { relative, join, resolve } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import YAML from "yaml";
 import type { Database } from "../db/connection.js";
-import type { IndexerOptions, IndexResult } from "./types.js";
+import type { ArcBridgeConfig, Service } from "../schemas/config.js";
+import type { IndexerOptions, IndexResult, IndexerLanguage } from "./types.js";
 import { createTsProgram } from "./program.js";
 import { extractSymbols } from "./symbol-extractor.js";
 import { extractDependencies, buildSymbolLookup } from "./dependency-extractor.js";
@@ -84,8 +85,9 @@ export async function indexProject(
     ? detectProjectLanguage(options.projectRoot)
     : language;
 
-  // Index package dependencies (npm/NuGet) regardless of language
-  indexPackageDependencies(db, options.projectRoot, options.service ?? "main");
+  // Index package dependencies (npm/NuGet) regardless of language, from this
+  // service's manifest directory (defaults to projectRoot)
+  indexPackageDependencies(db, options.manifestDir ?? options.projectRoot, options.service ?? "main");
 
   if (resolvedLanguage === "csharp") {
     const backend = resolveCSharpBackend(options.projectRoot);
@@ -139,6 +141,118 @@ export async function indexProject(
     ...options,
     tsconfigPath: resolvedTsconfigPath,
   });
+}
+
+/** Per-service result, tagging an IndexResult with the service it came from. */
+export interface ServiceIndexResult extends IndexResult {
+  service: string;
+}
+
+export interface ConfiguredIndexResult {
+  total: IndexResult;
+  services: ServiceIndexResult[];
+  warnings: string[];
+}
+
+const SERVICE_TYPE_LANGUAGE: Record<Service["type"], IndexerLanguage> = {
+  nextjs: "typescript",
+  react: "typescript",
+  angular: "typescript",
+  fastify: "typescript",
+  express: "typescript",
+  hono: "typescript",
+  dotnet: "csharp",
+  unity: "csharp",
+};
+
+function emptyResult(): IndexResult {
+  return {
+    symbolsIndexed: 0,
+    dependenciesIndexed: 0,
+    componentsAnalyzed: 0,
+    routesAnalyzed: 0,
+    filesProcessed: 0,
+    filesSkipped: 0,
+    filesRemoved: 0,
+    durationMs: 0,
+  };
+}
+
+function addResults(a: IndexResult, b: IndexResult): IndexResult {
+  return {
+    symbolsIndexed: a.symbolsIndexed + b.symbolsIndexed,
+    dependenciesIndexed: a.dependenciesIndexed + b.dependenciesIndexed,
+    componentsAnalyzed: a.componentsAnalyzed + b.componentsAnalyzed,
+    routesAnalyzed: a.routesAnalyzed + b.routesAnalyzed,
+    filesProcessed: a.filesProcessed + b.filesProcessed,
+    filesSkipped: a.filesSkipped + b.filesSkipped,
+    filesRemoved: a.filesRemoved + b.filesRemoved,
+    durationMs: a.durationMs + b.durationMs,
+  };
+}
+
+/**
+ * Index a project according to its config. When `config.services` lists
+ * services, each is indexed as its own unit (its own tsconfig, under its own
+ * `service` name) and merged into the shared database — this is how monorepos
+ * with per-package tsconfigs get indexed. With no services configured, falls
+ * back to a single root-level index (`service = "main"`).
+ *
+ * v1 indexes TypeScript services per-tsconfig; non-TypeScript services (C#,
+ * Unity) in a monorepo layout are reported as skipped warnings, since their
+ * indexers key off a discovery root rather than a config file.
+ */
+export async function indexConfiguredProject(
+  db: Database,
+  projectRoot: string,
+  config: Pick<ArcBridgeConfig, "services">,
+): Promise<ConfiguredIndexResult> {
+  const services = config.services ?? [];
+
+  // No services configured — single root index (backward compatible)
+  if (services.length === 0) {
+    const result = await indexProject(db, { projectRoot });
+    return {
+      total: result,
+      services: [{ ...result, service: "main" }],
+      warnings: [],
+    };
+  }
+
+  const results: ServiceIndexResult[] = [];
+  const warnings: string[] = [];
+
+  for (const svc of services) {
+    const language = SERVICE_TYPE_LANGUAGE[svc.type];
+
+    if (language !== "typescript") {
+      warnings.push(
+        `Service '${svc.name}' (${svc.type}): per-service indexing currently supports TypeScript only — skipped. Document it in arc42 and add its path to drift.ignore_paths.`,
+      );
+      results.push({ ...emptyResult(), service: svc.name, skippedReason: "non-typescript service" });
+      continue;
+    }
+
+    const tsconfigPath = resolve(projectRoot, svc.path, svc.tsconfig ?? "tsconfig.json");
+    if (!existsSync(tsconfigPath)) {
+      warnings.push(`Service '${svc.name}': tsconfig not found at ${tsconfigPath} — skipped.`);
+      results.push({ ...emptyResult(), service: svc.name, skippedReason: "tsconfig not found" });
+      continue;
+    }
+
+    const result = await indexProject(db, {
+      projectRoot,
+      tsconfigPath,
+      service: svc.name,
+      language: "typescript",
+      // Scan this package's own manifest, not the repo root's
+      manifestDir: resolve(projectRoot, svc.path),
+    });
+    results.push({ ...result, service: svc.name });
+  }
+
+  const total = results.reduce<IndexResult>((acc, r) => addResults(acc, r), emptyResult());
+  return { total, services: results, warnings };
 }
 
 /**

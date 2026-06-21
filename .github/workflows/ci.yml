@@ -34,3 +34,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      # Dogfood: run ArcBridge's own drift check against its committed
+      # .arcbridge/ model. Reindexes the monorepo and fails on error-severity
+      # drift (e.g. an undeclared cross-block dependency or undocumented module).
+      - run: node packages/cli/dist/index.js drift --reindex
