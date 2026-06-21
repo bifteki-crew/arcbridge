@@ -1,7 +1,6 @@
 import { z } from "zod";
-import { join } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
-import { atomicWriteFileSync } from "@arcbridge/core";
+import { atomicWriteFileSync, resolveWithin } from "@arcbridge/core";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
@@ -84,7 +83,8 @@ export function registerUpdateArc42Section(
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
-      const filePath = join(
+      // section is enum-validated; containment is defense in depth
+      const filePath = resolveWithin(
         params.target_dir,
         ".arcbridge",
         "arc42",

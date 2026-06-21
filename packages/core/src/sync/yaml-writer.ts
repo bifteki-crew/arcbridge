@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { existsSync, readFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { parse, stringify } from "yaml";
-import { atomicWriteFileSync } from "../utils/fs.js";
+import { atomicWriteFileSync, resolveWithin } from "../utils/fs.js";
 import { TaskFileSchema, PhasesFileSchema } from "../schemas/phases.js";
 import type { TaskFile, PhasesFile } from "../schemas/phases.js";
 import { QualityScenariosFileSchema } from "../schemas/quality-scenarios.js";
@@ -11,7 +11,11 @@ import { QualityScenariosFileSchema } from "../schemas/quality-scenarios.js";
 type ReadResult<T> = { data: T; path: string } | { error: "not-found" | "invalid" };
 
 function readTaskFile(projectRoot: string, phaseId: string): ReadResult<TaskFile> {
-  const path = join(projectRoot, ".arcbridge", "plan", "tasks", `${phaseId}.yaml`);
+  // phaseId may come from tool params — keep the path inside the tasks dir
+  const path = resolveWithin(
+    join(projectRoot, ".arcbridge", "plan", "tasks"),
+    `${phaseId}.yaml`,
+  );
   if (!existsSync(path)) return { error: "not-found" };
   const raw = readFileSync(path, "utf-8");
   const result = TaskFileSchema.safeParse(parse(raw));
@@ -87,7 +91,7 @@ export function addTaskToYaml(
     taskFile.tasks.push(task);
   }
 
-  const taskPath = join(tasksDir, `${phaseId}.yaml`);
+  const taskPath = resolveWithin(tasksDir, `${phaseId}.yaml`);
   atomicWriteFileSync(taskPath, stringify(taskFile));
 }
 
@@ -156,7 +160,7 @@ export function addPhaseToYaml(
     // Ensure task file exists (for new phases and retries of the same phase)
     const tasksDir = join(projectRoot, ".arcbridge", "plan", "tasks");
     mkdirSync(tasksDir, { recursive: true });
-    const taskFilePath = join(tasksDir, `${phase.id}.yaml`);
+    const taskFilePath = resolveWithin(tasksDir, `${phase.id}.yaml`);
     if (!existsSync(taskFilePath)) {
       atomicWriteFileSync(
         taskFilePath,
@@ -295,7 +299,10 @@ export function deletePhaseFromYaml(
     atomicWriteFileSync(phasesPath, stringify(phasesFile));
 
     // Remove the associated task file
-    const taskFilePath = join(projectRoot, ".arcbridge", "plan", "tasks", `${phaseId}.yaml`);
+    const taskFilePath = resolveWithin(
+      join(projectRoot, ".arcbridge", "plan", "tasks"),
+      `${phaseId}.yaml`,
+    );
     try {
       unlinkSync(taskFilePath);
     } catch (e) {

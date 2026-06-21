@@ -7,9 +7,29 @@ import {
   lstatSync,
   realpathSync,
 } from "node:fs";
-import { dirname, basename, join } from "node:path";
+import { dirname, basename, join, resolve, relative, isAbsolute, sep } from "node:path";
 
 let tmpCounter = 0;
+
+/**
+ * Resolve path segments against a root directory, guaranteeing the result
+ * stays inside it. Throws when traversal segments (`..`) or absolute paths
+ * would escape — use for any path built from external input (tool params,
+ * database rows, YAML content).
+ *
+ * Containment is lexical: symlinks inside the root are not resolved.
+ */
+export function resolveWithin(root: string, ...segments: string[]): string {
+  const resolvedRoot = resolve(root);
+  const resolved = resolve(resolvedRoot, ...segments);
+  const rel = relative(resolvedRoot, resolved);
+  if (rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+    throw new Error(
+      `Path escapes containment root: ${segments.join("/")} resolves outside ${resolvedRoot}`,
+    );
+  }
+  return resolved;
+}
 
 /**
  * Write a file atomically: write to a temp file in the same directory,
