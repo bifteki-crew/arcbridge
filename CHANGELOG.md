@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.3 (2026-06-21)
+
+### Security
+
+- **Path traversal containment** — file paths built from external input (tool params, database rows) are now validated to stay inside the project before any read or write. A `phase_id` like `../../escape` was previously only checked as a non-empty string at the MCP layer and could walk out of the `.arcbridge/plan` directory; all `${phaseId}.yaml` paths in the YAML writer are now contained to the tasks directory. `get_symbol` contains the database-sourced `file_path` before reading source (escapes surface as the existing "Source unavailable" note plus a stderr warning), and `update_arc42_section` is contained as defense in depth. New `resolveWithin` helper exported from `@arcbridge/core`.
+
+### Stats
+
+- 34 MCP tools, 557 tests passing, 0 lint errors, 0 type errors
+
 ## 0.6.2 (2026-06-11)
 
 ### Bug Fixes
