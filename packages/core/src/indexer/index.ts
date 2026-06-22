@@ -1,5 +1,5 @@
 import ts from "typescript";
-import { relative, join, resolve } from "node:path";
+import { relative, join } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import YAML from "yaml";
@@ -24,6 +24,7 @@ import { indexPythonTreeSitter } from "./python/indexer.js";
 import { indexGoTreeSitter } from "./go/indexer.js";
 import { indexPackageDependencies } from "./package-deps.js";
 import { loadConfig } from "../config/loader.js";
+import { resolveWithin } from "../utils/fs.js";
 
 export type ProjectLanguage = "typescript" | "csharp" | "python" | "go" | "auto";
 export type CSharpBackend = "roslyn" | "tree-sitter";
@@ -233,7 +234,21 @@ export async function indexConfiguredProject(
       continue;
     }
 
-    const tsconfigPath = resolve(projectRoot, svc.path, svc.tsconfig ?? "tsconfig.json");
+    // svc.path / svc.tsconfig are user-authored config — contain them within
+    // the project. tsconfig is resolved relative to the service path.
+    let manifestDir: string;
+    let tsconfigPath: string;
+    try {
+      manifestDir = resolveWithin(projectRoot, svc.path);
+      tsconfigPath = resolveWithin(projectRoot, svc.path, svc.tsconfig ?? "tsconfig.json");
+    } catch {
+      warnings.push(
+        `Service '${svc.name}': path '${svc.path}'/tsconfig escapes the project root — skipped.`,
+      );
+      results.push({ ...emptyResult(), service: svc.name, skippedReason: "path escapes project root" });
+      continue;
+    }
+
     if (!existsSync(tsconfigPath)) {
       warnings.push(`Service '${svc.name}': tsconfig not found at ${tsconfigPath} — skipped.`);
       results.push({ ...emptyResult(), service: svc.name, skippedReason: "tsconfig not found" });
@@ -246,7 +261,7 @@ export async function indexConfiguredProject(
       service: svc.name,
       language: "typescript",
       // Scan this package's own manifest, not the repo root's
-      manifestDir: resolve(projectRoot, svc.path),
+      manifestDir,
     });
     results.push({ ...result, service: svc.name });
   }

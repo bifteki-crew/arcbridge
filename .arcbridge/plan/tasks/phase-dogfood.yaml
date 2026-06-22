@@ -28,7 +28,7 @@ tasks:
       - arcbridge drift runs clean on this repo
   - id: task-dogfood.4-ci-drift
     title: Enforce drift in CI
-    status: todo
+    status: done
     building_block: cli
     quality_scenarios: []
     acceptance_criteria:

@@ -117,6 +117,22 @@ describe("indexConfiguredProject (monorepo)", () => {
     expect(result.services[0]!.service).toBe("main");
   });
 
+  it("skips services whose path escapes the project root", async () => {
+    const result = await indexConfiguredProject(db, repoRoot, {
+      services: [
+        { name: "evil", path: "../../etc", type: "express", tsconfig: "tsconfig.json" },
+        ...SERVICES,
+      ],
+    });
+
+    const evil = result.services.find((s) => s.service === "evil");
+    expect(evil?.skippedReason).toBe("path escapes project root");
+    expect(result.warnings.some((w) => w.includes("evil") && w.includes("escapes"))).toBe(true);
+    // No symbols indexed from outside the project
+    const files = db.prepare("SELECT file_path FROM symbols").all() as { file_path: string }[];
+    expect(files.every((f) => f.file_path.startsWith("packages/"))).toBe(true);
+  });
+
   it("warns and skips non-TypeScript services", async () => {
     const result = await indexConfiguredProject(db, repoRoot, {
       services: [

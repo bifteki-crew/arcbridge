@@ -3,9 +3,12 @@ import { QualityCategorySchema, QUALITY_PRIORITIES_DESCRIPTION } from "./quality
 
 export const ServiceSchema = z.object({
   name: z.string().min(1),
+  /** Service root, relative to the project root. */
   path: z.string().default("."),
   type: z.enum(["nextjs", "react", "fastify", "express", "hono", "dotnet", "unity", "angular"]),
+  /** tsconfig location, relative to `path` (defaults to `tsconfig.json`). */
   tsconfig: z.string().optional(),
+  /** csproj location, relative to `path`. */
   csproj: z.string().optional(),
 });
 
