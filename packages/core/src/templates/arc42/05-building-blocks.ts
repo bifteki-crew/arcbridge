@@ -139,18 +139,12 @@ export function buildingBlocksTemplate(
         responsibility: "Shared, reusable UI components",
         service: "main",
       },
-      {
-        id: "lib-utilities",
-        name: "Library & Utilities",
-        level: 1,
-        code_paths: [`${src}lib/`],
-        interfaces: [],
-        quality_scenarios: [],
-        adrs: [],
-        responsibility: "Shared utilities, helpers, and business logic",
-        service: "main",
-      },
     ];
+    // NOTE: lib-utilities (broad `${src}lib/` prefix) is appended LAST, after
+    // the narrower lib/* blocks below (auth-module → lib/auth, data-access →
+    // lib/db, api-client → lib/api). Drift assigns each file to the first
+    // matching block, so the broad prefix must come last or it would swallow
+    // the files those blocks should own.
 
     if (inp.features.includes("auth")) {
       blocks.push({
@@ -214,6 +208,19 @@ export function buildingBlocksTemplate(
       });
     }
 
+    // Broad catch-all prefix — must be last (see note above)
+    blocks.push({
+      id: "lib-utilities",
+      name: "Library & Utilities",
+      level: 1,
+      code_paths: [`${src}lib/`],
+      interfaces: [],
+      quality_scenarios: [],
+      adrs: [],
+      responsibility: "Shared utilities, helpers, and business logic",
+      service: "main",
+    });
+
     return blocks;
   }
 
@@ -262,17 +269,6 @@ export function buildingBlocksTemplate(
         responsibility: "Database connections, queries, data models, and persistence",
         service: "main",
       },
-      {
-        id: "lib-utilities",
-        name: "Library & Utilities",
-        level: 1,
-        code_paths: [`${src}lib/`, `${src}utils/`],
-        interfaces: [],
-        quality_scenarios: [],
-        adrs: [],
-        responsibility: "Shared utilities, helpers, and cross-cutting business logic",
-        service: "main",
-      },
     ];
 
     if (inp.features.includes("auth")) {
@@ -291,6 +287,21 @@ export function buildingBlocksTemplate(
         service: "main",
       });
     }
+
+    // lib-utilities owns the broad `${src}lib/` prefix, so it must come LAST:
+    // drift assigns each file to the first matching block, and data-access
+    // (lib/db) and auth-module (lib/auth) are narrower prefixes that must win.
+    blocks.push({
+      id: "lib-utilities",
+      name: "Library & Utilities",
+      level: 1,
+      code_paths: [`${src}lib/`, `${src}utils/`],
+      interfaces: [],
+      quality_scenarios: [],
+      adrs: [],
+      responsibility: "Shared utilities, helpers, and cross-cutting business logic",
+      service: "main",
+    });
 
     return blocks;
   }

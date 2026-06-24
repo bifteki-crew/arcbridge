@@ -86,6 +86,30 @@ describe("generateArc42", () => {
     expect(ids).toContain("api-client");
   });
 
+  it("orders the broad lib-utilities block after narrower lib/* blocks", () => {
+    // Drift assigns each file to the FIRST matching block, so lib-utilities
+    // (`lib/`) must come after auth-module (`lib/auth`), data-access (`lib/db`),
+    // and api-client (`lib/api`) or it would swallow their files.
+    function orderedIds(input: InitProjectInput): string[] {
+      const dir = mkdtempSync(join(tmpdir(), "arcbridge-order-"));
+      generateArc42(dir, input);
+      const raw = readFileSync(join(dir, ".arcbridge", "arc42", "05-building-blocks.md"), "utf-8");
+      const ids = BuildingBlocksFrontmatterSchema.parse(matter(raw).data).blocks.map((b) => b.id);
+      rmSync(dir, { recursive: true, force: true });
+      return ids;
+    }
+
+    const jsIds = orderedIds({ ...TEST_INPUT, template: "nextjs-app-router", features: ["auth", "api", "database"] });
+    const libIdx = jsIds.indexOf("lib-utilities");
+    for (const narrower of ["auth-module", "data-access", "api-client"]) {
+      expect(jsIds.indexOf(narrower), `${narrower} should precede lib-utilities`).toBeLessThan(libIdx);
+    }
+
+    const apiIds = orderedIds({ ...TEST_INPUT, template: "api-service", features: ["auth"] });
+    expect(apiIds.indexOf("auth-module")).toBeLessThan(apiIds.indexOf("lib-utilities"));
+    expect(apiIds.indexOf("data-access")).toBeLessThan(apiIds.indexOf("lib-utilities"));
+  });
+
   it("produces valid quality scenarios", () => {
     generateArc42(tempDir, TEST_INPUT);
     const raw = readFileSync(
