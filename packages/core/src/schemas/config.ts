@@ -40,10 +40,20 @@ export const ArcBridgeConfigSchema = z.object({
 
   indexing: z
     .object({
-      include: z.array(z.string()).default(["src/**/*", "app/**/*"]),
+      include: z
+        .array(z.string())
+        .default(["src/**/*", "app/**/*"])
+        .describe(
+          "Advisory only. The TypeScript indexer determines the file set from " +
+          "each service's tsconfig (its include/files/exclude), not from this " +
+          "field. Kept for documentation and future non-tsconfig languages.",
+        ),
       exclude: z
         .array(z.string())
-        .default(["node_modules", "dist", ".next", "coverage"]),
+        .default(["node_modules", "dist", ".next", "coverage"])
+        .describe(
+          "Advisory only — see `include`. tsconfig controls TypeScript indexing.",
+        ),
       default_mode: z.enum(["fast", "deep"]).default("fast"),
       csharp_indexer: z
         .enum(["auto", "roslyn", "tree-sitter"])

@@ -128,7 +128,7 @@ export async function sync(dir: string, json: boolean): Promise<void> {
     }
 
     // Step 5: Get changed files since last sync
-    const warnings: string[] = [...indexWarnings];
+    const warnings: string[] = [...docWarnings, ...indexWarnings];
     let changedFiles: ChangedFile[] = [];
     try {
       const ref = resolveRef(dir, "last-sync", db);
