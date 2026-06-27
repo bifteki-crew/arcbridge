@@ -1,0 +1,37 @@
+schema_version: 1
+phases:
+  - id: phase-hardening
+    name: Data-safety hardening
+    phase_number: 0
+    status: complete
+    description: >-
+      Close the silent-failure modes from the June 2026 audit: atomic writes,
+      refresh abort-on-invalid, service-scoped component cleanup, stderr logging,
+      and path-traversal containment. Shipped as v0.6.2 / v0.6.3.
+    gate_requirements:
+      - Atomic writes for all source-of-truth files
+      - refreshFromDocs aborts and rolls back on malformed top-level files
+      - Externally-sourced paths contained within the project
+  - id: phase-dogfood
+    name: Monorepo indexing & self-hosting
+    phase_number: 1
+    status: in-progress
+    description: >-
+      Make ArcBridge index its own pnpm monorepo (per-package TypeScript
+      services) and run drift on itself in CI. Fixes the api-service template
+      FK bug found while dogfooding.
+    gate_requirements:
+      - Per-service indexing honours config.services
+      - ArcBridge indexes its own four TS packages
+      - Drift runs clean and is enforced in CI
+  - id: phase-adopt
+    name: Brownfield adopt
+    phase_number: 2
+    status: planned
+    description: >-
+      Reverse-engineer building-block proposals from an existing codebase using
+      the indexer and dependency graph, so adopting ArcBridge on a mature repo
+      doesn't require hand-authoring building blocks.
+    gate_requirements:
+      - arcbridge adopt proposes blocks from the dependency graph
+      - Applying a proposal leaves zero undocumented_module drift

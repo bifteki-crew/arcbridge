@@ -14,3 +14,8 @@ bin/
 obj/
 *.nupkg
 *.snupkg
+
+# ArcBridge database (derived from .arcbridge/ YAML/markdown files)
+.arcbridge/index.db
+.arcbridge/index.db-wal
+.arcbridge/index.db-shm

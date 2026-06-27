@@ -7,7 +7,7 @@ import {
   generateAgentRoles,
   generateDatabase,
   generateSyncFiles,
-  indexProject,
+  indexConfiguredProject,
   discoverDotnetServices,
   type InitProjectInput,
 } from "@arcbridge/core";
@@ -301,18 +301,21 @@ export async function init(
   try {
     if (!json) console.log("Indexing codebase...");
 
-    // Index the whole project/solution as a single unit.
-    // For .NET solutions with multiple projects, all symbols are indexed together
-    // under the default service ("main") to preserve cross-project dependency resolution.
-    // Agents can filter by file_path prefix to scope queries to a specific project or layer.
-    const result = await indexProject(db, { projectRoot });
+    // Index per configured service. When services are declared (monorepo with
+    // per-package tsconfigs), each is indexed under its own service name and
+    // merged into one database. With none declared, falls back to a single
+    // root-level index. Agents can filter by service or file_path prefix.
+    const { total, warnings: indexWarnings } = await indexConfiguredProject(db, projectRoot, {
+      services: config.services,
+    });
     indexResult = {
-      filesProcessed: result.filesProcessed,
-      symbolsIndexed: result.symbolsIndexed,
-      dependenciesIndexed: result.dependenciesIndexed,
-      componentsAnalyzed: result.componentsAnalyzed,
-      routesAnalyzed: result.routesAnalyzed,
+      filesProcessed: total.filesProcessed,
+      symbolsIndexed: total.symbolsIndexed,
+      dependenciesIndexed: total.dependenciesIndexed,
+      componentsAnalyzed: total.componentsAnalyzed,
+      routesAnalyzed: total.routesAnalyzed,
     };
+    warnings.push(...indexWarnings);
   } catch {
     // Indexing is optional — project may not have tsconfig.json yet
   }

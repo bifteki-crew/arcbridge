@@ -31,7 +31,9 @@ export function buildingBlocksTemplate(
           ? buildUnityBlocks()
           : input.template === "angular-app"
             ? buildAngularBlocks(layout)
-            : buildJsBlocks(input, layout);
+            : input.template === "api-service"
+              ? buildApiServiceBlocks(input, layout)
+              : buildJsBlocks(input, layout);
 
   function buildFullstackBlocks(): BlockDef[] {
     return [
@@ -137,18 +139,12 @@ export function buildingBlocksTemplate(
         responsibility: "Shared, reusable UI components",
         service: "main",
       },
-      {
-        id: "lib-utilities",
-        name: "Library & Utilities",
-        level: 1,
-        code_paths: [`${src}lib/`],
-        interfaces: [],
-        quality_scenarios: [],
-        adrs: [],
-        responsibility: "Shared utilities, helpers, and business logic",
-        service: "main",
-      },
     ];
+    // NOTE: lib-utilities (broad `${src}lib/` prefix) is appended LAST, after
+    // the narrower lib/* blocks below (auth-module → lib/auth, data-access →
+    // lib/db, api-client → lib/api). Drift assigns each file to the first
+    // matching block, so the broad prefix must come last or it would swallow
+    // the files those blocks should own.
 
     if (inp.features.includes("auth")) {
       blocks.push({
@@ -211,6 +207,101 @@ export function buildingBlocksTemplate(
         service: "main",
       });
     }
+
+    // Broad catch-all prefix — must be last (see note above)
+    blocks.push({
+      id: "lib-utilities",
+      name: "Library & Utilities",
+      level: 1,
+      code_paths: [`${src}lib/`],
+      interfaces: [],
+      quality_scenarios: [],
+      adrs: [],
+      responsibility: "Shared utilities, helpers, and business logic",
+      service: "main",
+    });
+
+    return blocks;
+  }
+
+  function buildApiServiceBlocks(
+    inp: InitProjectInput,
+    lt: typeof layout,
+  ): BlockDef[] {
+    const src = lt.srcPrefix;
+    // Backend service blocks. The ids here MUST stay in sync with the
+    // building_block references in templates/phases/api-service.ts —
+    // a task pointing at a non-existent block fails the FK check during
+    // initial database population.
+    //
+    // `interfaces` lists the blocks a block is ALLOWED to depend on, so the
+    // declarations follow the layering direction: api-core → data-access →
+    // lib-utilities (and api-core → auth-module when present). Reversing these
+    // would make drift flag the real dependencies as violations.
+    const apiCoreInterfaces = ["data-access", "lib-utilities"];
+
+    const blocks: BlockDef[] = [
+      {
+        id: "api-core",
+        name: "API Core",
+        level: 1,
+        code_paths: [
+          ...lt.entrypoints,
+          `${src}routes/`,
+          `${src}api/`,
+          `${src}middleware/`,
+        ],
+        interfaces: apiCoreInterfaces,
+        quality_scenarios: ["SEC-03"],
+        adrs: [],
+        responsibility:
+          "Server entry point, route registration, middleware pipeline, and request handling",
+        service: "main",
+      },
+      {
+        id: "data-access",
+        name: "Data Access",
+        level: 1,
+        code_paths: [`${src}lib/db/`, `${src}db/`, `${src}models/`, `${src}repositories/`],
+        interfaces: ["lib-utilities"],
+        quality_scenarios: [],
+        adrs: [],
+        responsibility: "Database connections, queries, data models, and persistence",
+        service: "main",
+      },
+    ];
+
+    if (inp.features.includes("auth")) {
+      // api-core depends on auth (middleware); auth depends on the data/util layers
+      apiCoreInterfaces.push("auth-module");
+      blocks.push({
+        id: "auth-module",
+        name: "Authentication",
+        level: 1,
+        code_paths: [`${src}lib/auth/`, `${src}auth/`],
+        interfaces: ["data-access", "lib-utilities"],
+        quality_scenarios: ["SEC-01"],
+        adrs: [],
+        responsibility:
+          "User authentication, session management, and authorization",
+        service: "main",
+      });
+    }
+
+    // lib-utilities owns the broad `${src}lib/` prefix, so it must come LAST:
+    // drift assigns each file to the first matching block, and data-access
+    // (lib/db) and auth-module (lib/auth) are narrower prefixes that must win.
+    blocks.push({
+      id: "lib-utilities",
+      name: "Library & Utilities",
+      level: 1,
+      code_paths: [`${src}lib/`, `${src}utils/`],
+      interfaces: [],
+      quality_scenarios: [],
+      adrs: [],
+      responsibility: "Shared utilities, helpers, and cross-cutting business logic",
+      service: "main",
+    });
 
     return blocks;
   }

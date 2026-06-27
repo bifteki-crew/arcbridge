@@ -74,10 +74,17 @@ export function createTsProgram(options: IndexerOptions): ProgramResult {
     }
   }
 
+  // Resolve include/files/exclude against the tsconfig's own directory, per
+  // TypeScript semantics — NOT projectRoot. These coincide for a single-package
+  // project (tsconfig at the root) but differ in a monorepo, where projectRoot
+  // is the repo root and the tsconfig lives in packages/<name>/. Using the
+  // config's directory lets one program be built per package while file paths
+  // stay relative to projectRoot (the repo root).
+  const configDir = dirname(resolvedConfigPath);
   const parsed = ts.parseJsonConfigFileContent(
     configFile.config,
     ts.sys,
-    join(projectRoot),
+    configDir,
     { noEmit: true },
     resolvedConfigPath,
   );

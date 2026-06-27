@@ -7,7 +7,7 @@ export function configTemplate(input: InitProjectInput): ArcBridgeConfig {
     project_name: input.name,
     project_type: "fullstack-nextjs-dotnet",
     services: [
-      { name: "frontend", path: "frontend", type: "nextjs", tsconfig: "frontend/tsconfig.json" },
+      { name: "frontend", path: "frontend", type: "nextjs", tsconfig: "tsconfig.json" },
       { name: "api", path: "api", type: "dotnet" },
     ],
     platforms: input.platforms as ArcBridgeConfig["platforms"],

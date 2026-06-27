@@ -22,7 +22,7 @@ Commands:
   init              Initialize ArcBridge in a project directory
   sync              Run the sync loop: reindex, detect drift, infer tasks, propose updates
   status            Show project status (phase, tasks, drift)
-  drift             Check for architecture drift
+  drift             Check for architecture drift (add --reindex to refresh + reindex first)
   refresh           Rebuild the database from YAML/markdown sources
   update-task       Update a task's status (e.g. arcbridge update-task task-1.1 done)
   generate-configs  Regenerate platform agent configs from .arcbridge/agents/
@@ -39,6 +39,9 @@ Init options:
   --platform <name>  Target platform: claude, copilot, codex, gemini, opencode (can be repeated, default: claude)
   --spec <file>      Path to a requirements/spec file to include
 
+Drift options:
+  --reindex          Refresh from docs and reindex before checking (use in CI, where index.db is not committed)
+
 Generate-configs options:
   --force            Force-regenerate files that would normally be preserved (e.g. skills)
 `;
@@ -53,6 +56,7 @@ interface ParsedArgs {
   platforms?: string[];
   spec?: string;
   force: boolean;
+  reindex: boolean;
 }
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -65,6 +69,7 @@ function parseArgs(args: string[]): ParsedArgs {
   const platforms: string[] = [];
   let spec: string | undefined;
   let force = false;
+  let reindex = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
@@ -82,6 +87,8 @@ function parseArgs(args: string[]): ParsedArgs {
       spec = args[++i]!;
     } else if (arg === "--force") {
       force = true;
+    } else if (arg === "--reindex") {
+      reindex = true;
     } else if (arg === "--help" || arg === "-h") {
       console.log(USAGE);
       process.exit(0);
@@ -105,6 +112,7 @@ function parseArgs(args: string[]): ParsedArgs {
     platforms: platforms.length > 0 ? platforms : undefined,
     spec,
     force,
+    reindex,
   };
 }
 
@@ -134,7 +142,7 @@ async function main(): Promise<void> {
         await status(dir, json);
         break;
       case "drift":
-        await drift(dir, json);
+        await drift(dir, json, parsed.reindex);
         break;
       case "refresh":
         await refresh(dir, json);

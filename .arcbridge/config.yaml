@@ -1,0 +1,52 @@
+schema_version: 1
+project_name: arcbridge
+project_type: api-service
+services:
+  - name: core
+    path: packages/core
+    type: express
+    tsconfig: tsconfig.json
+  - name: adapters
+    path: packages/adapters
+    type: express
+    tsconfig: tsconfig.json
+  - name: cli
+    path: packages/cli
+    type: express
+    tsconfig: tsconfig.json
+  - name: mcp-server
+    path: packages/mcp-server
+    type: express
+    tsconfig: tsconfig.json
+platforms:
+  - claude
+quality_priorities:
+  - security
+  - performance
+  - maintainability
+  - reliability
+indexing:
+  include:
+    - packages/*/src/**/*
+  exclude:
+    - node_modules
+    - dist
+    - coverage
+    - "**/__tests__/**"
+  default_mode: fast
+  csharp_indexer: auto
+testing:
+  test_command: npx vitest run
+  timeout_ms: 120000
+drift:
+  ignore_paths:
+    - packages/dotnet-indexer/
+    - scripts/
+    - eslint.config.js
+    - vitest.workspace.ts
+metrics:
+  auto_record: false
+sync:
+  auto_detect_drift: true
+  drift_severity_threshold: warning
+  propose_updates_on: phase-complete

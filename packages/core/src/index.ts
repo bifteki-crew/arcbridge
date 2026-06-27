@@ -59,6 +59,9 @@ export {
 // Indexer
 export {
   indexProject,
+  indexConfiguredProject,
+  type ServiceIndexResult,
+  type ConfiguredIndexResult,
   detectProjectLanguage,
   discoverDotnetServices,
   indexPackageDependencies,

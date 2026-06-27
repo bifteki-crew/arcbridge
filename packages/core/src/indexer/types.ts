@@ -6,6 +6,14 @@ export interface IndexerOptions {
   tsconfigPath?: string;
   service?: string;
   language?: IndexerLanguage | "auto";
+  /**
+   * Directory holding this service's dependency manifest (package.json /
+   * .csproj). Defaults to projectRoot. In a monorepo, projectRoot is the repo
+   * root (so file paths stay repo-relative) while each service's manifest lives
+   * in its own package directory — set this to scope dependency scanning there
+   * and avoid attributing every package's deps to every service.
+   */
+  manifestDir?: string;
 }
 
 export type SymbolKind =

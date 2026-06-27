@@ -1,5 +1,5 @@
 import {
-  indexProject,
+  indexConfiguredProject,
   detectDrift,
   writeDriftLog,
   inferTaskStatuses,
@@ -12,7 +12,6 @@ import {
   loadConfig,
   refreshFromDocs,
   type DriftEntry,
-  type IndexResult,
   type TaskInferenceResult,
   type ChangedFile,
   type ScenarioTestResult,
@@ -41,17 +40,23 @@ export async function sync(dir: string, json: boolean): Promise<void> {
       for (const w of docWarnings) console.log(`  ${w}`);
     }
 
-    // Step 1: Reindex
+    // Step 1: Reindex (per-service for monorepos with configured services)
     if (!json) console.log("Reindexing...");
-    const indexResult: IndexResult = await indexProject(db, { projectRoot: dir });
-    if (!json)
+    const configForDrift = loadConfig(dir);
+    const { total: indexResult, warnings: indexWarnings } = await indexConfiguredProject(
+      db,
+      dir,
+      { services: configForDrift.config?.services ?? [] },
+    );
+    if (!json) {
       console.log(
         `  Indexed ${indexResult.filesProcessed} files, ${indexResult.symbolsIndexed} symbols, ${indexResult.dependenciesIndexed} deps`,
       );
+      for (const w of indexWarnings) console.log(`  ${w}`);
+    }
 
     // Step 2: Detect drift
     if (!json) console.log("Checking drift...");
-    const configForDrift = loadConfig(dir);
     const driftOpts: DriftOptions = {
       projectType: configForDrift.config?.project_type,
       ignorePaths: configForDrift.config?.drift?.ignore_paths,
@@ -123,7 +128,7 @@ export async function sync(dir: string, json: boolean): Promise<void> {
     }
 
     // Step 5: Get changed files since last sync
-    const warnings: string[] = [];
+    const warnings: string[] = [...docWarnings, ...indexWarnings];
     let changedFiles: ChangedFile[] = [];
     try {
       const ref = resolveRef(dir, "last-sync", db);
