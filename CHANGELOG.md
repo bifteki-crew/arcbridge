@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.7.0 (2026-06-27)
+
+### New Features
+
+- **Monorepo per-service indexing** — ArcBridge can now index a multi-package monorepo. When `config.services` lists services, each is indexed using its own `tsconfig` (resolved relative to the service's `path`) under its own service name and merged into one database; with no services configured, indexing falls back to a single root-level pass. `init` and `sync` use this automatically. New `indexConfiguredProject` API in `@arcbridge/core`. Non-TypeScript services are reported as skipped warnings.
+- **`arcbridge drift --reindex`** — refreshes from docs and reindexes before checking, so drift is self-sufficient in CI where `index.db` is not committed. `drift` and `sync` now also set a non-zero exit code on error-severity drift in `--json` mode (previously non-JSON only).
+- **ArcBridge dogfoods itself** — the repo now ships a committed `.arcbridge/` modeling its four TypeScript packages as building blocks, and CI runs `arcbridge drift --reindex` against it.
+
+### Bug Fixes
+
+- **`init --template api-service` no longer crashes** — the api-service phase template referenced building blocks (`api-core`, `data-access`) that the building-blocks template never generated, causing a `FOREIGN KEY constraint failed` during initial database population. The template now generates a coherent backend block set. A regression test exercises `generateDatabase` across all seven templates.
+- **Building-block code-path ordering** — the broad `lib-utilities` block (`lib/`) is now ordered after narrower `lib/*` blocks (`lib/auth`, `lib/db`, `lib/api`) in the api-service, Next.js, and React templates, so drift assigns each file to the correct block (assignment is first-match-wins).
+- **api-service interface direction** — `interfaces` (allowed dependencies) now follow the layering `api-core → data-access → lib-utilities`, fixing inverted declarations that would have flagged real dependencies as violations.
+
+### Internal
+
+- `createTsProgram` resolves a tsconfig's `include`/`files` against the tsconfig's own directory (correct TypeScript semantics), enabling per-package indexing while keeping file paths repo-relative.
+- Service `path`/`tsconfig` from `config.yaml` are now contained within the project via `resolveWithin`. `config.indexing.include`/`exclude` documented as advisory (the TypeScript file set is controlled by each service's tsconfig).
+
+### Stats
+
+- 34 MCP tools, 570 tests passing, 0 lint errors, 0 type errors
+
 ## 0.6.3 (2026-06-21)
 
 ### Security
