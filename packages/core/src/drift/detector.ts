@@ -258,14 +258,24 @@ function detectDependencyViolations(
     .prepare("SELECT DISTINCT file_path FROM symbols")
     .all() as { file_path: string }[];
 
+  // Assign each file to the block with the LONGEST matching code-path prefix
+  // (most specific wins). This is independent of the order blocks come back from
+  // SQLite — a broad `src/` block can't steal files from a narrower
+  // `src/components/` block regardless of row order. Building-block generators
+  // (templates, `adopt`) emit narrow-before-broad for readability, but the
+  // correctness guarantee lives here.
   for (const { file_path } of filePaths) {
+    let bestBlock: string | null = null;
+    let bestLen = -1;
     for (const block of blocks) {
-      const prefixes = blockPrefixes.get(block.id) ?? [];
-      if (prefixes.some((prefix) => fileMatchesPath(file_path, prefix))) {
-        fileToBlock.set(file_path, block.id);
-        break; // First match wins
+      for (const prefix of blockPrefixes.get(block.id) ?? []) {
+        if (fileMatchesPath(file_path, prefix) && prefix.length > bestLen) {
+          bestLen = prefix.length;
+          bestBlock = block.id;
+        }
       }
     }
+    if (bestBlock) fileToBlock.set(file_path, bestBlock);
   }
 
   // Build block interface sets (declared allowed dependencies)

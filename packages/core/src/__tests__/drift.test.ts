@@ -99,6 +99,36 @@ describe("detectDrift", () => {
     expect(violations.length).toBe(0);
   });
 
+  it("assigns files by longest-matching prefix regardless of block order", async () => {
+    await indexProject(db, { projectRoot: TS_FIXTURE });
+
+    // Insert a BROAD block first (covers all of src/), then narrower blocks.
+    // With naive first-match-in-row-order, the broad block would swallow every
+    // file and hide the services→models violation. Longest-prefix-match must
+    // still assign src/services/* and src/models/* to their specific blocks.
+    db.prepare(
+      `INSERT INTO building_blocks (id, name, responsibility, code_paths, interfaces)
+       VALUES ('app', 'App', 'Everything', '["src/"]', '[]')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO building_blocks (id, name, responsibility, code_paths, interfaces)
+       VALUES ('models', 'Models', 'Data models', '["src/models/"]', '[]')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO building_blocks (id, name, responsibility, code_paths, interfaces)
+       VALUES ('services', 'Services', 'Business logic', '["src/services/"]', '[]')`,
+    ).run();
+
+    const entries = detectDrift(db);
+    const svcToModels = entries.filter(
+      (e) =>
+        e.kind === "dependency_violation" &&
+        e.affectedBlock === "services" &&
+        e.description.includes("models"),
+    );
+    expect(svcToModels.length).toBeGreaterThan(0);
+  });
+
   it("detects unlinked test paths", async () => {
     await indexProject(db, { projectRoot: TS_FIXTURE });
 
