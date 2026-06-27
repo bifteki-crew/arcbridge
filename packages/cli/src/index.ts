@@ -107,7 +107,13 @@ function parseArgs(args: string[]): ParsedArgs {
     } else if (arg === "--service" && i + 1 < args.length) {
       service = args[++i]!;
     } else if (arg === "--max-blocks" && i + 1 < args.length) {
-      maxBlocks = Number(args[++i]!);
+      const raw = args[++i]!;
+      const v = Number(raw);
+      if (!Number.isInteger(v) || v < 1 || v > 50) {
+        console.error(`Error: --max-blocks must be an integer between 1 and 50 (got "${raw}")`);
+        process.exit(1);
+      }
+      maxBlocks = v;
     } else if (arg === "--help" || arg === "-h") {
       console.log(USAGE);
       process.exit(0);

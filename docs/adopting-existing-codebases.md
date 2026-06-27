@@ -58,8 +58,11 @@ the code, then `apply` and commit.
 
 ## Known limitations (v1)
 
-- **TypeScript only.** Adopt clusters whatever the indexer captured; per-service
-  indexing currently covers TypeScript. C#/Python/Go services aren't proposed.
+- **Monorepo per-service indexing is TypeScript-only.** Adopt clusters whatever
+  the indexer captured, so a single-service project indexes (and is proposed
+  from) whatever language auto-detection supports — C#, Python, and Go included.
+  In a multi-service (monorepo) layout, only TypeScript services are indexed
+  per-service, so non-TS services in a monorepo aren't proposed.
 - **Cross-package edges.** In a monorepo each package is indexed as its own
   TypeScript program, so an import of another package resolves to the package
   name, not its source symbols. Interfaces are therefore accurate *within* a

@@ -265,6 +265,7 @@ export function proposeBuildingBlocks(
   }
 
   // Derive interfaces + edge evidence from the real symbol dependency graph
+  const blockById = new Map(blocks.map((b) => [b.id, b]));
   const inbound = new Map<string, number>();
   const depTargets = new Map<string, Map<string, number>>(); // block → target block → count
   for (const b of blocks) depTargets.set(b.id, new Map());
@@ -276,7 +277,7 @@ export function proposeBuildingBlocks(
     const sb = fileToBlock.get(sf);
     const tb = fileToBlock.get(tf);
     if (!sb || !tb) continue;
-    const block = blocks.find((b) => b.id === sb)!;
+    const block = blockById.get(sb)!;
     if (sb === tb) {
       block.evidence.internalEdges++;
     } else {
@@ -331,11 +332,20 @@ function enrichRoutesAndComponents(
 ): void {
   const byId = new Map(blocks.map((b) => [b.id, b]));
   try {
+    // Routes are service-scoped, not file-scoped, so they can only be
+    // attributed unambiguously when a service maps to a single block. When a
+    // service is subdivided, omit route evidence rather than dumping every
+    // route on an arbitrary sub-block.
+    const blocksByService = new Map<string, ProposedBlock[]>();
+    for (const b of blocks) {
+      const arr = blocksByService.get(b.service) ?? [];
+      arr.push(b);
+      blocksByService.set(b.service, arr);
+    }
     const routes = db.prepare("SELECT service FROM routes").all() as { service: string }[];
-    // routes aren't file-scoped in all schemas; attribute by service when present
     for (const r of routes) {
-      const b = blocks.find((bl) => bl.service === r.service);
-      if (b) b.evidence.routes++;
+      const svcBlocks = blocksByService.get(r.service);
+      if (svcBlocks && svcBlocks.length === 1) svcBlocks[0]!.evidence.routes++;
     }
   } catch {
     /* routes table shape varies; evidence is optional */
