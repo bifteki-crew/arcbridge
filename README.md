@@ -36,6 +36,8 @@ ArcBridge follows a repeatable convention: **Plan → Build → Sync → Review*
 
 Run `arcbridge init` to scaffold a starting point tailored to your project type (Next.js, React, Angular, .NET, Unity, or API service). The generated building blocks, quality scenarios, and phase plans are **examples of the shape, not the plan to follow** — they show you the structure ArcBridge expects and give you something to iterate on immediately.
 
+On an existing codebase, run `arcbridge adopt` to reverse-engineer building blocks from your real code instead of starting from the template ones (see [Adopting an existing codebase](#adopting-an-existing-codebase)).
+
 The real value comes when you bring in your own specification — whether that's an existing design doc, a product brief, or a conversation with the Architect agent — and use it to create building blocks, phases, and quality scenarios that match *your* system. ArcBridge provides the tools to do this:
 
 - **Building blocks** — named architectural modules (e.g. `auth-module`, `api-layer`) with declared code paths and interfaces. These are the backbone of drift detection: if code imports across blocks without a declared interface, ArcBridge flags it.
@@ -47,7 +49,7 @@ As the project grows, this architecture documentation grows with it. When you ad
 
 ### Build — code with architectural context
 
-During development, the AI agent has access to 34 MCP tools. Instead of working file-by-file, it knows:
+During development, the AI agent has access to 35 MCP tools. Instead of working file-by-file, it knows:
 
 - Which **building block** a file belongs to, and what quality scenarios apply
 - What **tasks** are in the current phase and their acceptance criteria
@@ -210,7 +212,7 @@ The first 5 roles participate in the automatic Plan → Build → Sync → Revie
 
 Roles are loaded from `.arcbridge/agents/*.md` files. Edit the markdown frontmatter to customize tools, quality focus, and model preferences per role.
 
-## MCP Tools (34)
+## MCP Tools (35)
 
 ### Lifecycle
 
@@ -245,6 +247,7 @@ Roles are loaded from `.arcbridge/agents/*.md` files. Edit the markdown frontmat
 | Tool | Description |
 |------|-------------|
 | `arcbridge_reindex` | Index/re-index code symbols — TypeScript, C#, Python (experimental), Go (experimental) |
+| `arcbridge_propose_building_blocks` | Reverse-engineer building blocks from existing code (brownfield adoption) |
 | `arcbridge_search_symbols` | Search symbols by name, kind, file path, or building block |
 | `arcbridge_get_symbol` | Full symbol detail: signature, source code, relationships |
 | `arcbridge_get_dependency_graph` | Import/dependency graph for a module |
@@ -292,15 +295,21 @@ The `arcbridge` CLI enables CI integration and command-line workflows.
 
 ```bash
 arcbridge init                  # Initialize ArcBridge (auto-detects project type)
+arcbridge adopt                 # Propose building blocks from existing code (--apply to write)
 arcbridge sync                  # Reindex, detect drift, infer tasks, update sync point
 arcbridge status                # Show project status
 arcbridge drift                 # Check for architecture drift
+arcbridge drift --reindex       # Self-contained drift check for CI (reindex first)
 
 arcbridge sync --json           # JSON output for CI pipelines
 arcbridge status --dir /path/to/project
 ```
 
 The `sync` command runs the full sync loop: reindex symbols, detect drift, infer task statuses, and store a git sync point. The generated GitHub Action workflow (`.github/workflows/arcbridge-sync.yml`) uses this command automatically.
+
+### Adopting an existing codebase
+
+On a brownfield project, `arcbridge adopt` reverse-engineers a building-block decomposition from your indexed code — clustering files by directory and deriving each block's dependencies from the real symbol graph — so you don't hand-write building blocks. After `arcbridge adopt --apply`, every indexed file maps to a block (zero `undocumented_module` drift); the auto-generated responsibilities are placeholders to refine. See [docs/adopting-existing-codebases.md](docs/adopting-existing-codebases.md).
 
 ## Development
 

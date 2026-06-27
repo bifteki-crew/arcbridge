@@ -148,6 +148,16 @@ export {
 // Config loader
 export { loadConfig } from "./config/loader.js";
 
+// Adopt — building-block proposals for existing codebases
+export {
+  proposeBuildingBlocks,
+  type AdoptProposal,
+  type ProposedBlock,
+  type ProposeOptions,
+  type BlockEvidence,
+} from "./adopt/propose.js";
+export { proposalToBuildingBlocksMarkdown } from "./adopt/serialize.js";
+
 // Filesystem utils
 export { atomicWriteFileSync, resolveWithin } from "./utils/fs.js";
 
