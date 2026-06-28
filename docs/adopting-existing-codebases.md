@@ -30,8 +30,10 @@ auto-generated placeholders — refine them, then commit `.arcbridge/`.
   A single-service project is subdivided by directory up to `--max-blocks`
   (default 12). Run `arcbridge adopt --service <name>` to subdivide one service.
 - **Coverage.** Clustering is a complete partition: a parent directory keeps a
-  "remainder" block for its loose files, emitted after its narrower children so
-  drift's first-match assignment lands each file in the most specific block.
+  "remainder" block for its loose files. Drift assigns each file to the block
+  with the longest matching code-path prefix (most specific wins), so a file in
+  `src/components/` lands in the `components` block even though the remainder
+  block's broader `src/` prefix also matches.
 - **Interfaces.** For each pair of blocks, if any symbol in block A imports,
   calls, or otherwise depends on a symbol in block B, then `B` is added to A's
   `interfaces` (the dependencies A is allowed to have). This is derived from the

@@ -80,8 +80,8 @@ function commonPrefix(files: string[]): string {
 }
 
 /**
- * Assign each file to the longest matching prefix (first-match-wins, mirroring
- * drift's file→block mapping). Returns prefix → files.
+ * Assign each file to the longest matching prefix (most specific wins),
+ * mirroring drift's file→block mapping. Returns prefix → files.
  */
 function assign(files: string[], prefixes: string[]): Map<string, string[]> {
   const sorted = [...prefixes].sort((a, b) => b.length - a.length);
@@ -227,8 +227,9 @@ export function proposeBuildingBlocks(
       : [commonPrefix(svcFiles)];
     const owned = assign(svcFiles, prefixes);
 
-    // Emit narrowest prefixes first so broad parent "remainder" blocks come
-    // last — drift assigns each file to the first matching block.
+    // Drift assigns each file to its longest matching prefix (most specific
+    // wins), so block order doesn't affect correctness. Emit narrowest first
+    // anyway, purely so the generated doc reads child-before-parent.
     const ordered = [...prefixes].sort((a, b) => b.length - a.length);
     const prefixId = new Map<string, string>();
     for (const prefix of ordered) {
