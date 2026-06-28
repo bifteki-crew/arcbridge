@@ -101,7 +101,7 @@ function printProposal(proposal: AdoptProposal): void {
   for (const b of proposal.blocks) {
     const deps = b.interfaces.length ? ` → ${b.interfaces.join(", ")}` : "";
     console.log(`  ${b.id}  [${b.service}]  ${b.evidence.fileCount} files  (${b.confidence})${deps}`);
-    console.log(`      ${b.code_paths.join(", ")}`);
+    console.log(`      ${b.code_paths.map((p) => p || ".").join(", ")}`);
   }
   if (proposal.unassigned.length) {
     console.log(`\n  ${proposal.unassigned.length} file(s) unassigned.`);

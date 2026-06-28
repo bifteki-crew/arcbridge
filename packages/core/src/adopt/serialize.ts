@@ -38,7 +38,7 @@ function blockLine(b: ProposedBlock): string {
   return [
     `### ${b.name} \`${b.id}\``,
     "",
-    `**Code:** \`${b.code_paths.join("`, `")}\`${deps}`,
+    `**Code:** \`${b.code_paths.map((p) => p || ".").join("`, `")}\`${deps}`,
     "",
     `> ${b.responsibility}`,
     "",

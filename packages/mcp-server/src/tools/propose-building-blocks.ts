@@ -70,7 +70,7 @@ export function registerProposeBuildingBlocks(
           const deps = b.interfaces.length ? ` — depends on: ${b.interfaces.join(", ")}` : " — no internal dependencies";
           lines.push(
             `## \`${b.id}\` (${b.name}) — service: ${b.service}`,
-            `- **Code paths:** \`${b.code_paths.join("`, `")}\`${deps}`,
+            `- **Code paths:** \`${b.code_paths.map((p) => p || ".").join("`, `")}\`${deps}`,
             `- **Evidence:** ${b.evidence.fileCount} files; ${b.evidence.internalEdges} internal / ${b.evidence.inboundEdges} inbound / ${b.evidence.outboundEdges} outbound edges; confidence ${b.confidence}.`,
             ...(b.evidence.topSymbols.length ? [`- **Key exports:** ${b.evidence.topSymbols.join(", ")}`] : []),
             `- **Draft responsibility:** ${b.responsibility}`,
