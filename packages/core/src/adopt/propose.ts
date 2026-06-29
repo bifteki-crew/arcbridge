@@ -189,6 +189,24 @@ export function proposeBuildingBlocks(
   const maxBlocks = opts.maxBlocks ?? 12;
   const minFiles = opts.minFilesPerBlock ?? 3;
 
+  // Validate an explicit service against what's actually indexed, so an unknown
+  // name fails with a clear, listed error instead of an empty "no symbols"
+  // proposal.
+  if (opts.service) {
+    const known = (
+      db.prepare("SELECT DISTINCT service FROM symbols").all() as { service: string }[]
+    )
+      .map((r) => r.service)
+      .sort();
+    if (!known.includes(opts.service)) {
+      throw new Error(
+        known.length
+          ? `Service "${opts.service}" has no indexed symbols. Available services: ${known.join(", ")}.`
+          : `Service "${opts.service}" has no indexed symbols — nothing is indexed yet.`,
+      );
+    }
+  }
+
   const symbols = (
     opts.service
       ? db

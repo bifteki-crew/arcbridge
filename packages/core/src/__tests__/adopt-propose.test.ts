@@ -138,6 +138,15 @@ describe("proposeBuildingBlocks", () => {
     }
   });
 
+  it("throws a listed error when --service names an unknown service", () => {
+    for (const pkg of ["core", "cli"]) {
+      for (let i = 0; i < 4; i++) addSymbol(`packages/${pkg}/src/f${i}.ts`, `fn_${pkg}_${i}`, { service: pkg });
+    }
+    expect(() => proposeBuildingBlocks(db, { service: "nope" })).toThrow(/Available services: cli, core/);
+    // A valid service does not throw
+    expect(() => proposeBuildingBlocks(db, { service: "core" })).not.toThrow();
+  });
+
   it("respects maxBlocks", () => {
     for (let d = 0; d < 20; d++) {
       for (let i = 0; i < 3; i++) addSymbol(`src/mod${d}/f${i}.ts`, `f_${d}_${i}`);
