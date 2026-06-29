@@ -84,7 +84,7 @@ function commonPrefix(files: string[]): string {
  * mirroring drift's file→block mapping. Returns prefix → files.
  */
 function assign(files: string[], prefixes: string[]): Map<string, string[]> {
-  const sorted = [...prefixes].sort((a, b) => b.length - a.length);
+  const sorted = [...prefixes].sort((a, b) => b.length - a.length || a.localeCompare(b));
   const owned = new Map<string, string[]>(prefixes.map((p) => [p, []]));
   for (const file of files) {
     const match = sorted.find((p) => file === p || file.startsWith(p));
@@ -220,7 +220,9 @@ export function proposeBuildingBlocks(
   const subdivide = services.length === 1;
 
   for (const service of services) {
-    const svcFiles = [...new Set(symbols.filter((s) => s.service === service).map((s) => s.file_path))];
+    // Sort for determinism — SQLite row order isn't guaranteed, and we want
+    // reproducible proposals (stable block ids and ordering) across runs.
+    const svcFiles = [...new Set(symbols.filter((s) => s.service === service).map((s) => s.file_path))].sort();
     if (svcFiles.length === 0) continue;
     const prefixes = subdivide
       ? clusterFiles(svcFiles, maxBlocks, minFiles)
@@ -230,7 +232,7 @@ export function proposeBuildingBlocks(
     // Drift assigns each file to its longest matching prefix (most specific
     // wins), so block order doesn't affect correctness. Emit narrowest first
     // anyway, purely so the generated doc reads child-before-parent.
-    const ordered = [...prefixes].sort((a, b) => b.length - a.length);
+    const ordered = [...prefixes].sort((a, b) => b.length - a.length || a.localeCompare(b));
     const prefixId = new Map<string, string>();
     for (const prefix of ordered) {
       prefixId.set(prefix, prefixToId(prefix, service, usedIds));

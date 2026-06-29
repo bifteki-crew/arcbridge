@@ -245,7 +245,6 @@ function detectDependencyViolations(
 
   // Build file → block mapping
   const fileToBlock = new Map<string, string>();
-  const blockPrefixes = new Map<string, string[]>();
 
   // Flatten every (block, prefix) pair once and sort by descending prefix
   // length, with block id as a deterministic tie-breaker for equal-length
@@ -253,9 +252,9 @@ function detectDependencyViolations(
   const rankedPrefixes: { blockId: string; prefix: string }[] = [];
   for (const block of blocks) {
     const paths = safeParseJson<string[]>(block.code_paths, []);
-    const prefixes = paths.map(normalizePath);
-    blockPrefixes.set(block.id, prefixes);
-    for (const prefix of prefixes) rankedPrefixes.push({ blockId: block.id, prefix });
+    for (const prefix of paths.map(normalizePath)) {
+      rankedPrefixes.push({ blockId: block.id, prefix });
+    }
   }
   rankedPrefixes.sort(
     (a, b) => b.prefix.length - a.prefix.length || a.blockId.localeCompare(b.blockId),

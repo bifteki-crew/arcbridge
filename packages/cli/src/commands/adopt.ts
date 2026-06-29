@@ -68,7 +68,13 @@ export async function adopt(dir: string, options: AdoptOptions, json: boolean): 
         ignorePaths: config.config?.drift?.ignore_paths,
       };
       const undoc = detectDrift(db, driftOpts).filter((e) => e.kind === "undocumented_module");
-      if (!json) {
+      if (json) {
+        // Keep stdout as pure JSON; surface the side-effect on stderr so it's
+        // visible in CI logs.
+        console.error(
+          `Applied ${proposal.blocks.length} building block(s) to .arcbridge/arc42/05-building-blocks.md (${undoc.length} undocumented module(s) remain).`,
+        );
+      } else {
         console.log(`\nApplied to .arcbridge/arc42/05-building-blocks.md.`);
         console.log(
           undoc.length === 0
@@ -83,7 +89,9 @@ export async function adopt(dir: string, options: AdoptOptions, json: boolean): 
       mkdirSync(proposalsDir, { recursive: true });
       const out = join(proposalsDir, "building-blocks.md");
       atomicWriteFileSync(out, markdown);
-      if (!json) {
+      if (json) {
+        console.error("Wrote proposal to .arcbridge/proposals/building-blocks.md (not applied).");
+      } else {
         console.log(`\nWrote proposal to .arcbridge/proposals/building-blocks.md (not applied).`);
         console.log("  Review it, then re-run with --apply to replace your building blocks.");
       }
