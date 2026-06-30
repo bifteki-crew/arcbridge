@@ -44,7 +44,8 @@ export async function adopt(dir: string, options: AdoptOptions, json: boolean): 
       const msg =
         "No building blocks could be proposed — no indexed symbols. Ensure the project has a tsconfig (or configured services) and try again.";
       if (json) console.log(JSON.stringify({ error: msg, proposal }));
-      else console.log(msg);
+      else console.error(msg);
+      process.exitCode = 1;
       return;
     }
 
