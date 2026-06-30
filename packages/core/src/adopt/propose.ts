@@ -40,7 +40,11 @@ export interface AdoptProposal {
 export interface ProposeOptions {
   /** Limit the proposal to a single service. */
   service?: string;
-  /** Upper bound on the number of level-1 blocks (default 12). */
+  /**
+   * Max blocks when subdividing a single service by directory (default 12).
+   * Has no effect in multi-service mode, where each service is one block
+   * regardless — pass `service` to subdivide a specific one.
+   */
   maxBlocks?: number;
   /** Directories below this file count are rolled into their parent (default 3). */
   minFilesPerBlock?: number;

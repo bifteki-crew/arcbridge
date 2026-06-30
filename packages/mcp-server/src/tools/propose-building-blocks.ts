@@ -32,7 +32,7 @@ export function registerProposeBuildingBlocks(
         .min(1)
         .max(50)
         .optional()
-        .describe("Maximum number of building blocks to propose (default: 12)"),
+        .describe("Maximum blocks when subdividing a single service by directory (default: 12). No effect in multi-service mode, where each service is one block — pass `service` to subdivide one."),
       apply: z
         .boolean()
         .optional()

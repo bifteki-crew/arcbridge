@@ -55,7 +55,7 @@ the code, then `apply` and commit.
 |------|---------|
 | `--apply` | Write to `.arcbridge/arc42/05-building-blocks.md` (default: write a reviewable copy to `.arcbridge/proposals/` only) |
 | `--service <name>` | Limit to / subdivide one configured service |
-| `--max-blocks <n>` | Cap the number of blocks (default 12) |
+| `--max-blocks <n>` | Cap blocks when subdividing a single service (default 12). No effect in multi-service mode — each service is one block. |
 | `--json` | Emit the structured proposal |
 
 ## Known limitations (v1)

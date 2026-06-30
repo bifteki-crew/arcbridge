@@ -44,7 +44,7 @@ Init options:
 Adopt options:
   --apply            Write the proposal to .arcbridge/arc42/05-building-blocks.md (default: write to .arcbridge/proposals/ only)
   --service <name>   Limit the proposal to one configured service
-  --max-blocks <n>   Maximum number of building blocks to propose (default: 12)
+  --max-blocks <n>   Max blocks when subdividing a single service (default: 12). Multi-service projects get one block per service regardless; use --service to subdivide one.
 
 Drift options:
   --reindex          Refresh from docs and reindex before checking (use in CI, where index.db is not committed)
