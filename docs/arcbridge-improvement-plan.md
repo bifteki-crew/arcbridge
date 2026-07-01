@@ -1,27 +1,36 @@
-# ArcBridge Improvement Plan — June 2026
+# ArcBridge Improvement Plan — June 2026 (updated July 2026)
 
-Status: IN PROGRESS — A1–A4 implemented (2026-06-10), rest proposed
-Baseline: v0.6.1 — 34 MCP tools, 7 templates, 5 adapters, 4 language indexers, 534 tests.
+Status: Phase A DONE (released v0.6.2/v0.6.3). Phase C `arcbridge adopt` DONE
+(released v0.8.0). An unplanned but load-bearing addition — monorepo per-service
+indexing — shipped in v0.7.0. Phases B, D, E, F remain.
+Baseline (when written): v0.6.1 — 34 MCP tools, 7 templates, 5 adapters, 4 language indexers, 534 tests.
+Now: v0.8.0 — 35 MCP tools, 578 tests.
 
-This plan turns the June 2026 project assessment into six workstreams, ordered by
+This plan turns the June 2026 project assessment into workstreams, ordered by
 release. The strategic thesis: ArcBridge is engineering-mature but has no brownfield
 adoption path and no public visibility. The headline investment is `arcbridge adopt`
 (reverse-engineer building blocks from existing code); everything else either
 de-risks it (hardening, tests) or amplifies it (demo assets, CI action).
 
 ```
-v0.6.2  Phase A: Hardening (quick wins)          ~2 days
-—       Phase B: Demo & adoption assets           ~3 days   (parallel to A)
-v0.7.0  Phase C: arcbridge adopt                  ~8–10 days
-v0.7.1  Phase D: GitHub Action for drift          ~3–4 days
-v0.8.0  Phase E: Integration tests, then          ~7–9 days
-                 MCP tool consolidation (breaking)
-Later   Phase F: Perf, contracts, metrics dashboard
+v0.6.2/.3  Phase A: Hardening (quick wins)             DONE
+v0.7.0     (unplanned) Monorepo per-service indexing   DONE — enabled dogfooding + adopt
+v0.8.0     Phase C: arcbridge adopt                    DONE — the headline
+—          Phase B: Demo & adoption assets             NEXT (~3 days)
+—          Phase D: GitHub Action for drift            planned (~3–4 days)
+—          Phase E: Integration tests, then            planned (~7–9 days)
+                    MCP tool consolidation (breaking)
+Later      Phase F: Perf, contracts, metrics dashboard backlog
 ```
+
+> Version note: Phase C was originally slated for v0.7.0, but v0.7.0 shipped the
+> monorepo per-service indexing that dogfooding (Phase A6) surfaced as a
+> prerequisite, so `adopt` released as v0.8.0. The Phase D/E version labels below
+> are historical estimates — treat the ordering above as current.
 
 ---
 
-## Phase A — Hardening (v0.6.2, ~2 days)
+## Phase A — Hardening (v0.6.2/v0.6.3) — DONE
 
 Closes the silent-failure modes found in the June 2026 audit. All items are small,
 independent, and each ships with a regression test.
@@ -80,7 +89,7 @@ independent, and each ships with a regression test.
 
 ---
 
-## Phase B — Demo & adoption assets (~3 days, parallel with A)
+## Phase B — Demo & adoption assets (~3 days) — NEXT
 
 No code changes; pure conversion-rate work. A stranger must be able to judge
 ArcBridge in 3 minutes without installing it.
@@ -111,7 +120,7 @@ ArcBridge in 3 minutes without installing it.
 
 ---
 
-## Phase C — `arcbridge adopt` (v0.7.0, ~8–10 days) — the headline
+## Phase C — `arcbridge adopt` (released v0.8.0) — the headline — DONE
 
 Goal: point ArcBridge at an existing codebase and get a *proposed* architecture
 model — building blocks with code paths, candidate interfaces, and evidence — that

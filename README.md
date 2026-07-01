@@ -373,6 +373,12 @@ packages/
 - **v0.4.x** (done): Angular template, Angular `@Component` detection in indexer, dependency updates (all security vulnerabilities resolved), OpenCode platform adapter, README restructure — 6 project templates, 5 platform adapters, 457 tests
 - **v0.5.0** (done): Python and Go indexer support (experimental) via tree-sitter WASM, Windows MCP config support, language-scoped incremental indexing, init resilience improvements — 510 tests
 - **v0.6.0** (done): Route analysis for Python (FastAPI, Flask) and Go (Gin, Chi, net/http), fullstack Next.js + .NET template, service-scoped route IDs to prevent cross-service collisions — 7 project templates, 530 tests
+- **v0.6.1** (done): Auto-recreate `index.db` from YAML when missing (fresh clones, `git clean`)
+- **v0.6.2 / v0.6.3** (done): Data-safety hardening — atomic writes for source-of-truth files, `refreshFromDocs` rollback on malformed input, service-scoped component cleanup, stderr logging, and path-traversal containment
+- **v0.7.0** (done): Monorepo per-service indexing — each configured service indexed by its own tsconfig and merged into one DB; `arcbridge drift --reindex` for self-contained CI checks; api-service template fix; ArcBridge now indexes itself with a CI drift gate
+- **v0.8.0** (done): **`arcbridge adopt`** — reverse-engineer building blocks from an existing codebase (clusters files, derives interfaces from the real symbol graph); `arcbridge_propose_building_blocks` MCP tool — 35 MCP tools, 578 tests
+
+**Next:** demo assets (walkthrough GIF, public example repo), a drift-check GitHub Action, then integration tests and MCP tool consolidation. See [`docs/arcbridge-improvement-plan.md`](docs/arcbridge-improvement-plan.md).
 
 See [`docs/arcbridge-project-plan.md`](docs/arcbridge-project-plan.md) for the full specification and [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
