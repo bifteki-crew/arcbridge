@@ -9,7 +9,7 @@ export function openProjectDb(projectDir: string): Database {
     const configPath = join(projectDir, ".arcbridge", "config.yaml");
     if (!existsSync(configPath)) {
       throw new Error(
-        `No ArcBridge project found at ${projectDir}. Run \`arcbridge_init_project\` via MCP first.`,
+        `No ArcBridge project found at ${projectDir}. Run \`arcbridge init\` first.`,
       );
     }
     const db = openDatabase(dbPath);
@@ -27,7 +27,7 @@ export function ensureInitialized(projectDir: string): void {
   const configPath = join(projectDir, ".arcbridge", "config.yaml");
   if (!existsSync(configPath)) {
     throw new Error(
-      `No ArcBridge project found at ${projectDir}. Run \`arcbridge_init_project\` via MCP first.`,
+      `No ArcBridge project found at ${projectDir}. Run \`arcbridge init\` first.`,
     );
   }
 }

@@ -19,3 +19,6 @@ obj/
 .arcbridge/index.db
 .arcbridge/index.db-wal
 .arcbridge/index.db-shm
+
+# ArcBridge adopt proposals (review artifacts — apply, don't commit)
+.arcbridge/proposals/

@@ -245,27 +245,35 @@ function detectDependencyViolations(
 
   // Build file → block mapping
   const fileToBlock = new Map<string, string>();
-  const blockPrefixes = new Map<string, string[]>();
 
+  // Flatten every (block, prefix) pair once and sort by descending prefix
+  // length, with block id as a deterministic tie-breaker for equal-length
+  // prefixes. The first match for a file is then the most specific block.
+  const rankedPrefixes: { blockId: string; prefix: string }[] = [];
   for (const block of blocks) {
     const paths = safeParseJson<string[]>(block.code_paths, []);
-    const prefixes = paths.map(normalizePath);
-    blockPrefixes.set(block.id, prefixes);
+    for (const prefix of paths.map(normalizePath)) {
+      rankedPrefixes.push({ blockId: block.id, prefix });
+    }
   }
+  rankedPrefixes.sort(
+    (a, b) => b.prefix.length - a.prefix.length || a.blockId.localeCompare(b.blockId),
+  );
 
   // Get all file paths and assign them to blocks
   const filePaths = db
     .prepare("SELECT DISTINCT file_path FROM symbols")
     .all() as { file_path: string }[];
 
+  // Assign each file to the block with the LONGEST matching code-path prefix
+  // (most specific wins) — first match in the ranked list, breaking early. This
+  // is independent of the order blocks come back from SQLite, so a broad `src/`
+  // block can't steal files from a narrower `src/components/` block. Generators
+  // (templates, `adopt`) emit narrow-before-broad for readability, but the
+  // correctness guarantee lives here.
   for (const { file_path } of filePaths) {
-    for (const block of blocks) {
-      const prefixes = blockPrefixes.get(block.id) ?? [];
-      if (prefixes.some((prefix) => fileMatchesPath(file_path, prefix))) {
-        fileToBlock.set(file_path, block.id);
-        break; // First match wins
-      }
-    }
+    const match = rankedPrefixes.find(({ prefix }) => fileMatchesPath(file_path, prefix));
+    if (match) fileToBlock.set(file_path, match.blockId);
   }
 
   // Build block interface sets (declared allowed dependencies)

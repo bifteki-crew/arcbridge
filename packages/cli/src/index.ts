@@ -10,6 +10,7 @@ import { init } from "./commands/init.js";
 import { generateConfigs } from "./commands/generate-configs.js";
 import { updateTask } from "./commands/update-task.js";
 import { refresh } from "./commands/refresh.js";
+import { adopt } from "./commands/adopt.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
@@ -21,6 +22,7 @@ const USAGE = `Usage: arcbridge <command> [options]
 Commands:
   init              Initialize ArcBridge in a project directory
   sync              Run the sync loop: reindex, detect drift, infer tasks, propose updates
+  adopt             Propose building blocks for an existing codebase (--apply to write them)
   status            Show project status (phase, tasks, drift)
   drift             Check for architecture drift (add --reindex to refresh + reindex first)
   refresh           Rebuild the database from YAML/markdown sources
@@ -38,6 +40,11 @@ Init options:
   --template <type>  Project template: nextjs-app-router, react-vite, angular-app, api-service, dotnet-webapi, unity-game, fullstack-nextjs-dotnet
   --platform <name>  Target platform: claude, copilot, codex, gemini, opencode (can be repeated, default: claude)
   --spec <file>      Path to a requirements/spec file to include
+
+Adopt options:
+  --apply            Write the proposal to .arcbridge/arc42/05-building-blocks.md (default: write to .arcbridge/proposals/ only)
+  --service <name>   Limit the proposal to one configured service
+  --max-blocks <n>   Max blocks when subdividing a single service (default: 12). Multi-service projects get one block per service regardless; use --service to subdivide one.
 
 Drift options:
   --reindex          Refresh from docs and reindex before checking (use in CI, where index.db is not committed)
@@ -57,6 +64,9 @@ interface ParsedArgs {
   spec?: string;
   force: boolean;
   reindex: boolean;
+  apply: boolean;
+  service?: string;
+  maxBlocks?: number;
 }
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -70,6 +80,9 @@ function parseArgs(args: string[]): ParsedArgs {
   let spec: string | undefined;
   let force = false;
   let reindex = false;
+  let apply = false;
+  let service: string | undefined;
+  let maxBlocks: number | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
@@ -89,6 +102,18 @@ function parseArgs(args: string[]): ParsedArgs {
       force = true;
     } else if (arg === "--reindex") {
       reindex = true;
+    } else if (arg === "--apply") {
+      apply = true;
+    } else if (arg === "--service" && i + 1 < args.length) {
+      service = args[++i]!;
+    } else if (arg === "--max-blocks" && i + 1 < args.length) {
+      const raw = args[++i]!;
+      const v = Number(raw);
+      if (!Number.isInteger(v) || v < 1 || v > 50) {
+        console.error(`Error: --max-blocks must be an integer between 1 and 50 (got "${raw}")`);
+        process.exit(1);
+      }
+      maxBlocks = v;
     } else if (arg === "--help" || arg === "-h") {
       console.log(USAGE);
       process.exit(0);
@@ -113,6 +138,9 @@ function parseArgs(args: string[]): ParsedArgs {
     spec,
     force,
     reindex,
+    apply,
+    service,
+    maxBlocks,
   };
 }
 
@@ -137,6 +165,9 @@ async function main(): Promise<void> {
         break;
       case "sync":
         await sync(dir, json);
+        break;
+      case "adopt":
+        await adopt(dir, { apply: parsed.apply, service: parsed.service, maxBlocks: parsed.maxBlocks }, json);
         break;
       case "status":
         await status(dir, json);

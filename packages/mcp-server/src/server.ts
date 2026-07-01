@@ -18,6 +18,7 @@ import { registerCreatePhase } from "./tools/create-phase.js";
 import { registerDeletePhase } from "./tools/delete-phase.js";
 import { registerGetRelevantAdrs } from "./tools/get-relevant-adrs.js";
 import { registerReindex } from "./tools/reindex.js";
+import { registerProposeBuildingBlocks } from "./tools/propose-building-blocks.js";
 import { registerSearchSymbols } from "./tools/search-symbols.js";
 import { registerGetSymbol } from "./tools/get-symbol.js";
 import { registerGetDependencyGraph } from "./tools/get-dependency-graph.js";
@@ -68,6 +69,7 @@ export function createArcBridgeServer(): McpServer {
 
   // Code Intelligence
   registerReindex(server, ctx);
+  registerProposeBuildingBlocks(server, ctx);
   registerSearchSymbols(server, ctx);
   registerGetSymbol(server, ctx);
   registerGetDependencyGraph(server, ctx);
