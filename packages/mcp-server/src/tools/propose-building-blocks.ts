@@ -53,7 +53,10 @@ export function registerProposeBuildingBlocks(
           maxBlocks: params.max_blocks,
         });
 
+        if (proposal.blocks.length === 0) {
+          return textResult(
             "No building blocks could be proposed — no indexed symbols were found. Ensure the project contains indexable source files and any required configuration (e.g. a tsconfig for TypeScript), or configure services, then try again.",
+          );
         }
 
         const lines: string[] = [
