@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.8.0 (2026-07-01)
+
+### New Features
+
+- **`arcbridge adopt`** — reverse-engineer a building-block decomposition for an existing codebase instead of hand-writing one. It indexes the code, clusters files by directory (a multi-service project gets one block per service; a single service, or `--service <name>`, is subdivided by directory up to `--max-blocks`), and derives each block's `interfaces` from the real symbol dependency graph. The partition covers every indexed file, so `arcbridge adopt --apply` yields zero `undocumented_module` drift; the auto-generated responsibilities are placeholders to refine. Default writes a reviewable proposal to `.arcbridge/proposals/`; `--apply` replaces `05-building-blocks.md`. See [docs/adopting-existing-codebases.md](docs/adopting-existing-codebases.md).
+- **`arcbridge_propose_building_blocks` MCP tool** (35 tools total) — returns the same proposal with evidence (file/edge counts, confidence, top exported symbols) so an agent can refine responsibilities, with an `apply` option.
+
+### Bug Fixes
+
+- **Order-independent drift assignment** — the drift detector now assigns each file to the building block with the **longest matching code-path prefix** (most specific wins), instead of the first match in SQLite row order. A broad `src/` block can no longer steal files from a narrower `src/components/` block depending on row order, which could have silently hidden dependency violations. Block emission order (templates, `adopt`) is now purely cosmetic.
+
+### Internal
+
+- `proposeBuildingBlocks` / `proposalToBuildingBlocksMarkdown` in `@arcbridge/core`. Proposals are deterministic (sorted inputs, lexicographic tie-breaks). `adopt` validates `--service`/`--max-blocks` and exits non-zero when it can't produce a proposal.
+
+### Stats
+
+- 35 MCP tools, 578 tests passing, 0 lint errors, 0 type errors
+
 ## 0.7.0 (2026-06-27)
 
 ### New Features
