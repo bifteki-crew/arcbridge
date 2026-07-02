@@ -7,6 +7,12 @@ An MCP server that gives AI coding agents architectural awareness. It bridges ar
 [![npm version](https://img.shields.io/npm/v/@arcbridge/mcp-server)](https://www.npmjs.com/package/@arcbridge/mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+<p align="center">
+  <img src="docs/demo/adopt.gif" alt="arcbridge adopt reverse-engineers building blocks from an existing codebase, then drift-checks them" width="800">
+  <br>
+  <em><code>arcbridge adopt</code> reverse-engineers a building-block model from an existing codebase — then drift keeps it honest.</em>
+</p>
+
 ## The Problem
 
 Your AI agent starts every coding session blind to your architecture. It sees the current file, maybe some imports — but it doesn't know which module it's in, what quality requirements apply, or whether the change it's about to make violates a boundary the team agreed on last week.
@@ -378,9 +384,29 @@ packages/
 - **v0.7.0** (done): Monorepo per-service indexing — each configured service indexed by its own tsconfig and merged into one DB; `arcbridge drift --reindex` for self-contained CI checks; api-service template fix; ArcBridge now indexes itself with a CI drift gate
 - **v0.8.0** (done): **`arcbridge adopt`** — reverse-engineer building blocks from an existing codebase (clusters files, derives interfaces from the real symbol graph); `arcbridge_propose_building_blocks` MCP tool — 35 MCP tools, 578 tests
 
-**Next:** demo assets (walkthrough GIF, public example repo), a drift-check GitHub Action, then integration tests and MCP tool consolidation. See [`docs/arcbridge-improvement-plan.md`](docs/arcbridge-improvement-plan.md).
+**Next:** a drift-check GitHub Action, then integration tests and MCP tool consolidation. See [`docs/arcbridge-improvement-plan.md`](docs/arcbridge-improvement-plan.md).
 
 See [`docs/arcbridge-project-plan.md`](docs/arcbridge-project-plan.md) for the full specification and [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+
+## Troubleshooting & FAQ
+
+**The MCP server won't connect / the agent doesn't see ArcBridge tools.**
+Check that Node.js is ≥ 22.16 (`node --version`) — ArcBridge uses the built-in `node:sqlite`. Confirm your MCP config points at `npx @arcbridge/mcp-server`, then fully restart the agent (MCP servers are loaded at startup). Most tools take a `target_dir` — pass the absolute project path.
+
+**How do I adopt ArcBridge on an existing codebase?**
+Run `arcbridge init` then `arcbridge adopt` — it reverse-engineers building blocks from your code instead of leaving you to hand-write them. See [Adopting an existing codebase](docs/adopting-existing-codebases.md). There's a complete worked example at [bifteki-crew/arcbridge-example-bookmarks](https://github.com/bifteki-crew/arcbridge-example-bookmarks).
+
+**I have a monorepo — how do I index all the packages?**
+List each package under `services` in `.arcbridge/config.yaml` with its `path` and `tsconfig` (relative to `path`). `arcbridge sync`/`adopt` index each service by its own tsconfig and merge them into one model. Per-service indexing currently covers TypeScript.
+
+**How do I run drift in CI?**
+`arcbridge drift --reindex` is self-contained — it refreshes from docs and reindexes first, so it works on a fresh checkout where `index.db` isn't committed. It exits non-zero on error-severity drift.
+
+**`index.db` is missing after a fresh clone / `git clean`.**
+That's expected — `index.db` is a derived cache and is gitignored. ArcBridge recreates it from the YAML/markdown sources automatically on the next command.
+
+**`arcbridge init` didn't index anything ("0 files").**
+The TypeScript indexer needs a `tsconfig.json` (per service for monorepos). For C#/.NET the Roslyn backend needs the .NET 8+ SDK; without it, ArcBridge falls back to a tree-sitter parser that needs no SDK.
 
 ## License
 
