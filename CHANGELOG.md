@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.0 (2026-07-03)
+
+### Changes
+
+- **Building blocks are now stored as `05-building-blocks.yaml`** — previously a YAML frontmatter array inside `05-building-blocks.md`, which GitHub (and VS Code) rendered as an unreadable single-row table. As a plain YAML file (consistent with `10-quality-scenarios.yaml`) the architecture model renders cleanly everywhere. **Backward compatible and self-healing:** on the first read, a legacy `05-building-blocks.md` is automatically migrated to `.yaml` (and the `.md` removed) — existing projects just work after upgrading. `init`, `arcbridge adopt`, and the MCP tools all read/write the new format; new `BuildingBlocksFileSchema` exported from `@arcbridge/core` (the old `BuildingBlocksFrontmatterSchema` name remains as a deprecated alias).
+
+### Stats
+
+- 35 MCP tools, 578 tests passing, 0 lint errors, 0 type errors
+
 ## 0.8.0 (2026-07-01)
 
 ### New Features

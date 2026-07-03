@@ -1,10 +1,12 @@
 # ArcBridge Improvement Plan — June 2026 (updated July 2026)
 
-Status: Phase A DONE (released v0.6.2/v0.6.3). Phase C `arcbridge adopt` DONE
-(released v0.8.0). An unplanned but load-bearing addition — monorepo per-service
-indexing — shipped in v0.7.0. Phases B, D, E, F remain.
+Status: Phases A, B, and C DONE. Phase A released v0.6.2/v0.6.3; monorepo
+per-service indexing (unplanned but load-bearing) shipped v0.7.0; Phase C
+`arcbridge adopt` shipped v0.8.0; Phase B (demo GIF, FAQ, example repo) landed
+July 2026, and v0.9.0 moved building blocks to `05-building-blocks.yaml` for
+clean GitHub rendering. Phases D, E, F remain.
 Baseline (when written): v0.6.1 — 34 MCP tools, 7 templates, 5 adapters, 4 language indexers, 534 tests.
-Now: v0.8.0 — 35 MCP tools, 578 tests.
+Now: v0.9.0 — 35 MCP tools, 578 tests.
 
 This plan turns the June 2026 project assessment into workstreams, ordered by
 release. The strategic thesis: ArcBridge is engineering-mature but has no brownfield
@@ -16,8 +18,9 @@ de-risks it (hardening, tests) or amplifies it (demo assets, CI action).
 v0.6.2/.3  Phase A: Hardening (quick wins)             DONE
 v0.7.0     (unplanned) Monorepo per-service indexing   DONE — enabled dogfooding + adopt
 v0.8.0     Phase C: arcbridge adopt                    DONE — the headline
-—          Phase B: Demo & adoption assets             NEXT (~3 days)
-—          Phase D: GitHub Action for drift            planned (~3–4 days)
+—          Phase B: Demo & adoption assets             DONE — GIF, FAQ, example repo
+v0.9.0     (unplanned) Building blocks as .yaml        DONE — clean GitHub rendering
+—          Phase D: GitHub Action for drift            NEXT (~3–4 days)
 —          Phase E: Integration tests, then            planned (~7–9 days)
                     MCP tool consolidation (breaking)
 Later      Phase F: Perf, contracts, metrics dashboard backlog
@@ -89,7 +92,13 @@ independent, and each ships with a regression test.
 
 ---
 
-## Phase B — Demo & adoption assets (~3 days) — NEXT
+## Phase B — Demo & adoption assets — DONE
+
+Shipped July 2026: VHS-rendered `arcbridge adopt` demo GIF as the README hero
+(`docs/demo/adopt.gif` + checked-in `.tape`), a Troubleshooting & FAQ section,
+and the public worked example
+[bifteki-crew/arcbridge-example-bookmarks](https://github.com/bifteki-crew/arcbridge-example-bookmarks).
+Original plan (for reference):
 
 No code changes; pure conversion-rate work. A stranger must be able to judge
 ArcBridge in 3 minutes without installing it.
