@@ -82,7 +82,7 @@ export function registerGetGuidance(
           lines.push(
             "## Warning: Unmapped File",
             "",
-            `\`${params.file_path}\` is not mapped to any building block. Consider updating \`.arcbridge/arc42/05-building-blocks.md\` to include this path.`,
+            `\`${params.file_path}\` is not mapped to any building block. Consider updating \`.arcbridge/arc42/05-building-blocks.yaml\` to include this path.`,
             "",
           );
         }
@@ -254,7 +254,7 @@ const FRONTEND_GUIDANCE: Record<string, string> = {
 
 const DOTNET_GUIDANCE: Record<string, string> = {
   "adding-component":
-    "- Follow the existing service/repository pattern\n- Register the new class in DI (Program.cs or extension method)\n- Add an interface if the component needs to be mockable\n- **Arc42:** Update `05-building-blocks.md` if this is a new architectural layer",
+    "- Follow the existing service/repository pattern\n- Register the new class in DI (Program.cs or extension method)\n- Add an interface if the component needs to be mockable\n- **Arc42:** Update `05-building-blocks.yaml` if this is a new architectural layer",
   "adding-api-route":
     "- Use `[HttpGet]`, `[HttpPost]`, etc. attributes for controller routes, or `MapGet`/`MapPost` for minimal APIs\n- Apply `[Authorize]` for protected endpoints\n- Validate input with data annotations or FluentValidation\n- Follow existing error response patterns (ProblemDetails)\n- **Arc42:** Update `03-context.md` if this exposes new external integrations; update `06-runtime-views.md` for key workflows",
   "adding-hook":
@@ -267,7 +267,7 @@ const DOTNET_GUIDANCE: Record<string, string> = {
 
 const API_GUIDANCE: Record<string, string> = {
   "adding-component":
-    "- Follow existing module/service patterns\n- Add TypeScript interfaces for public APIs\n- Register in the dependency injection or module system\n- **Arc42:** Update `05-building-blocks.md` if this is a new architectural layer",
+    "- Follow existing module/service patterns\n- Add TypeScript interfaces for public APIs\n- Register in the dependency injection or module system\n- **Arc42:** Update `05-building-blocks.yaml` if this is a new architectural layer",
   "adding-api-route":
     "- Ensure authentication middleware covers this route\n- Validate all input with zod or equivalent\n- Follow existing error response patterns\n- Consider rate limiting for public endpoints\n- **Arc42:** Update `03-context.md` if this exposes a new external integration",
   "adding-hook":
@@ -280,7 +280,7 @@ const API_GUIDANCE: Record<string, string> = {
 
 const SHARED_GUIDANCE: Record<string, string> = {
   "refactoring":
-    "- Ensure no cross-block boundary violations are introduced\n- Maintain existing public API contracts\n- Run tests before and after to verify behavior preservation\n- If the refactoring changes architectural patterns, update or create an ADR\n- **Arc42:** Update `05-building-blocks.md` if module structure changed; update `08-crosscutting.md` if patterns changed",
+    "- Ensure no cross-block boundary violations are introduced\n- Maintain existing public API contracts\n- Run tests before and after to verify behavior preservation\n- If the refactoring changes architectural patterns, update or create an ADR\n- **Arc42:** Update `05-building-blocks.yaml` if module structure changed; update `08-crosscutting.md` if patterns changed",
   "general":
     "- Check `arcbridge_get_relevant_adrs` for existing decisions that may constrain this change\n- If you're choosing between approaches, document the decision in an ADR\n- **Arc42:** Consider which documentation sections may need updating (check `.arcbridge/arc42/`)",
 };

@@ -5,7 +5,7 @@ import {
   loadConfig,
   indexConfiguredProject,
   proposeBuildingBlocks,
-  proposalToBuildingBlocksMarkdown,
+  proposalToBuildingBlocksYaml,
   refreshFromDocs,
   detectDrift,
   atomicWriteFileSync,
@@ -36,7 +36,7 @@ export function registerProposeBuildingBlocks(
       apply: z
         .boolean()
         .optional()
-        .describe("Write the proposal to .arcbridge/arc42/05-building-blocks.md and reload (default: false — only returns the proposal)."),
+        .describe("Write the proposal to .arcbridge/arc42/05-building-blocks.yaml and reload (default: false — only returns the proposal)."),
     },
     async (params) => {
       const db = ensureDb(ctx, params.target_dir);
@@ -82,10 +82,10 @@ export function registerProposeBuildingBlocks(
         }
 
         if (params.apply) {
-          const blocksPath = join(params.target_dir, ".arcbridge", "arc42", "05-building-blocks.md");
+          const blocksPath = join(params.target_dir, ".arcbridge", "arc42", "05-building-blocks.yaml");
           atomicWriteFileSync(
             blocksPath,
-            proposalToBuildingBlocksMarkdown(proposal, new Date().toISOString()),
+            proposalToBuildingBlocksYaml(proposal, new Date().toISOString()),
           );
           refreshFromDocs(db, params.target_dir);
           const undoc = detectDrift(db, {
@@ -94,7 +94,7 @@ export function registerProposeBuildingBlocks(
           }).filter((e) => e.kind === "undocumented_module");
           lines.push(
             "---",
-            `**Applied** to \`.arcbridge/arc42/05-building-blocks.md\`. ${undoc.length === 0 ? "Every indexed file is mapped (0 undocumented modules)." : `${undoc.length} file(s) still unmapped.`}`,
+            `**Applied** to \`.arcbridge/arc42/05-building-blocks.yaml\`. ${undoc.length === 0 ? "Every indexed file is mapped (0 undocumented modules)." : `${undoc.length} file(s) still unmapped.`}`,
             "Next: refine the draft responsibilities (they're auto-generated), then commit `.arcbridge/`.",
           );
         } else {

@@ -162,7 +162,7 @@ The database is a **derived cache**, not the source of truth. The source of trut
 ├── arc42/
 │   ├── 01-introduction.md         ← project goals and stakeholders
 │   ├── 03-context.md              ← external systems and integrations
-│   ├── 05-building-blocks.md      ← defines what code belongs where
+│   ├── 05-building-blocks.yaml      ← defines what code belongs where
 │   ├── 06-runtime-views.md        ← key workflows and request flows
 │   ├── 07-deployment.md           ← environments and infrastructure
 │   ├── 08-crosscutting.md         ← patterns: error handling, auth, logging, validation

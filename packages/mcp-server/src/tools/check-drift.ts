@@ -86,7 +86,7 @@ export function registerCheckDrift(
       if (params.persist) {
         lines.push(
           "---",
-          "*Findings saved to drift_log. Use `arcbridge_update_task` or resolve drift by updating `.arcbridge/arc42/05-building-blocks.md`.*",
+          "*Findings saved to drift_log. Use `arcbridge_update_task` or resolve drift by updating `.arcbridge/arc42/05-building-blocks.yaml`.*",
           "",
         );
       }

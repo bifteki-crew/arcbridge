@@ -102,7 +102,7 @@ When you run `arcbridge init`, it generates:
 │   ├── 02-constraints.md          # Technical, organizational, legal constraints
 │   ├── 03-context.md              # System scope
 │   ├── 04-solution-strategy.md    # Technology decisions and architecture approach
-│   ├── 05-building-blocks.md      # Architecture decomposition
+│   ├── 05-building-blocks.yaml      # Architecture decomposition
 │   ├── 06-runtime-views.md        # Key scenarios
 │   ├── 07-deployment.md           # Infrastructure
 │   ├── 08-crosscutting.md         # Patterns and conventions

@@ -35,13 +35,12 @@ export function generateArc42(
   mkdirSync(arc42Dir, { recursive: true });
   mkdirSync(decisionsDir, { recursive: true });
 
-  // Standard markdown sections
+  // Standard markdown (prose) sections
   const sections = [
     { file: "01-introduction.md", template: introductionTemplate },
     { file: "02-constraints.md", template: constraintsTemplate },
     { file: "03-context.md", template: contextTemplate },
     { file: "04-solution-strategy.md", template: solutionStrategyTemplate },
-    { file: "05-building-blocks.md", template: buildingBlocksTemplate },
     { file: "06-runtime-views.md", template: runtimeViewsTemplate },
     { file: "07-deployment.md", template: deploymentTemplate },
     { file: "08-crosscutting.md", template: crosscuttingTemplate },
@@ -53,6 +52,15 @@ export function generateArc42(
     const { frontmatter, body } = template(inputWithRoot);
     writeMarkdownWithFrontmatter(join(arc42Dir, file), frontmatter, body);
   }
+
+  // Building blocks (structured YAML, like quality scenarios — renders cleanly
+  // on GitHub, unlike an array in .md frontmatter). The template's frontmatter
+  // object is the file's data; its prose body is not used.
+  const buildingBlocks = buildingBlocksTemplate(inputWithRoot).frontmatter;
+  atomicWriteFileSync(
+    join(arc42Dir, "05-building-blocks.yaml"),
+    stringify(buildingBlocks),
+  );
 
   // ADR (first decision)
   const adr = firstAdrTemplate(inputWithRoot);

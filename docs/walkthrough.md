@@ -70,7 +70,7 @@ ArcBridge created a complete architecture scaffold:
   arc42/
     01-introduction.md            # Project goals and stakeholders
     03-context.md                 # System context and external integrations
-    05-building-blocks.md         # Module decomposition
+    05-building-blocks.yaml         # Module decomposition
     06-runtime-views.md           # Key workflows and request flows
     07-deployment.md              # Deployment environments and infrastructure
     08-crosscutting.md            # Patterns: error handling, auth, logging, validation

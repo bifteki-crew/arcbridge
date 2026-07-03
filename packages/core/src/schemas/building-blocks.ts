@@ -13,14 +13,17 @@ export const BuildingBlockSchema = z.object({
   service: z.string().default("main"),
 });
 
-export const BuildingBlocksFrontmatterSchema = z.object({
+export const BuildingBlocksFileSchema = z.object({
   section: z.literal("building-blocks"),
   schema_version: z.literal(1).default(1),
   last_synced: z.string(),
   blocks: z.array(BuildingBlockSchema),
 });
 
+/** @deprecated Building blocks moved from `.md` frontmatter to `05-building-blocks.yaml`. Same shape. */
+export const BuildingBlocksFrontmatterSchema = BuildingBlocksFileSchema;
+
 export type BuildingBlock = z.infer<typeof BuildingBlockSchema>;
-export type BuildingBlocksFrontmatter = z.infer<
-  typeof BuildingBlocksFrontmatterSchema
->;
+export type BuildingBlocksFile = z.infer<typeof BuildingBlocksFileSchema>;
+/** @deprecated Use BuildingBlocksFile. */
+export type BuildingBlocksFrontmatter = BuildingBlocksFile;
