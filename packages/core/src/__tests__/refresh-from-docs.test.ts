@@ -198,8 +198,8 @@ describe("refreshFromDocs", () => {
     ).count;
 
     writeFileSync(
-      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
-      "---\nsection: building-blocks\nlast_synced: now\nblocks: not-an-array\n---\nBody\n",
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.yaml"),
+      "section: building-blocks\nlast_synced: now\nblocks: not-an-array\n",
       "utf-8",
     );
 

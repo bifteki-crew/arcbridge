@@ -66,7 +66,7 @@ describe("arc42 section files", () => {
       "02-constraints.md",
       "03-context.md",
       "04-solution-strategy.md",
-      "05-building-blocks.md",
+      "05-building-blocks.yaml",
       "06-runtime-views.md",
       "07-deployment.md",
       "08-crosscutting.md",
@@ -78,9 +78,15 @@ describe("arc42 section files", () => {
       const raw = readFileSync(filePath, "utf-8");
       expect(raw.length).toBeGreaterThan(0);
 
-      const { data } = parseFrontmatter(raw);
-      expect(data.section).toBeDefined();
-      expect(data.schema_version).toBe(1);
+      // Building blocks are a plain .yaml file; prose sections use .md frontmatter.
+      if (file.endsWith(".yaml")) {
+        expect(raw).toContain("section: building-blocks");
+        expect(raw).toContain("schema_version: 1");
+      } else {
+        const { data } = parseFrontmatter(raw);
+        expect(data.section).toBeDefined();
+        expect(data.schema_version).toBe(1);
+      }
     }
   });
 

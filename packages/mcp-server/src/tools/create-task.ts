@@ -24,7 +24,7 @@ export function registerCreateTask(
         .describe(
           "Building block this task belongs to. Use `arcbridge_get_building_blocks` " +
           "to see available blocks. If no suitable block exists, create one in " +
-          "`.arcbridge/arc42/05-building-blocks.md` and run `arcbridge_reindex` first.",
+          "`.arcbridge/arc42/05-building-blocks.yaml` and run `arcbridge_reindex` first.",
         ),
       quality_scenarios: z
         .array(z.string())
@@ -93,7 +93,7 @@ export function registerCreateTask(
             content: [
               {
                 type: "text" as const,
-                text: `Building block \`${blockId}\` not found.\n\n**Available blocks:**\n${blockList}\n\nIf you need a new block, add it to \`.arcbridge/arc42/05-building-blocks.md\` and run \`arcbridge_reindex\`, then retry.`,
+                text: `Building block \`${blockId}\` not found.\n\n**Available blocks:**\n${blockList}\n\nIf you need a new block, add it to \`.arcbridge/arc42/05-building-blocks.yaml\` and run \`arcbridge_reindex\`, then retry.`,
               },
             ],
           };

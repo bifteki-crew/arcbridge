@@ -16,8 +16,10 @@ export {
 } from "./schemas/quality-scenarios.js";
 export {
   BuildingBlockSchema,
+  BuildingBlocksFileSchema,
   BuildingBlocksFrontmatterSchema,
   type BuildingBlock,
+  type BuildingBlocksFile,
   type BuildingBlocksFrontmatter,
 } from "./schemas/building-blocks.js";
 export {
@@ -156,7 +158,7 @@ export {
   type ProposeOptions,
   type BlockEvidence,
 } from "./adopt/propose.js";
-export { proposalToBuildingBlocksMarkdown } from "./adopt/serialize.js";
+export { proposalToBuildingBlocksYaml } from "./adopt/serialize.js";
 
 // Filesystem utils
 export { atomicWriteFileSync, resolveWithin } from "./utils/fs.js";

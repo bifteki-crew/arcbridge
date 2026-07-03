@@ -57,7 +57,7 @@ describe("generateArc42", () => {
 
     expect(existsSync(join(arc42Dir, "01-introduction.md"))).toBe(true);
     expect(existsSync(join(arc42Dir, "03-context.md"))).toBe(true);
-    expect(existsSync(join(arc42Dir, "05-building-blocks.md"))).toBe(true);
+    expect(existsSync(join(arc42Dir, "05-building-blocks.yaml"))).toBe(true);
     expect(existsSync(join(arc42Dir, "06-runtime-views.md"))).toBe(true);
     expect(existsSync(join(arc42Dir, "07-deployment.md"))).toBe(true);
     expect(existsSync(join(arc42Dir, "08-crosscutting.md"))).toBe(true);
@@ -71,10 +71,10 @@ describe("generateArc42", () => {
   it("produces valid building blocks frontmatter", () => {
     generateArc42(tempDir, TEST_INPUT);
     const raw = readFileSync(
-      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.yaml"),
       "utf-8",
     );
-    const { data } = matter(raw);
+    const data = parse(raw);
     const validated = BuildingBlocksFrontmatterSchema.parse(data);
 
     expect(validated.blocks.length).toBeGreaterThan(0);
@@ -93,8 +93,8 @@ describe("generateArc42", () => {
     function orderedIds(input: InitProjectInput): string[] {
       const dir = mkdtempSync(join(tmpdir(), "arcbridge-order-"));
       generateArc42(dir, input);
-      const raw = readFileSync(join(dir, ".arcbridge", "arc42", "05-building-blocks.md"), "utf-8");
-      const ids = BuildingBlocksFrontmatterSchema.parse(matter(raw).data).blocks.map((b) => b.id);
+      const raw = readFileSync(join(dir, ".arcbridge", "arc42", "05-building-blocks.yaml"), "utf-8");
+      const ids = BuildingBlocksFrontmatterSchema.parse(parse(raw)).blocks.map((b) => b.id);
       rmSync(dir, { recursive: true, force: true });
       return ids;
     }
@@ -304,10 +304,10 @@ describe("api-client building block", () => {
   it("is present for nextjs-app-router template", () => {
     generateArc42(tempDir, TEST_INPUT);
     const raw = readFileSync(
-      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.yaml"),
       "utf-8",
     );
-    const { data } = matter(raw);
+    const data = parse(raw);
     const validated = BuildingBlocksFrontmatterSchema.parse(data);
     expect(validated.blocks.map((b) => b.id)).toContain("api-client");
   });
@@ -322,10 +322,10 @@ describe("api-client building block", () => {
     };
     generateArc42(tempDir, viteInput);
     const raw = readFileSync(
-      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.yaml"),
       "utf-8",
     );
-    const { data } = matter(raw);
+    const data = parse(raw);
     const validated = BuildingBlocksFrontmatterSchema.parse(data);
     expect(validated.blocks.map((b) => b.id)).toContain("api-client");
   });
@@ -340,10 +340,10 @@ describe("api-client building block", () => {
     };
     generateArc42(tempDir, apiInput);
     const raw = readFileSync(
-      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.yaml"),
       "utf-8",
     );
-    const { data } = matter(raw);
+    const data = parse(raw);
     const validated = BuildingBlocksFrontmatterSchema.parse(data);
     expect(validated.blocks.map((b) => b.id)).not.toContain("api-client");
   });
@@ -358,10 +358,10 @@ describe("api-client building block", () => {
     };
     generateArc42(tempDir, dotnetInput);
     const raw = readFileSync(
-      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.yaml"),
       "utf-8",
     );
-    const { data } = matter(raw);
+    const data = parse(raw);
     const validated = BuildingBlocksFrontmatterSchema.parse(data);
     expect(validated.blocks.map((b) => b.id)).not.toContain("api-client");
   });
@@ -389,10 +389,10 @@ describe("dotnet-webapi template", () => {
   it("generates dotnet-specific building blocks", () => {
     generateArc42(tempDir, DOTNET_INPUT);
     const raw = readFileSync(
-      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.yaml"),
       "utf-8",
     );
-    const { data } = matter(raw);
+    const data = parse(raw);
     const validated = BuildingBlocksFrontmatterSchema.parse(data);
 
     const ids = validated.blocks.map((b) => b.id);
@@ -526,10 +526,10 @@ describe("unity-game template", () => {
   it("generates unity-specific building blocks", () => {
     generateArc42(tempDir, UNITY_INPUT);
     const raw = readFileSync(
-      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.yaml"),
       "utf-8",
     );
-    const { data } = matter(raw);
+    const data = parse(raw);
     const validated = BuildingBlocksFrontmatterSchema.parse(data);
 
     const ids = validated.blocks.map((b) => b.id);
@@ -652,10 +652,10 @@ describe("angular-app template", () => {
   it("generates angular-specific building blocks", () => {
     generateArc42(tempDir, ANGULAR_INPUT);
     const raw = readFileSync(
-      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.yaml"),
       "utf-8",
     );
-    const { data } = matter(raw);
+    const data = parse(raw);
     const validated = BuildingBlocksFrontmatterSchema.parse(data);
 
     const ids = validated.blocks.map((b) => b.id);
@@ -769,10 +769,10 @@ describe("fullstack-nextjs-dotnet template", () => {
   it("generates fullstack building blocks", () => {
     generateArc42(tempDir, FULLSTACK_INPUT);
     const raw = readFileSync(
-      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.md"),
+      join(tempDir, ".arcbridge", "arc42", "05-building-blocks.yaml"),
       "utf-8",
     );
-    const { data } = matter(raw);
+    const data = parse(raw);
     const validated = BuildingBlocksFrontmatterSchema.parse(data);
 
     const ids = validated.blocks.map((b) => b.id);

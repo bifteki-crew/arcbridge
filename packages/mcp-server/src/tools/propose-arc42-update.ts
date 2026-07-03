@@ -194,7 +194,7 @@ function generateProposals(
           section: "05 Building Block View",
           title: `New cross-block interface: \`${sym.name}\``,
           description: `Exported ${sym.kind} \`${sym.name}\` in block \`${block.name}\` is consumed by blocks: ${consumerNames}. This should be documented as an interface.`,
-          suggestedChange: `Add \`${sym.name}\` to the interfaces section of building block \`${block.id}\` in \`.arcbridge/arc42/05-building-blocks.md\`.`,
+          suggestedChange: `Add \`${sym.name}\` to the interfaces section of building block \`${block.id}\` in \`.arcbridge/arc42/05-building-blocks.yaml\`.`,
         });
       }
     }

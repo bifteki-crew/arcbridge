@@ -354,7 +354,7 @@ It's not one-way. **Both directions stay in sync.**
 ├── arc42/
 │   ├── 01-introduction.md         # Goals & stakeholders
 │   ├── 03-context.md              # System boundary
-│   ├── 05-building-blocks.md      # Module decomposition → code
+│   ├── 05-building-blocks.yaml      # Module decomposition → code
 │   ├── 06-runtime-views.md        # Key workflows
 │   ├── 09-decisions/              # ADRs linked to code
 │   └── 10-quality-scenarios.yaml  # Testable requirements

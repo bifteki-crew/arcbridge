@@ -42,7 +42,7 @@ Init options:
   --spec <file>      Path to a requirements/spec file to include
 
 Adopt options:
-  --apply            Write the proposal to .arcbridge/arc42/05-building-blocks.md (default: write to .arcbridge/proposals/ only)
+  --apply            Write the proposal to .arcbridge/arc42/05-building-blocks.yaml (default: write to .arcbridge/proposals/ only)
   --service <name>   Limit the proposal to one configured service
   --max-blocks <n>   Max blocks when subdividing a single service (default: 12). Multi-service projects get one block per service regardless; use --service to subdivide one.
 

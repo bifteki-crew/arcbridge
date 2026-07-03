@@ -176,7 +176,7 @@ function reviewArchitecture(
       dimension: "Architecture",
       severity: "warning",
       description: `${unmapped.length} changed file(s) not mapped to any building block: ${unmapped.slice(0, 3).map((f) => `\`${f}\``).join(", ")}${unmapped.length > 3 ? ` and ${unmapped.length - 3} more` : ""}`,
-      action: "Map these files to building blocks in `.arcbridge/arc42/05-building-blocks.md`",
+      action: "Map these files to building blocks in `.arcbridge/arc42/05-building-blocks.yaml`",
     });
   }
 

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { openMemoryDatabase, type Database } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
+import { parse } from "yaml";
 import { proposeBuildingBlocks } from "../adopt/propose.js";
-import { proposalToBuildingBlocksMarkdown } from "../adopt/serialize.js";
-import { BuildingBlocksFrontmatterSchema } from "../schemas/building-blocks.js";
-import matter from "gray-matter";
+import { proposalToBuildingBlocksYaml } from "../adopt/serialize.js";
+import { BuildingBlocksFileSchema } from "../schemas/building-blocks.js";
 
 let db: Database;
 let sid = 0;
@@ -124,10 +124,10 @@ describe("proposeBuildingBlocks", () => {
       for (let i = 0; i < 3; i++) addSymbol(`src/${d}/f${i}.ts`, `${d}${i}`);
     }
     const proposal = proposeBuildingBlocks(db);
-    const md = proposalToBuildingBlocksMarkdown(proposal, "2026-01-01T00:00:00.000Z");
+    const yaml = proposalToBuildingBlocksYaml(proposal, "2026-01-01T00:00:00.000Z");
 
-    // Round-trips through the canonical schema
-    const fm = BuildingBlocksFrontmatterSchema.parse(matter(md).data);
+    // Round-trips through the canonical schema (parsed as a plain YAML file)
+    const fm = BuildingBlocksFileSchema.parse(parse(yaml));
     const prefixes = fm.blocks.flatMap((b) => b.code_paths);
 
     // Every indexed file matches at least one block's code_path (zero

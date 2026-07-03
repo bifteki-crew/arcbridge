@@ -4,7 +4,7 @@ import {
   loadConfig,
   indexConfiguredProject,
   proposeBuildingBlocks,
-  proposalToBuildingBlocksMarkdown,
+  proposalToBuildingBlocksYaml,
   refreshFromDocs,
   detectDrift,
   atomicWriteFileSync,
@@ -49,7 +49,7 @@ export async function adopt(dir: string, options: AdoptOptions, json: boolean): 
       return;
     }
 
-    const markdown = proposalToBuildingBlocksMarkdown(proposal, new Date().toISOString());
+    const blocksYaml = proposalToBuildingBlocksYaml(proposal, new Date().toISOString());
 
     if (json) {
       console.log(JSON.stringify(proposal, null, 2));
@@ -59,8 +59,8 @@ export async function adopt(dir: string, options: AdoptOptions, json: boolean): 
 
     if (options.apply) {
       // Overwrite the building blocks doc and reload
-      const blocksPath = join(dir, ".arcbridge", "arc42", "05-building-blocks.md");
-      atomicWriteFileSync(blocksPath, markdown);
+      const blocksPath = join(dir, ".arcbridge", "arc42", "05-building-blocks.yaml");
+      atomicWriteFileSync(blocksPath, blocksYaml);
       refreshFromDocs(db, dir);
 
       // Confirm the inverse property: no undocumented modules remain
@@ -73,10 +73,10 @@ export async function adopt(dir: string, options: AdoptOptions, json: boolean): 
         // Keep stdout as pure JSON; surface the side-effect on stderr so it's
         // visible in CI logs.
         console.error(
-          `Applied ${proposal.blocks.length} building block(s) to .arcbridge/arc42/05-building-blocks.md (${undoc.length} undocumented module(s) remain).`,
+          `Applied ${proposal.blocks.length} building block(s) to .arcbridge/arc42/05-building-blocks.yaml (${undoc.length} undocumented module(s) remain).`,
         );
       } else {
-        console.log(`\nApplied to .arcbridge/arc42/05-building-blocks.md.`);
+        console.log(`\nApplied to .arcbridge/arc42/05-building-blocks.yaml.`);
         console.log(
           undoc.length === 0
             ? "  Every indexed file is now mapped to a block (0 undocumented modules)."
@@ -88,12 +88,12 @@ export async function adopt(dir: string, options: AdoptOptions, json: boolean): 
       // Write a reviewable proposal alongside, don't touch the live doc
       const proposalsDir = join(dir, ".arcbridge", "proposals");
       mkdirSync(proposalsDir, { recursive: true });
-      const out = join(proposalsDir, "building-blocks.md");
-      atomicWriteFileSync(out, markdown);
+      const out = join(proposalsDir, "building-blocks.yaml");
+      atomicWriteFileSync(out, blocksYaml);
       if (json) {
-        console.error("Wrote proposal to .arcbridge/proposals/building-blocks.md (not applied).");
+        console.error("Wrote proposal to .arcbridge/proposals/building-blocks.yaml (not applied).");
       } else {
-        console.log(`\nWrote proposal to .arcbridge/proposals/building-blocks.md (not applied).`);
+        console.log(`\nWrote proposal to .arcbridge/proposals/building-blocks.yaml (not applied).`);
         console.log("  Review it, then re-run with --apply to replace your building blocks.");
       }
     }

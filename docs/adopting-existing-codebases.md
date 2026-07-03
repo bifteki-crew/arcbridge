@@ -16,7 +16,7 @@ instead of a blank page.
 arcbridge init            # scaffold .arcbridge/ (one-time)
 arcbridge adopt           # propose blocks — writes .arcbridge/proposals/building-blocks.md
 # review the proposal, then:
-arcbridge adopt --apply   # replace .arcbridge/arc42/05-building-blocks.md
+arcbridge adopt --apply   # replace .arcbridge/arc42/05-building-blocks.yaml
 ```
 
 After `--apply`, every indexed file is mapped to a block (`arcbridge drift`
@@ -53,7 +53,7 @@ the code, then `apply` and commit.
 
 | Flag | Meaning |
 |------|---------|
-| `--apply` | Write to `.arcbridge/arc42/05-building-blocks.md` (default: write a reviewable copy to `.arcbridge/proposals/` only) |
+| `--apply` | Write to `.arcbridge/arc42/05-building-blocks.yaml` (default: write a reviewable copy to `.arcbridge/proposals/` only) |
 | `--service <name>` | Limit to / subdivide one configured service |
 | `--max-blocks <n>` | Cap blocks when subdividing a single service (default 12). No effect in multi-service mode — each service is one block. |
 | `--json` | Emit the structured proposal |

@@ -1,13 +1,14 @@
 import { join } from "node:path";
-import { existsSync, readFileSync, readdirSync, appendFileSync } from "node:fs";
-import { parse } from "yaml";
+import { existsSync, readFileSync, readdirSync, appendFileSync, unlinkSync } from "node:fs";
+import { parse, stringify } from "yaml";
 import matter from "gray-matter";
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
 import { openDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
+import { atomicWriteFileSync } from "../utils/fs.js";
 import type { InitProjectInput } from "../templates/types.js";
-import { BuildingBlocksFrontmatterSchema } from "../schemas/building-blocks.js";
+import { BuildingBlocksFileSchema } from "../schemas/building-blocks.js";
 import { QualityScenariosFileSchema } from "../schemas/quality-scenarios.js";
 import { PhasesFileSchema, TaskFileSchema } from "../schemas/phases.js";
 import { AdrFrontmatterSchema } from "../schemas/adrs.js";
@@ -44,38 +45,57 @@ function populateBuildingBlocks(
   targetDir: string,
 ): string[] {
   const warnings: string[] = [];
-  const filePath = join(
-    targetDir,
-    ".arcbridge",
-    "arc42",
-    "05-building-blocks.md",
-  );
+  const arc42Dir = join(targetDir, ".arcbridge", "arc42");
+  const yamlPath = join(arc42Dir, "05-building-blocks.yaml");
+  const legacyMdPath = join(arc42Dir, "05-building-blocks.md");
 
-  if (!existsSync(filePath)) {
+  // Building blocks are stored as a plain YAML file (renders cleanly on GitHub,
+  // consistent with 10-quality-scenarios.yaml). Older projects kept the blocks
+  // in `05-building-blocks.md` frontmatter — read that as a fallback and migrate
+  // it to `.yaml`.
+  let data: unknown;
+  let migrateFromMd = false;
+  let sourceLabel: string;
+
+  if (existsSync(yamlPath)) {
+    sourceLabel = ".arcbridge/arc42/05-building-blocks.yaml";
+    try {
+      data = parse(readFileSync(yamlPath, "utf-8"));
+    } catch (err) {
+      throw new RefreshValidationError(sourceLabel, err instanceof Error ? err.message : String(err));
+    }
+  } else if (existsSync(legacyMdPath)) {
+    sourceLabel = ".arcbridge/arc42/05-building-blocks.md";
+    try {
+      ({ data } = matter(readFileSync(legacyMdPath, "utf-8")));
+    } catch (err) {
+      throw new RefreshValidationError(sourceLabel, err instanceof Error ? err.message : String(err));
+    }
+    migrateFromMd = true;
+  } else {
     warnings.push("Building blocks file not found, skipping");
     return warnings;
   }
 
-  const raw = readFileSync(filePath, "utf-8");
-  let data: unknown;
-  try {
-    ({ data } = matter(raw));
-  } catch (err) {
-    throw new RefreshValidationError(
-      ".arcbridge/arc42/05-building-blocks.md",
-      err instanceof Error ? err.message : String(err),
-    );
-  }
-  const result = BuildingBlocksFrontmatterSchema.safeParse(data);
+  const result = BuildingBlocksFileSchema.safeParse(data);
 
   if (!result.success) {
-    throw new RefreshValidationError(
-      ".arcbridge/arc42/05-building-blocks.md",
-      formatZodIssues(result.error),
-    );
+    throw new RefreshValidationError(sourceLabel, formatZodIssues(result.error));
   }
 
   const fm = result.data;
+
+  // One-time migration: rewrite the legacy .md as canonical .yaml and drop the
+  // .md so it stops rendering as an unreadable frontmatter table on GitHub.
+  if (migrateFromMd) {
+    try {
+      atomicWriteFileSync(yamlPath, stringify(fm));
+      unlinkSync(legacyMdPath);
+      warnings.push("Migrated 05-building-blocks.md → 05-building-blocks.yaml");
+    } catch (err) {
+      warnings.push(`Could not migrate building blocks to YAML: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
   const insert = db.prepare(`
     INSERT OR IGNORE INTO building_blocks (id, name, level, parent_id, description, responsibility, code_paths, interfaces, service, last_synced)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -330,7 +350,7 @@ function populateAdrs(
  *
  * Throws RefreshValidationError (rolling back the transaction, leaving the
  * database unchanged) when a top-level source file exists but is malformed:
- * 05-building-blocks.md, 10-quality-scenarios.yaml, or phases.yaml.
+ * 05-building-blocks.yaml, 10-quality-scenarios.yaml, or phases.yaml.
  * Missing files and invalid individual task/ADR files only produce warnings.
  */
 export function refreshFromDocs(
