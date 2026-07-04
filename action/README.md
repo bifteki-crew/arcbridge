@@ -26,6 +26,11 @@ jobs:
       - uses: bifteki-crew/arcbridge/action@main
 ```
 
+> **Pin your ref.** `@main` can change without your review — prefer a release tag
+> (the first ArcBridge release tag that contains this action; `@main` is the only
+> valid ref until then) or, strictest, a full commit SHA:
+> `bifteki-crew/arcbridge/action@<sha>`.
+
 Requires a committed `.arcbridge/` directory (run `arcbridge init` /
 `arcbridge adopt` once and commit the result). `index.db` does not need to be
 committed — it is rebuilt from the YAML sources.
@@ -38,7 +43,7 @@ committed — it is rebuilt from the YAML sources.
 | `severity-threshold` | `error` | Fail on drift at/above this severity: `error`, `warning`, `info` |
 | `comment` | `true` | Post/update the sticky PR comment (needs `pull-requests: write`) |
 | `arcbridge-version` | `0.9.0` | `arcbridge` npm version to run |
-| `node-version` | `22` | Node.js to set up (arcbridge needs ≥ 22.16) |
+| `node-version` | `22.16.0` | Node.js to set up (arcbridge needs ≥ 22.16; default pins the tested minimum) |
 
 ## Outputs
 

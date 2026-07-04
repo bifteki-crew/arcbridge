@@ -15,6 +15,9 @@ const exitCode = process.env.DRIFT_EXIT ?? "unknown";
 const threshold = (process.env.SEVERITY_THRESHOLD ?? "error").toLowerCase();
 
 if (!(threshold in RANK)) {
+  // Emit the count outputs even on this early failure so downstream steps that
+  // consume them (reporting/metrics) always find them present.
+  setOutputs({ error: 0, warning: 0, info: 0 });
   fail(`Invalid severity-threshold "${threshold}" — use error, warning, or info.`);
 }
 

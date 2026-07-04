@@ -26,9 +26,9 @@ inputs:
     required: false
     default: "0.9.0"
   node-version:
-    description: "Node.js version to set up (arcbridge needs >= 22.16)."
+    description: "Node.js version to set up. arcbridge needs >= 22.16; the default pins the tested minimum for deterministic behavior."
     required: false
-    default: "22"
+    default: "22.16.0"
 
 outputs:
   error-count:
