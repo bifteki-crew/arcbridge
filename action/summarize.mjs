@@ -104,6 +104,9 @@ function setOutputs(c) {
 }
 
 function fail(reason) {
-  appendFileSync(process.env.GITHUB_OUTPUT, `fail=true\nfail-reason=${reason}\n`);
+  // GITHUB_OUTPUT entries are line-delimited key=value pairs — a newline in the
+  // reason (e.g. from an exception message) would corrupt the file, so flatten.
+  const oneLine = String(reason).replace(/\s*\r?\n\s*/g, " ").trim();
+  appendFileSync(process.env.GITHUB_OUTPUT, `fail=true\nfail-reason=${oneLine}\n`);
   process.exit(0); // verdict is enforced by the final action step, after the comment posts
 }
