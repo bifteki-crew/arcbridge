@@ -4,7 +4,8 @@ Status: Phases A, B, and C DONE. Phase A released v0.6.2/v0.6.3; monorepo
 per-service indexing (unplanned but load-bearing) shipped v0.7.0; Phase C
 `arcbridge adopt` shipped v0.8.0; Phase B (demo GIF, FAQ, example repo) landed
 July 2026, and v0.9.0 moved building blocks to `05-building-blocks.yaml` for
-clean GitHub rendering. Phases D, E, F remain.
+clean GitHub rendering. Phase D (drift GitHub Action) DONE July 2026. Phases E
+and F remain.
 Baseline (when written): v0.6.1 — 34 MCP tools, 7 templates, 5 adapters, 4 language indexers, 534 tests.
 Now: v0.9.0 — 35 MCP tools, 578 tests.
 
@@ -20,8 +21,8 @@ v0.7.0     (unplanned) Monorepo per-service indexing   DONE — enabled dogfoodi
 v0.8.0     Phase C: arcbridge adopt                    DONE — the headline
 —          Phase B: Demo & adoption assets             DONE — GIF, FAQ, example repo
 v0.9.0     (unplanned) Building blocks as .yaml        DONE — clean GitHub rendering
-—          Phase D: GitHub Action for drift            NEXT (~3–4 days)
-—          Phase E: Integration tests, then            planned (~7–9 days)
+—          Phase D: GitHub Action for drift            DONE — in-repo composite action
+—          Phase E: Integration tests, then            NEXT (~7–9 days)
                     MCP tool consolidation (breaking)
 Later      Phase F: Perf, contracts, metrics dashboard backlog
 ```
@@ -241,7 +242,15 @@ this path. (Net +1 tool now; reabsorbed in Phase E.)
 
 ---
 
-## Phase D — GitHub Action for drift (v0.7.1, ~3–4 days)
+## Phase D — GitHub Action for drift — DONE (July 2026)
+
+Shipped as an in-repo composite action (`action/`, used as
+`bifteki-crew/arcbridge/action@<ref>`): runs `drift --reindex --json`, writes a
+job summary, keeps a sticky PR comment updated, configurable
+`severity-threshold`, dogfooded in this repo's CI and the example repo.
+Deviation from the plan below: no separate `bifteki-crew/arcbridge-action`
+marketplace repo yet — a subdirectory action avoids a second repo; extract it
+if marketplace listing is wanted later. Original plan (for reference):
 
 Goal: a marketplace action that makes drift a PR-time gate and a recruitment
 channel (every adopting repo shows ArcBridge comments to its contributors).

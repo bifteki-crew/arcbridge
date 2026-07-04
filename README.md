@@ -400,7 +400,14 @@ Run `arcbridge init` then `arcbridge adopt` — it reverse-engineers building bl
 List each package under `services` in `.arcbridge/config.yaml` with its `path` and `tsconfig` (relative to `path`). `arcbridge sync`/`adopt` index each service by its own tsconfig and merge them into one model. Per-service indexing currently covers TypeScript.
 
 **How do I run drift in CI?**
-`arcbridge drift --reindex` is self-contained — it refreshes from docs and reindexes first, so it works on a fresh checkout where `index.db` isn't committed. It exits non-zero on error-severity drift.
+Use the [ArcBridge Drift Check action](action/README.md):
+
+```yaml
+- uses: actions/checkout@v4
+- uses: bifteki-crew/arcbridge/action@main
+```
+
+It runs `arcbridge drift --reindex` (self-contained — rebuilds the index from the committed `.arcbridge/` YAML on a fresh checkout), writes a job summary, keeps a sticky PR comment updated, and fails on drift at/above a configurable severity threshold. Or call `arcbridge drift --reindex` directly — it exits non-zero on error-severity drift.
 
 **`index.db` is missing after a fresh clone / `git clean`.**
 That's expected — `index.db` is a derived cache and is gitignored. ArcBridge recreates it from the YAML/markdown sources automatically on the next command.
