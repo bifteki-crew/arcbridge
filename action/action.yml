@@ -1,0 +1,132 @@
+name: "ArcBridge Drift Check"
+description: >-
+  Fail CI when code drifts from the committed ArcBridge architecture model
+  (.arcbridge/). Runs `arcbridge drift --reindex`, writes a job summary, and
+  posts a sticky PR comment with the findings.
+author: bifteki-crew
+branding:
+  icon: "layers"
+  color: "purple"
+
+inputs:
+  working-directory:
+    description: "Directory containing the .arcbridge/ model (monorepo support)."
+    required: false
+    default: "."
+  severity-threshold:
+    description: "Fail the check when drift at or above this severity exists: error, warning, or info."
+    required: false
+    default: "error"
+  comment:
+    description: "Post/update a sticky PR comment with the findings (needs pull-requests: write)."
+    required: false
+    default: "true"
+  arcbridge-version:
+    description: "arcbridge npm version to run."
+    required: false
+    default: "0.9.0"
+  node-version:
+    description: "Node.js version to set up. arcbridge needs >= 22.16; the default pins the tested minimum for deterministic behavior."
+    required: false
+    default: "22.16.0"
+
+outputs:
+  error-count:
+    description: "Number of error-severity drift entries."
+    value: ${{ steps.summarize.outputs.error-count }}
+  warning-count:
+    description: "Number of warning-severity drift entries."
+    value: ${{ steps.summarize.outputs.warning-count }}
+  info-count:
+    description: "Number of info-severity drift entries."
+    value: ${{ steps.summarize.outputs.info-count }}
+  total-count:
+    description: "Total number of drift entries."
+    value: ${{ steps.summarize.outputs.total-count }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Run arcbridge drift
+      id: drift
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        # Passed via env (not interpolated into the script) so shell
+        # metacharacters in the input can't alter the command being run
+        ARCBRIDGE_VERSION: ${{ inputs.arcbridge-version }}
+      run: |
+        # Exact version or dist-tag only (no ranges — their chars overlap shell syntax)
+        if ! [[ "$ARCBRIDGE_VERSION" =~ ^[0-9A-Za-z.+-]+$ ]]; then
+          echo "::error::Invalid arcbridge-version \"${ARCBRIDGE_VERSION//[^0-9A-Za-z.+-]/_}\" — use an exact npm version (e.g. 0.9.0) or dist-tag (e.g. latest)."
+          exit 1
+        fi
+        set +e
+        npx -y "arcbridge@$ARCBRIDGE_VERSION" drift --reindex --json \
+          > "$RUNNER_TEMP/arcbridge-drift.json" 2> "$RUNNER_TEMP/arcbridge-drift.log"
+        echo "exit-code=$?" >> "$GITHUB_OUTPUT"
+        set -e
+        # Reindex notes / warnings go to stderr — surface them in the job log
+        cat "$RUNNER_TEMP/arcbridge-drift.log" >&2 || true
+
+    - name: Summarize findings
+      id: summarize
+      shell: bash
+      env:
+        DRIFT_JSON: ${{ runner.temp }}/arcbridge-drift.json
+        DRIFT_LOG: ${{ runner.temp }}/arcbridge-drift.log
+        DRIFT_EXIT: ${{ steps.drift.outputs.exit-code }}
+        SEVERITY_THRESHOLD: ${{ inputs.severity-threshold }}
+        COMMENT_FILE: ${{ runner.temp }}/arcbridge-comment.md
+      run: node "${{ github.action_path }}/summarize.mjs"
+
+    - name: Post sticky PR comment
+      if: ${{ inputs.comment == 'true' && github.event_name == 'pull_request' }}
+      uses: actions/github-script@v7
+      env:
+        COMMENT_FILE: ${{ runner.temp }}/arcbridge-comment.md
+      with:
+        script: |
+          const fs = require("fs");
+          const marker = "<!-- arcbridge-drift -->";
+          try {
+            const body = fs.readFileSync(process.env.COMMENT_FILE, "utf-8");
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            // paginate: the marker comment may sit beyond the first page on long PRs
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100,
+            });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+          } catch (err) {
+            // Commenting is best-effort — a missing pull-requests:write permission
+            // (or an unwritten comment file) must not fail the drift check itself.
+            core.warning(`Could not post drift comment: ${err.message}`);
+          }
+
+    - name: Enforce severity threshold
+      shell: bash
+      env:
+        FAIL: ${{ steps.summarize.outputs.fail }}
+        REASON: ${{ steps.summarize.outputs.fail-reason }}
+      run: |
+        if [ "$FAIL" = "true" ]; then
+          # Escape workflow-command data (% first) so a reason containing
+          # %0A/%0D sequences or newlines can't inject into the annotation
+          esc="${REASON//'%'/%25}"
+          esc="${esc//$'\r'/%0D}"
+          esc="${esc//$'\n'/%0A}"
+          echo "::error::$esc"
+          exit 1
+        fi
+        echo "ArcBridge drift check passed."

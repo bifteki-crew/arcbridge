@@ -38,3 +38,17 @@ jobs:
       # .arcbridge/ model. Reindexes the monorepo and fails on error-severity
       # drift (e.g. an undeclared cross-block dependency or undocumented module).
       - run: node packages/cli/dist/index.js drift --reindex
+
+  # Dogfood the drift GitHub Action (action/) itself: same architecture check,
+  # but through the published-CLI path + summary + sticky PR comment.
+  # PR-only: push runs are covered by the check job's local-build drift step,
+  # and the pull-requests:write grant is only needed (or used) on PRs.
+  drift-action:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./action
