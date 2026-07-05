@@ -11,12 +11,10 @@ job summary, and keeps one sticky PR comment up to date with the findings.
 name: Architecture
 on:
   pull_request:
-  push:
-    branches: [main]
 
 permissions:
   contents: read
-  pull-requests: write   # for the sticky PR comment (optional)
+  pull-requests: write   # only used for the sticky PR comment — drop it (or set `comment: false`) to run without commenting
 
 jobs:
   drift:
@@ -25,6 +23,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: bifteki-crew/arcbridge/action@main
 ```
+
+Also running on `push` (e.g. to `main`)? Add the trigger but keep
+`pull-requests: write` scoped to a PR-only job — the comment is only ever
+posted on `pull_request` events, so push runs don't need the grant.
 
 > **Pin your ref.** `@main` can change without your review — prefer a release tag
 > (the first ArcBridge release tag that contains this action; `@main` is the only
