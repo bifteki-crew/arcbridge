@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -15,6 +15,7 @@ import { drift } from "../commands/drift.js";
 import { sync } from "../commands/sync.js";
 import { updateTask } from "../commands/update-task.js";
 import { refresh } from "../commands/refresh.js";
+import { adopt } from "../commands/adopt.js";
 import { generateConfigs } from "../commands/generate-configs.js";
 import { openProjectDb } from "../project.js";
 
@@ -318,5 +319,117 @@ describe("openProjectDb auto-recreation", () => {
     expect(phases.length).toBeGreaterThan(0);
 
     db.close();
+  });
+});
+
+describe("error paths and adopt", () => {
+  let adoptDir: string;
+  let corruptDir: string;
+  let bareDir: string;
+
+  beforeAll(() => {
+    bareDir = mkdtempSync(join(tmpdir(), "arcbridge-cli-bare-"));
+
+    // A project with real source so adopt has something to cluster
+    adoptDir = mkdtempSync(join(tmpdir(), "arcbridge-cli-adopt-"));
+    for (const dir of ["lib", "api"]) {
+      mkdirSync(join(adoptDir, "src", dir), { recursive: true });
+      for (let i = 0; i < 3; i++) {
+        writeFileSync(join(adoptDir, "src", dir, `f${i}.ts`), `export function ${dir}Fn${i}(): number { return ${i}; }\n`, "utf-8");
+      }
+    }
+    writeFileSync(
+      join(adoptDir, "tsconfig.json"),
+      JSON.stringify({ compilerOptions: { target: "ES2022", module: "ESNext", moduleResolution: "bundler" }, include: ["src/**/*"] }),
+      "utf-8",
+    );
+    generateConfig(adoptDir, { ...TEST_INPUT, name: "adopt-fixture", template: "api-service" });
+    generateArc42(adoptDir, { ...TEST_INPUT, name: "adopt-fixture", template: "api-service" });
+    generatePlan(adoptDir, { ...TEST_INPUT, name: "adopt-fixture", template: "api-service" });
+    const { db } = generateDatabase(adoptDir, { ...TEST_INPUT, name: "adopt-fixture", template: "api-service" });
+    db.close();
+
+    // A project whose phases.yaml is malformed
+    corruptDir = mkdtempSync(join(tmpdir(), "arcbridge-cli-corrupt-"));
+    generateConfig(corruptDir, { ...TEST_INPUT, name: "corrupt-fixture" });
+    generateArc42(corruptDir, { ...TEST_INPUT, name: "corrupt-fixture" });
+    generatePlan(corruptDir, { ...TEST_INPUT, name: "corrupt-fixture" });
+    const gen = generateDatabase(corruptDir, { ...TEST_INPUT, name: "corrupt-fixture" });
+    gen.db.close();
+    writeFileSync(join(corruptDir, ".arcbridge", "plan", "phases.yaml"), "phases: [unclosed\n", "utf-8");
+  });
+
+  afterAll(() => {
+    for (const d of [adoptDir, corruptDir, bareDir]) rmSync(d, { recursive: true, force: true });
+  });
+
+  it("status on an uninitialized directory names `arcbridge init`", async () => {
+    await expect(status(bareDir, false)).rejects.toThrow(/No ArcBridge project found.*arcbridge init/s);
+  });
+
+  it("drift on an uninitialized directory names `arcbridge init`", async () => {
+    await expect(drift(bareDir, false)).rejects.toThrow(/No ArcBridge project found.*arcbridge init/s);
+  });
+
+  it("refresh surfaces a malformed phases.yaml as RefreshValidationError", async () => {
+    await expect(refresh(corruptDir, false)).rejects.toThrow(/phases\.yaml/);
+  });
+
+  it("adopt --json emits the structured proposal and writes the proposals file", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await adopt(adoptDir, {}, true);
+      const parsed = JSON.parse(logSpy.mock.calls.at(-1)?.[0] as string);
+      expect(Array.isArray(parsed.blocks)).toBe(true);
+      const ids = parsed.blocks.map((b: { id: string }) => b.id);
+      expect(ids).toEqual(expect.arrayContaining(["lib", "api"]));
+      expect(parsed.unassigned).toEqual([]);
+      expect(parsed.stats.files).toBeGreaterThanOrEqual(6);
+      // Reviewable proposal written alongside, not applied
+      expect(existsSync(join(adoptDir, ".arcbridge", "proposals", "building-blocks.yaml"))).toBe(true);
+    } finally {
+      logSpy.mockRestore();
+      errSpy.mockRestore();
+    }
+  });
+
+  it("adopt --apply leaves drift --reindex clean (CLI mirror of the e2e property)", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await adopt(adoptDir, { apply: true }, false);
+      await drift(adoptDir, false, true);
+      expect(process.exitCode).not.toBe(1);
+    } finally {
+      logSpy.mockRestore();
+      errSpy.mockRestore();
+    }
+  });
+
+  it("adopt with an unknown --service lists the available services", async () => {
+    await expect(adopt(adoptDir, { service: "nope" }, false)).rejects.toThrow(/Available services/);
+  });
+
+  it("adopt reports the no-symbols case as an error with exit code 1", async () => {
+    const noSrc = mkdtempSync(join(tmpdir(), "arcbridge-cli-nosrc-"));
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      generateConfig(noSrc, { ...TEST_INPUT, name: "no-src" });
+      generateArc42(noSrc, { ...TEST_INPUT, name: "no-src" });
+      generatePlan(noSrc, { ...TEST_INPUT, name: "no-src" });
+      const gen = generateDatabase(noSrc, { ...TEST_INPUT, name: "no-src" });
+      gen.db.close();
+
+      await adopt(noSrc, {}, true);
+      const parsed = JSON.parse(logSpy.mock.calls.at(-1)?.[0] as string);
+      expect(parsed).toHaveProperty("error");
+      expect(process.exitCode).toBe(1);
+    } finally {
+      logSpy.mockRestore();
+      errSpy.mockRestore();
+      rmSync(noSrc, { recursive: true, force: true });
+    }
   });
 });
