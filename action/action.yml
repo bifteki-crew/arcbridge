@@ -112,7 +112,12 @@ runs:
         REASON: ${{ steps.summarize.outputs.fail-reason }}
       run: |
         if [ "$FAIL" = "true" ]; then
-          echo "::error::$REASON"
+          # Escape workflow-command data (% first) so a reason containing
+          # %0A/%0D sequences or newlines can't inject into the annotation
+          esc="${REASON//'%'/%25}"
+          esc="${esc//$'\r'/%0D}"
+          esc="${esc//$'\n'/%0A}"
+          echo "::error::$esc"
           exit 1
         fi
         echo "ArcBridge drift check passed."

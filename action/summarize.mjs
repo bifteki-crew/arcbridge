@@ -15,8 +15,17 @@ const exitCode = process.env.DRIFT_EXIT ?? "unknown";
 const threshold = (process.env.SEVERITY_THRESHOLD ?? "error").toLowerCase();
 
 if (!(threshold in RANK)) {
-  // Emit the count outputs even on this early failure so downstream steps that
-  // consume them (reporting/metrics) always find them present.
+  // Even on this early failure: emit the count outputs (downstream consumers
+  // must always find them) and write the summary/comment (diagnosable from the
+  // PR UI, matching the "summary on every run" contract).
+  writeArtifacts(
+    [
+      MARKER,
+      "## ArcBridge drift check — misconfigured",
+      "",
+      `Invalid \`severity-threshold\` input: \`${threshold}\`. Use \`error\`, \`warning\`, or \`info\`.`,
+    ].join("\n"),
+  );
   setOutputs({ error: 0, warning: 0, info: 0 });
   fail(`Invalid severity-threshold "${threshold}" — use error, warning, or info.`);
 }
