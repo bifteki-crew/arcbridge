@@ -17,7 +17,7 @@ export function registerManageTasks(
 ): void {
   server.tool(
     "arcbridge_manage_tasks",
-    "Create, update, or delete tasks. `action: create` adds a task to a phase (requires phase_id + title). `action: update` changes a task's status (requires task_id + status) — use status 'cancelled' for tasks no longer relevant, preserving the decision trail. `action: delete` removes tasks permanently (requires task_ids) — prefer update→cancelled for planned-but-dropped work. To list tasks, use `arcbridge_get_phase_plan`.",
+    "Create, update, or delete tasks. `action: create` adds a task to a phase (requires phase_id + title). `action: update` changes a task's status (requires task_id + status) — use status 'cancelled' for tasks no longer relevant, preserving the decision trail. `action: delete` removes tasks permanently (task_ids for batch, or task_id for one) — prefer update→cancelled for planned-but-dropped work. To list tasks, use `arcbridge_get_phase_plan`.",
     {
       target_dir: z.string().describe("Absolute path to the project directory"),
       action: z.enum(["create", "update", "delete"]).describe("What to do"),
@@ -35,7 +35,7 @@ export function registerManageTasks(
         .array(z.string())
         .optional()
         .describe("create: acceptance criteria"),
-      task_id: z.string().optional().describe("update (required): task ID, e.g. 'task-0.1-init'"),
+      task_id: z.string().optional().describe("update (required) / delete (single): task ID, e.g. 'task-0.1-init'"),
       status: z
         .enum(["in-progress", "done", "blocked", "cancelled"])
         .optional()

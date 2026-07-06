@@ -43,7 +43,7 @@ function generateClaudeMd(config: ArcBridgeConfig): string {
     "Then use:",
     "- `arcbridge_get_guidance` — get context-aware guidance for the file/block you're working on",
     "- `arcbridge_get_phase_plan` — check what tasks are expected in the current phase",
-    "- `arcbridge_query_symbols` / `arcbridge_query_symbols` — understand existing code",
+    "- `arcbridge_query_symbols` — understand existing code (pass `symbol_id` for full detail)",
     "- `arcbridge_get_dependency_graph` — check module dependencies before adding new ones",
     "- `arcbridge_manage_tasks` — mark tasks as in-progress or done as you complete them",
     "- `arcbridge_reindex` — re-index after significant code changes",

@@ -14,7 +14,6 @@ export function qualityGuardianTemplate(): AgentRole {
       "arcbridge_query_symbols",
       "arcbridge_get_component_graph",
       "arcbridge_get_boundary_analysis",
-      "arcbridge_quality_scenarios",
       "arcbridge_verify_scenarios",
       "arcbridge_run_role_check",
     ],
