@@ -1,7 +1,5 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, safeParseJson, escapeLike, normalizeCodePath } from "../helpers.js";
+import { ensureDb, notInitialized, safeParseJson, escapeLike, normalizeCodePath, type ToolResult } from "../helpers.js";
 import type { BlockRow, ScenarioRow, AdrRow, TaskRow } from "../db-types.js";
 
 interface ChildRow {
@@ -10,22 +8,11 @@ interface ChildRow {
   responsibility: string;
 }
 
-export function registerGetBuildingBlock(
-  server: McpServer,
+/** Detail mode of arcbridge_get_building_blocks (block_id set). */
+export async function handleGetBuildingBlock(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_get_building_block",
-    "Get detailed information about a single building block: its arc42 description, code modules, interfaces, quality scenarios, ADRs, and tasks.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      block_id: z
-        .string()
-        .describe("Building block ID (e.g., 'auth-module')"),
-    },
-    async (params) => {
+  params: { target_dir: string; block_id: string },
+): Promise<ToolResult> {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -205,6 +192,4 @@ export function registerGetBuildingBlock(
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],
       };
-    },
-  );
 }

@@ -27,8 +27,8 @@ ${triggerNote}
 ## Steps
 
 1. First, call \`arcbridge_check_drift\` to detect any architecture drift
-2. Call \`arcbridge_get_current_tasks\` to see the current phase progress
-3. Call \`arcbridge_propose_arc42_update\` with \`changes_since: "last-sync"\` to generate update proposals
+2. Call \`arcbridge_get_phase_plan\` to see the current phase progress
+3. Call \`arcbridge_arc42\` with \`changes_since: "last-sync"\` to generate update proposals
 4. Present the proposals to the developer for review
 5. If the developer approves, update the relevant arc42 files and run \`arcbridge_reindex\`
 

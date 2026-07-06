@@ -1,31 +1,19 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
+import { ensureDb, notInitialized, safeParseJson, type ToolResult } from "../helpers.js";
 import type { TaskRow, PhaseRow } from "../db-types.js";
 
-export function registerGetCurrentTasks(
-  server: McpServer,
+export interface CurrentTasksParams {
+  target_dir: string;
+  phase_id?: string;
+  status?: "todo" | "in-progress" | "done" | "blocked";
+}
+
+/** `view: tasks` mode of arcbridge_get_phase_plan. */
+export async function handleGetCurrentTasks(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_get_current_tasks",
-    "Get tasks for a phase. Defaults to the current phase (in-progress, or first planned). Pass phase_id to get tasks for a specific phase.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      phase_id: z
-        .string()
-        .optional()
-        .describe("Get tasks for a specific phase by ID (default: current/first planned phase)"),
-      status: z
-        .enum(["todo", "in-progress", "done", "blocked"])
-        .optional()
-        .describe("Filter tasks by status"),
-    },
-    async (params) => {
+  params: CurrentTasksParams,
+): Promise<ToolResult> {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -160,13 +148,11 @@ export function registerGetCurrentTasks(
           "**Warning:** The following phases have no tasks yet:",
           ...emptyFuturePhases.map((p) => `- Phase ${p.phase_number}: ${p.name} (\`${p.id}\`)`),
           "",
-          "Use `arcbridge_create_task` to plan tasks before reaching these phases.",
+          "Use `arcbridge_manage_tasks` to plan tasks before reaching these phases.",
         );
       }
 
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],
       };
-    },
-  );
 }

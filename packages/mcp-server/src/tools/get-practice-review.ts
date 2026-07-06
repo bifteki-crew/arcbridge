@@ -418,7 +418,7 @@ function reviewDocumentation(
         dimension: "Documentation",
         severity: "warning",
         description: `${warnings.length} documentation gap(s) found (undocumented modules, missing code paths, etc.).`,
-        action: "Run `arcbridge_propose_arc42_update` to generate update proposals.",
+        action: "Run `arcbridge_arc42` to generate update proposals.",
       });
     }
   }

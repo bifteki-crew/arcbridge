@@ -1,5 +1,3 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   resolveRef,
   getChangedFiles,
@@ -9,30 +7,20 @@ import {
 } from "@arcbridge/core";
 import type { Database } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath, escapeLike } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath, escapeLike, type ToolResult } from "../helpers.js";
 import type { BlockRow, SymbolRow } from "../db-types.js";
 
-export function registerProposeArc42Update(
-  server: McpServer,
+export interface ProposeArc42Params {
+  target_dir: string;
+  changes_since: string;
+  update_sync_point: boolean;
+}
+
+/** `propose` action of arcbridge_arc42. */
+export async function handleProposeArc42Update(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_propose_arc42_update",
-    "Analyze code changes since a reference point and generate specific, actionable proposals for updating arc42 documentation.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      changes_since: z
-        .string()
-        .default("last-sync")
-        .describe("Reference point: 'last-commit', 'last-sync', 'last-phase', or a git ref"),
-      update_sync_point: z
-        .boolean()
-        .default(false)
-        .describe("Update the stored sync commit to HEAD after generating proposals"),
-    },
-    async (params) => {
+  params: ProposeArc42Params,
+): Promise<ToolResult> {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -96,8 +84,6 @@ export function registerProposeArc42Update(
       }
 
       return textResult(lines.join("\n"));
-    },
-  );
 }
 
 interface Proposal {

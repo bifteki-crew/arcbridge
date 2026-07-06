@@ -1,9 +1,7 @@
-import { z } from "zod";
 import { readFileSync, existsSync } from "node:fs";
 import { logWarn, resolveWithin } from "@arcbridge/core";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult, safeParseJson } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, safeParseJson, type ToolResult } from "../helpers.js";
 import type { SymbolRow } from "../db-types.js";
 
 interface DepRow {
@@ -13,28 +11,17 @@ interface DepRow {
   file_path: string;
 }
 
-export function registerGetSymbol(
-  server: McpServer,
+export interface GetSymbolParams {
+  target_dir: string;
+  symbol_id: string;
+  include_source: boolean;
+}
+
+/** Detail mode of arcbridge_query_symbols. */
+export async function handleGetSymbol(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_get_symbol",
-    "Get detailed information about a specific TypeScript symbol including its source code, type signature, and relationships.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      symbol_id: z
-        .string()
-        .describe(
-          "Symbol ID (e.g. 'src/utils.ts::formatName#function')",
-        ),
-      include_source: z
-        .boolean()
-        .default(true)
-        .describe("Include source code snippet (default: true)"),
-    },
-    async (params) => {
+  params: GetSymbolParams,
+): Promise<ToolResult> {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -44,7 +31,7 @@ export function registerGetSymbol(
 
       if (!symbol) {
         return textResult(
-          `Symbol not found: \`${params.symbol_id}\`\n\nUse \`arcbridge_search_symbols\` to find symbols by name.`,
+          `Symbol not found: \`${params.symbol_id}\`\n\nUse \`arcbridge_query_symbols\` to find symbols by name.`,
         );
       }
 
@@ -165,6 +152,4 @@ export function registerGetSymbol(
       }
 
       return textResult(lines.join("\n"));
-    },
-  );
 }

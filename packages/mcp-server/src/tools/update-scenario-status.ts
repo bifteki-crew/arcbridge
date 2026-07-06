@@ -1,8 +1,6 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { syncScenarioToYaml, transaction } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, type ToolResult } from "../helpers.js";
 
 interface ScenarioRow {
   id: string;
@@ -12,29 +10,18 @@ interface ScenarioRow {
   verification: string;
 }
 
-export function registerUpdateScenarioStatus(
-  server: McpServer,
+export interface UpdateScenarioParams {
+  target_dir: string;
+  scenario_id: string;
+  status: "passing" | "failing" | "untested" | "partial";
+  linked_tests?: string[];
+}
+
+/** `update` action of arcbridge_quality_scenarios. */
+export async function handleUpdateScenarioStatus(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_update_scenario_status",
-    "Update a quality scenario's status and optionally link test files. Use this to mark scenarios as passing/failing after manual verification, or to link test files so `arcbridge_verify_scenarios` can run them automatically.",
-    {
-      target_dir: z.string().describe("Absolute path to the project directory"),
-      scenario_id: z.string().describe("Quality scenario ID (e.g., 'SEC-01', 'PERF-01')"),
-      status: z
-        .enum(["passing", "failing", "untested", "partial"])
-        .describe("New status for the scenario"),
-      linked_tests: z
-        .array(z.string())
-        .optional()
-        .describe(
-          "Test file paths to link to this scenario (e.g., ['src/__tests__/auth.test.ts']). " +
-          "Once linked, `arcbridge_verify_scenarios` can run them automatically. " +
-          "Also sets verification to 'semi-automatic' if currently 'manual'.",
-        ),
-    },
-    async (params) => {
+  params: UpdateScenarioParams,
+): Promise<ToolResult> {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -124,6 +111,4 @@ export function registerUpdateScenarioStatus(
       }
 
       return textResult(lines.join("\n"));
-    },
-  );
 }

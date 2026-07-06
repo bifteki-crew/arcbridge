@@ -27,7 +27,7 @@ describe("agent activity metrics", () => {
   describe("insertActivity", () => {
     it("inserts a row and returns the row ID", () => {
       const id = insertActivity(db, {
-        toolName: "arcbridge_update_task",
+        toolName: "arcbridge_manage_tasks",
         action: "implement login",
         model: "claude-sonnet-4",
       });
@@ -37,7 +37,7 @@ describe("agent activity metrics", () => {
       const row = db
         .prepare("SELECT * FROM agent_activity WHERE id = ?")
         .get(id) as Record<string, unknown>;
-      expect(row.tool_name).toBe("arcbridge_update_task");
+      expect(row.tool_name).toBe("arcbridge_manage_tasks");
       expect(row.action).toBe("implement login");
       expect(row.model).toBe("claude-sonnet-4");
     });

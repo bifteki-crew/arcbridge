@@ -4,6 +4,7 @@ import { refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
 import type { PhaseRow, TaskRow } from "../db-types.js";
+import { handleGetCurrentTasks } from "./get-current-tasks.js";
 
 export function registerGetPhasePlan(
   server: McpServer,
@@ -11,11 +12,15 @@ export function registerGetPhasePlan(
 ): void {
   server.tool(
     "arcbridge_get_phase_plan",
-    "Get the phase plan with phases, tasks, status, and gate requirements. Use filters to reduce output for large projects.",
+    "Get the phase plan with phases, tasks, status, and gate requirements. Use filters to reduce output for large projects. Set `view: tasks` for just the task list of one phase — defaulting to the active phase — which replaces arcbridge_get_current_tasks (0.10.0).",
     {
       target_dir: z
         .string()
         .describe("Absolute path to the project directory"),
+      view: z
+        .enum(["plan", "tasks"])
+        .default("plan")
+        .describe("'plan' shows phases with gates; 'tasks' shows one phase's task list (phase_id defaults to the in-progress or first planned phase)"),
       phase_id: z
         .string()
         .optional()
@@ -23,13 +28,24 @@ export function registerGetPhasePlan(
       status: z
         .enum(["planned", "in-progress", "complete", "blocked"])
         .optional()
-        .describe("Filter phases by status"),
+        .describe("view 'plan': filter phases by status"),
+      task_status: z
+        .enum(["todo", "in-progress", "done", "blocked"])
+        .optional()
+        .describe("view 'tasks': filter tasks by status"),
       include_completed: z
         .boolean()
         .default(true)
-        .describe("Include completed phases (default: true). Set to false to hide completed phases and reduce output."),
+        .describe("view 'plan': include completed phases (set false to reduce output)"),
     },
     async (params) => {
+      if (params.view === "tasks") {
+        return handleGetCurrentTasks(ctx, {
+          target_dir: params.target_dir,
+          phase_id: params.phase_id,
+          status: params.task_status,
+        });
+      }
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 

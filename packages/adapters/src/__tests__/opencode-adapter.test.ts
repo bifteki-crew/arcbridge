@@ -43,7 +43,7 @@ const TEST_ROLES: AgentRole[] = [
     name: "Code Reviewer",
     description: "On-demand code review",
     version: 1,
-    required_tools: ["arcbridge_get_building_block"],
+    required_tools: ["arcbridge_get_building_blocks"],
     denied_tools: [],
     read_only: true,
     quality_focus: ["maintainability", "reliability"],

@@ -305,7 +305,15 @@ Original plan (for reference):
   (uninitialized dir, malformed YAML, bad task id) and `--json` shapes.
 - These tests define the behavioral contract that consolidation must preserve.
 
-### E2. Tool consolidation 34 → ~22 (~4–6 days, breaking)
+### E2. Tool consolidation 35 → 25 (breaking) — DONE (July 2026)
+
+Shipped merges 1–8 of the sign-off (user chose 25 tools over the deeper 22 —
+the last three candidate merges combined tools with genuinely different
+inputs/outputs). Implementation: old tool files became exported handler
+modules (bodies untouched — the E1 contract suite pins behavior); thin merged
+registrations dispatch on `action`. A guard test fails if any retired tool
+name reappears in tool sources, adapters, or role templates.
+Original plan (for reference):
 
 Rationale: ~15–20K tokens of tool schemas per session today; mergeable CRUD
 clusters degrade agent tool selection. Target ~22 tools / ~9–11K tokens.

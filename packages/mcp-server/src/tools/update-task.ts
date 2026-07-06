@@ -1,32 +1,21 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { syncTaskToYaml } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized } from "../helpers.js";
+import { ensureDb, notInitialized, type ToolResult } from "../helpers.js";
 import { autoRecord } from "../auto-record.js";
 import type { TaskRow } from "../db-types.js";
 
-export function registerUpdateTask(
-  server: McpServer,
+export interface UpdateTaskParams {
+  target_dir: string;
+  task_id: string;
+  status: "in-progress" | "done" | "blocked" | "cancelled";
+  notes?: string;
+}
+
+/** `update` action of arcbridge_manage_tasks. */
+export async function handleUpdateTask(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_update_task",
-    "Update a task's status. Use this to mark tasks as in-progress, done, or blocked as you work.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      task_id: z.string().describe("Task ID (e.g., 'task-0.1-init-nextjs')"),
-      status: z
-        .enum(["in-progress", "done", "blocked", "cancelled"])
-        .describe("New status. Use 'cancelled' for tasks that are no longer relevant."),
-      notes: z
-        .string()
-        .optional()
-        .describe("Optional notes about the status change"),
-    },
-    async (params) => {
+  params: UpdateTaskParams,
+): Promise<ToolResult> {
       const start = Date.now();
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
@@ -41,7 +30,7 @@ export function registerUpdateTask(
           content: [
             {
               type: "text" as const,
-              text: `Task '${params.task_id}' not found. Use \`arcbridge_get_current_tasks\` to see available tasks.`,
+              text: `Task '${params.task_id}' not found. Use \`arcbridge_get_phase_plan\` to see available tasks.`,
             },
           ],
         };
@@ -104,7 +93,7 @@ export function registerUpdateTask(
       }
 
       autoRecord(db, params.target_dir, {
-        toolName: "arcbridge_update_task",
+        toolName: "arcbridge_manage_tasks",
         action: `${task.id}: ${oldStatus} → ${params.status}`,
         taskId: params.task_id,
         phaseId: task.phase_id,
@@ -114,6 +103,4 @@ export function registerUpdateTask(
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],
       };
-    },
-  );
 }

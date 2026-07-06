@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
 import type { BlockRow } from "../db-types.js";
+import { handleGetBuildingBlock } from "./get-building-block.js";
 
 interface ScenarioLinkRow {
   id: string;
@@ -17,13 +18,23 @@ export function registerGetBuildingBlocks(
 ): void {
   server.tool(
     "arcbridge_get_building_blocks",
-    "Get all architecture building blocks with their code mappings, responsibilities, and linked quality scenarios.",
+    "Get the architecture building blocks with code mappings, responsibilities, and linked quality scenarios. Pass `block_id` for the deep view of one block (arc42 description, code modules, interfaces, ADRs, tasks). Replaces arcbridge_get_building_block (0.10.0).",
     {
       target_dir: z
         .string()
         .describe("Absolute path to the project directory"),
+      block_id: z
+        .string()
+        .optional()
+        .describe("Deep-dive a single block by ID (e.g. 'auth-module'); omit to list all blocks"),
     },
     async (params) => {
+      if (params.block_id) {
+        return handleGetBuildingBlock(ctx, {
+          target_dir: params.target_dir,
+          block_id: params.block_id,
+        });
+      }
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 

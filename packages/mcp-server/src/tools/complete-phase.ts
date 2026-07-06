@@ -1,5 +1,3 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   detectDrift,
   writeDriftLog,
@@ -14,39 +12,23 @@ import {
   transaction,
 } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, type ToolResult } from "../helpers.js";
 import type { PhaseRow, TaskRow, ScenarioRow } from "../db-types.js";
 import { autoRecord } from "../auto-record.js";
 
-export function registerCompletePhase(
-  server: McpServer,
+export interface CompletePhaseParams {
+  target_dir: string;
+  phase_id?: string;
+  notes?: string;
+  auto_infer: boolean;
+  run_tests: boolean;
+}
+
+/** `complete` action of arcbridge_manage_phases — validates all gates. */
+export async function handleCompletePhase(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_complete_phase",
-    "Attempt to complete a phase by validating all gates: tasks done, no critical drift, quality scenarios passing. Transitions the phase to 'complete' if all gates pass.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      phase_id: z
-        .string()
-        .optional()
-        .describe("Phase ID to complete (defaults to current in-progress phase)"),
-      notes: z
-        .string()
-        .optional()
-        .describe("Optional notes about this phase completion"),
-      auto_infer: z
-        .boolean()
-        .default(true)
-        .describe("Automatically infer task statuses from code state before checking gates"),
-      run_tests: z
-        .boolean()
-        .default(false)
-        .describe("Run linked tests for quality scenarios before checking the quality gate"),
-    },
-    async (params) => {
+  params: CompletePhaseParams,
+): Promise<ToolResult> {
       const start = Date.now();
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
@@ -306,7 +288,7 @@ export function registerCompletePhase(
           "- [ ] **10 Quality Scenarios** — Any new quality requirements or changed thresholds?",
           "- [ ] **11 Risks & Debt** — Any known limitations or tech debt introduced?",
           "",
-          "*Run `arcbridge_propose_arc42_update` to auto-detect documentation gaps.*",
+          "*Run `arcbridge_arc42` to auto-detect documentation gaps.*",
         );
       } else {
         const failCount = gates.filter((g) => !g.pass).length;
@@ -318,13 +300,11 @@ export function registerCompletePhase(
       }
 
       autoRecord(db, params.target_dir, {
-        toolName: "arcbridge_complete_phase",
+        toolName: "arcbridge_manage_phases",
         action: `${phase.name}: ${allPass ? "PASSED" : "BLOCKED"}`,
         phaseId: params.phase_id,
         durationMs: Date.now() - start,
       });
 
       return textResult(lines.join("\n"));
-    },
-  );
 }

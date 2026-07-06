@@ -1,41 +1,21 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { addTaskToYaml } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized } from "../helpers.js";
+import { ensureDb, notInitialized, type ToolResult } from "../helpers.js";
 
-export function registerCreateTask(
-  server: McpServer,
+export interface CreateTaskParams {
+  target_dir: string;
+  phase_id: string;
+  title: string;
+  building_block?: string;
+  quality_scenarios: string[];
+  acceptance_criteria: string[];
+}
+
+/** `create` action of arcbridge_manage_tasks. */
+export async function handleCreateTask(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_create_task",
-    "Create a new task in a phase. Links it to a building block and quality scenarios.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      phase_id: z.string().describe("Phase ID to add the task to"),
-      title: z.string().min(1).describe("Task title"),
-      building_block: z
-        .string()
-        .min(1)
-        .optional()
-        .describe(
-          "Building block this task belongs to. Use `arcbridge_get_building_blocks` " +
-          "to see available blocks. If no suitable block exists, create one in " +
-          "`.arcbridge/arc42/05-building-blocks.yaml` and run `arcbridge_reindex` first.",
-        ),
-      quality_scenarios: z
-        .array(z.string())
-        .default([])
-        .describe("Quality scenario IDs this task addresses"),
-      acceptance_criteria: z
-        .array(z.string())
-        .default([])
-        .describe("Acceptance criteria for this task"),
-    },
-    async (params) => {
+  params: CreateTaskParams,
+): Promise<ToolResult> {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -150,6 +130,4 @@ export function registerCreateTask(
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],
       };
-    },
-  );
 }

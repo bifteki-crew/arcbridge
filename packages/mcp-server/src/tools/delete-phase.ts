@@ -1,24 +1,18 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { deletePhaseFromYaml, refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, type ToolResult } from "../helpers.js";
 import type { PhaseRow, CountRow } from "../db-types.js";
 
-export function registerDeletePhase(
-  server: McpServer,
+export interface DeletePhaseParams {
+  target_dir: string;
+  phase_id: string;
+}
+
+/** `delete` action of arcbridge_manage_phases. */
+export async function handleDeletePhase(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_delete_phase",
-    "Delete a phase and all its tasks permanently. Use this to remove template phases that don't apply to this project. Phases with status 'in-progress' or 'done' cannot be deleted — change their status first if you really need to remove them.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      phase_id: z.string().describe("Phase ID to delete"),
-    },
-    async (params) => {
+  params: DeletePhaseParams,
+): Promise<ToolResult> {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -62,6 +56,4 @@ export function registerDeletePhase(
       }
 
       return textResult(lines.join("\n"));
-    },
-  );
 }

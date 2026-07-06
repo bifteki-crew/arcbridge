@@ -30,7 +30,16 @@ export function ensureDb(
   return ctx.db;
 }
 
-export function notInitialized() {
+/**
+ * Shape every tool handler returns — text content blocks. A type alias (not an
+ * interface) so it gets an implicit index signature and stays assignable to
+ * the SDK's CallToolResult.
+ */
+export type ToolResult = {
+  content: { type: "text"; text: string }[];
+};
+
+export function notInitialized(): ToolResult {
   return {
     content: [
       {

@@ -1,64 +1,35 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult, escapeLike } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, escapeLike, type ToolResult } from "../helpers.js";
 import type { SymbolRow } from "../db-types.js";
 
-export function registerSearchSymbols(
-  server: McpServer,
+export type SymbolKindFilter =
+  | "function"
+  | "class"
+  | "type"
+  | "constant"
+  | "interface"
+  | "enum"
+  | "variable"
+  | "component"
+  | "hook"
+  | "context";
+
+export interface SearchSymbolsParams {
+  target_dir: string;
+  query?: string;
+  service?: string;
+  kind?: SymbolKindFilter;
+  file_path?: string;
+  is_exported?: boolean;
+  building_block?: string;
+  limit: number;
+}
+
+/** Search mode of arcbridge_query_symbols. */
+export async function handleSearchSymbols(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_search_symbols",
-    "Search code symbols by name, kind, file path, or building block. Supports TypeScript and C#. Returns matching symbols with type signatures.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      query: z
-        .string()
-        .optional()
-        .describe("Search term to match against symbol names"),
-      service: z
-        .string()
-        .optional()
-        .describe("Filter by service name (for multi-project solutions). Omit to search all services."),
-      kind: z
-        .enum([
-          "function",
-          "class",
-          "type",
-          "constant",
-          "interface",
-          "enum",
-          "variable",
-          "component",
-          "hook",
-          "context",
-        ])
-        .optional()
-        .describe("Filter by symbol kind"),
-      file_path: z
-        .string()
-        .optional()
-        .describe("Filter by file path (prefix match)"),
-      is_exported: z
-        .boolean()
-        .optional()
-        .describe("Filter by export status"),
-      building_block: z
-        .string()
-        .optional()
-        .describe("Filter by building block ID (matches against code_paths)"),
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(200)
-        .default(50)
-        .describe("Maximum results to return (default: 50)"),
-    },
-    async (params) => {
+  params: SearchSymbolsParams,
+): Promise<ToolResult> {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -165,6 +136,4 @@ export function registerSearchSymbols(
       }
 
       return textResult(lines.join("\n"));
-    },
-  );
 }

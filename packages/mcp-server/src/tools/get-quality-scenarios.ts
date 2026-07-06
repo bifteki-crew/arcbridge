@@ -1,26 +1,19 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { QualityCategorySchema, QualityPrioritySchema, QualityScenarioStatusSchema } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, safeParseJson } from "../helpers.js";
+import { ensureDb, notInitialized, safeParseJson, type ToolResult } from "../helpers.js";
 import type { ScenarioRow } from "../db-types.js";
 
-export function registerGetQualityScenarios(
-  server: McpServer,
+export interface ListScenariosParams {
+  target_dir: string;
+  category?: string;
+  status?: string;
+  priority?: string;
+}
+
+/** `list` action of arcbridge_quality_scenarios. */
+export async function handleListScenarios(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_get_quality_scenarios",
-    "Get quality scenarios, optionally filtered by category. Shows scenario details, linked code/tests, and current status.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      category: QualityCategorySchema.optional().describe("Filter by category"),
-      status: QualityScenarioStatusSchema.optional().describe("Filter by status"),
-      priority: QualityPrioritySchema.optional().describe("Filter by priority (must/should/could)"),
-    },
-    async (params) => {
+  params: ListScenariosParams,
+): Promise<ToolResult> {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -136,6 +129,4 @@ export function registerGetQualityScenarios(
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],
       };
-    },
-  );
 }

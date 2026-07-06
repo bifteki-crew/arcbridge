@@ -1,28 +1,19 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { deleteTaskFromYaml, refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, type ToolResult } from "../helpers.js";
 import type { TaskRow } from "../db-types.js";
 
-export function registerDeleteTask(
-  server: McpServer,
+export interface DeleteTaskParams {
+  target_dir: string;
+  task_id?: string;
+  task_ids?: string[];
+}
+
+/** `delete` action of arcbridge_manage_tasks. */
+export async function handleDeleteTask(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_delete_task",
-    "Delete one or more tasks permanently. Use this to remove example/template tasks or duplicates. Pass task_ids (array) for batch deletion, or task_id (string) for a single task. For tasks that were planned but are no longer relevant, prefer `arcbridge_update_task` with status 'cancelled' instead — this preserves the decision trail.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      task_id: z.string().optional().describe("Single task ID to delete (deprecated — use task_ids)"),
-      task_ids: z
-        .array(z.string())
-        .optional()
-        .describe("Task IDs to delete (preferred)"),
-    },
-    async (params) => {
+  params: DeleteTaskParams,
+): Promise<ToolResult> {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -73,6 +64,4 @@ export function registerDeleteTask(
       }
 
       return textResult(lines.join("\n"));
-    },
-  );
 }

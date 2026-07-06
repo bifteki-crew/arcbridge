@@ -1,32 +1,20 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { addPhaseToYaml, refreshFromDocs } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, type ToolResult } from "../helpers.js";
 
-export function registerCreatePhase(
-  server: McpServer,
+export interface CreatePhaseParams {
+  target_dir: string;
+  name: string;
+  description: string;
+  phase_number?: number;
+  gate_requirements: string[];
+}
+
+/** `create` action of arcbridge_manage_phases. */
+export async function handleCreatePhase(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_create_phase",
-    "Create a new phase in the project plan. Use this to add phases beyond the initial 4-phase template when the project scope requires it.",
-    {
-      target_dir: z.string().describe("Absolute path to the project directory"),
-      name: z.string().min(1).describe("Phase name (e.g., 'Integrations', 'Performance Optimization')"),
-      description: z.string().min(1).describe("What this phase covers"),
-      phase_number: z
-        .number()
-        .int()
-        .min(0)
-        .optional()
-        .describe("Phase number (default: next after highest existing phase)"),
-      gate_requirements: z
-        .array(z.string())
-        .default([])
-        .describe("Requirements that must be met to complete this phase"),
-    },
-    async (params) => {
+  params: CreatePhaseParams,
+): Promise<ToolResult> {
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 
@@ -93,10 +81,8 @@ export function registerCreatePhase(
 
       lines.push(
         "",
-        `Use \`arcbridge_create_task\` with phase ID \`${phaseId}\` to add tasks.`,
+        `Use \`arcbridge_manage_tasks\` (action: create) with phase ID \`${phaseId}\` to add tasks.`,
       );
 
       return textResult(lines.join("\n"));
-    },
-  );
 }

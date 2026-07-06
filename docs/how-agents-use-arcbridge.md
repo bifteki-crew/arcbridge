@@ -36,7 +36,7 @@ Existing patterns in this area: verifyToken(), refreshSession(), authGuard()
 
 ### Step 2 — Understand a specific function
 
-The agent calls `arcbridge_get_symbol` with `{ symbol_id: "src/lib/auth/middleware.ts::verifyToken#function" }`.
+The agent calls `arcbridge_query_symbols` with `{ symbol_id: "src/lib/auth/middleware.ts::verifyToken#function" }`.
 
 Returns:
 
@@ -54,7 +54,7 @@ The agent now knows the exact signature, what this function calls, and **what de
 
 ### Step 3 — Find related code
 
-The agent calls `arcbridge_search_symbols` with `{ query: "expir", kind: "function" }`.
+The agent calls `arcbridge_query_symbols` with `{ query: "expir", kind: "function" }`.
 
 Returns all functions matching "expir" across the codebase — maybe `isTokenExpired()` already exists in a different file that the agent would have missed by grepping. No need to guess file paths or scan directories.
 
@@ -108,9 +108,9 @@ When an agent (or developer) changes code, ArcBridge detects the divergence and 
 
 1. **Drift detection** — `arcbridge_check_drift` compares indexed code against the architecture docs. If a new module appears that isn't mapped to a building block, or a declared code path no longer has any symbols, it flags the mismatch.
 
-2. **Update proposals** — `arcbridge_propose_arc42_update` analyzes recent git changes and generates concrete proposals: "Add `src/lib/cache/` to the `data-access` building block" or "Create ADR for the new caching strategy."
+2. **Update proposals** — `arcbridge_arc42` analyzes recent git changes and generates concrete proposals: "Add `src/lib/cache/` to the `data-access` building block" or "Create ADR for the new caching strategy."
 
-3. **Phase gates enforce it** — When the agent tries to complete a phase via `arcbridge_complete_phase`, it checks three gates: all tasks done, no critical drift, and quality scenarios not failing. If new code introduced undocumented modules, the phase can't close until the docs are updated. This makes documentation a natural part of the workflow, not an afterthought.
+3. **Phase gates enforce it** — When the agent tries to complete a phase via `arcbridge_manage_phases`, it checks three gates: all tasks done, no critical drift, and quality scenarios not failing. If new code introduced undocumented modules, the phase can't close until the docs are updated. This makes documentation a natural part of the workflow, not an afterthought.
 
 4. **Practice reviews** — `arcbridge_get_practice_review` scores the project across 5 dimensions (architecture, security, testing, documentation, complexity). Documentation gaps show up as low scores, prompting the agent to fix them.
 
