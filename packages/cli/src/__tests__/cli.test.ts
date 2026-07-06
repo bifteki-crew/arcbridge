@@ -322,7 +322,7 @@ describe("openProjectDb auto-recreation", () => {
   });
 });
 
-describe("error paths and adopt", () => {
+describe.sequential("error paths and adopt", () => {
   let adoptDir: string;
   let corruptDir: string;
   let bareDir: string;

@@ -78,7 +78,7 @@ afterAll(async () => {
   rmSync(emptyDir, { recursive: true, force: true });
 });
 
-describe("MCP e2e lifecycle (Plan → Build → Sync → Review)", () => {
+describe.sequential("MCP e2e lifecycle (Plan → Build → Sync → Review)", () => {
   it("rejects tool calls before init with a clear message", async () => {
     const out = await call("arcbridge_get_project_status", { target_dir: emptyDir });
     expect(out).toContain("not initialized");
