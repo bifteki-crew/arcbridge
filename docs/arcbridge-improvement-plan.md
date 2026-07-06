@@ -285,7 +285,16 @@ channel (every adopting repo shows ArcBridge comments to its contributors).
 Order matters: the test layer lands first because it's the regression net for the
 breaking tool changes.
 
-### E1. Integration test layer (~3 days)
+### E1. Integration test layer — DONE (July 2026)
+
+Shipped: `packages/mcp-server/src/__tests__/e2e/lifecycle.test.ts` drives a real
+MCP Client ↔ ArcBridge server pair over the SDK's in-memory transport through
+the full Plan → Build → Sync → Review cycle (init → adopt → reindex → search →
+guidance → drift → task CRUD → phase gates → refresh round-trip), asserting
+tool outputs AND on-disk YAML. CLI tests extended with error paths
+(uninitialized dir, malformed phases.yaml, unknown service, no-symbols) and
+adopt `--json` shapes. This suite is the behavioral contract for E2.
+Original plan (for reference):
 
 - New `packages/mcp-server/src/__tests__/e2e/`: instantiate the real `McpServer`
   via `createArcBridgeServer()` with the SDK's in-memory transport against a
