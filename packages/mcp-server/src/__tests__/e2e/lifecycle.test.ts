@@ -12,10 +12,12 @@ import { parse } from "yaml";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createArcBridgeServer } from "../../server.js";
+import { createContext } from "../../context.js";
 
 let project: string;
 let emptyDir: string;
 let client: Client;
+const ctx = createContext();
 
 /** Call a tool and return its concatenated text content. */
 async function call(name: string, args: Record<string, unknown>): Promise<string> {
@@ -65,7 +67,7 @@ beforeAll(async () => {
     "utf-8",
   );
 
-  const server = createArcBridgeServer();
+  const server = createArcBridgeServer(ctx);
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);
   client = new Client({ name: "arcbridge-e2e", version: "0.0.0" });
@@ -74,6 +76,9 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await client.close();
+  // Close the server-side DB handle before deleting the temp project — some
+  // platforms refuse to remove directories containing open DB/WAL files.
+  ctx.db?.close();
   rmSync(project, { recursive: true, force: true });
   rmSync(emptyDir, { recursive: true, force: true });
 });

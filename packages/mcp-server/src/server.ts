@@ -3,7 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json");
-import { createContext } from "./context.js";
+import { createContext, type ServerContext } from "./context.js";
 import { registerInitProject } from "./tools/init-project.js";
 import { registerGetProjectStatus } from "./tools/get-project-status.js";
 import { registerGetBuildingBlocks } from "./tools/get-building-blocks.js";
@@ -40,13 +40,16 @@ import { registerGetMetrics } from "./tools/get-metrics.js";
 import { registerExportMetrics } from "./tools/export-metrics.js";
 import { registerUpdateArc42Section } from "./tools/update-arc42-section.js";
 
-export function createArcBridgeServer(): McpServer {
+/**
+ * Create the ArcBridge MCP server. An explicit `ctx` may be passed so callers
+ * that own the lifecycle (tests) can close the cached database handle; when
+ * omitted, a fresh context is created (production behavior, unchanged).
+ */
+export function createArcBridgeServer(ctx: ServerContext = createContext()): McpServer {
   const server = new McpServer({
     name: "arcbridge",
     version,
   });
-
-  const ctx = createContext();
 
   // Lifecycle
   registerInitProject(server, ctx);
