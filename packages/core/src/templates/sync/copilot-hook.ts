@@ -20,7 +20,7 @@ When a Copilot coding session ends${config.sync.propose_updates_on === "session-
 
 1. Run \`arcbridge_check_drift\` to detect architecture drift
 2. If drift is found above the \`${config.sync.drift_severity_threshold}\` threshold:
-   - Run \`arcbridge_arc42\` with \`changes_since: "last-sync"\`
+   - Run \`arcbridge_arc42\` with \`action: "propose"\` and \`changes_since: "last-sync"\`
    - Create a branch with proposed documentation changes
    - Open a PR for review
 

@@ -148,7 +148,7 @@ export async function handleGetCurrentTasks(
           "**Warning:** The following phases have no tasks yet:",
           ...emptyFuturePhases.map((p) => `- Phase ${p.phase_number}: ${p.name} (\`${p.id}\`)`),
           "",
-          "Use `arcbridge_manage_tasks` to plan tasks before reaching these phases.",
+          "Use `arcbridge_manage_tasks` (action: create) to plan tasks before reaching these phases.",
         );
       }
 

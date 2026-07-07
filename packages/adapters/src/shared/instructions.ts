@@ -48,7 +48,7 @@ export function generateInstructions(config: ArcBridgeConfig, options?: Instruct
     "- `arcbridge_get_building_blocks` — view architecture decomposition",
     "- `arcbridge_quality_scenarios` — view quality requirements",
     "- `arcbridge_get_open_questions` — find architectural gaps",
-    "- `arcbridge_arc42` — propose doc updates from code changes",
+    "- `arcbridge_arc42` (action: propose) — propose doc updates from code changes",
     "",
     "### When Implementing Features",
     "",
@@ -71,7 +71,7 @@ export function generateInstructions(config: ArcBridgeConfig, options?: Instruct
     "",
     "### Completing a Phase",
     "",
-    "Activate the **phase-manager** role, then: `arcbridge_manage_phases`",
+    "Activate the **phase-manager** role, then: `arcbridge_manage_phases` (action: complete)",
     "— validates three gates: all tasks done, no critical drift, must-have quality scenarios (priority = \"must\") not failing.",
     "",
   );

@@ -288,7 +288,7 @@ export async function handleCompletePhase(
           "- [ ] **10 Quality Scenarios** — Any new quality requirements or changed thresholds?",
           "- [ ] **11 Risks & Debt** — Any known limitations or tech debt introduced?",
           "",
-          "*Run `arcbridge_arc42` to auto-detect documentation gaps.*",
+          "*Run `arcbridge_arc42` (action: propose) to auto-detect documentation gaps.*",
         );
       } else {
         const failCount = gates.filter((g) => !g.pass).length;

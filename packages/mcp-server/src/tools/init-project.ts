@@ -286,7 +286,7 @@ export function registerInitProject(
         "2. **Review the spec** — read `.arcbridge/spec.md` (if provided) and understand the full scope",
         "3. **Tailor building blocks** — edit `.arcbridge/arc42/05-building-blocks.yaml`: delete blocks that don't apply, add blocks for your real modules, and declare `interfaces` between blocks (drift detection depends on this)",
         "4. **Tailor quality scenarios** — edit `.arcbridge/arc42/10-quality-scenarios.yaml`: delete irrelevant scenarios, add ones that match your actual requirements",
-        "5. **Tailor phase tasks** — Phase 0-1 tasks are ready to use. Phase 2+ tasks are examples only — **delete them** (edit `.arcbridge/plan/tasks/<phase>.yaml` or use `arcbridge_manage_tasks`) and create real tasks from the project's requirements using `arcbridge_manage_tasks`. Add more phases with `arcbridge_manage_phases` if needed.",
+        "5. **Tailor phase tasks** — Phase 0-1 tasks are ready to use. Phase 2+ tasks are examples only — **delete them** (edit `.arcbridge/plan/tasks/<phase>.yaml` or use `arcbridge_manage_tasks` with action: delete) and create real tasks from the project's requirements using `arcbridge_manage_tasks` with action: create. Add more phases with `arcbridge_manage_phases` (action: create) if needed.",
         "6. **Reindex** — run `arcbridge_reindex` to pick up your changes",
         "7. **Then start building** — use `arcbridge_get_phase_plan` to see what to do next",
         "",

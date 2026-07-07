@@ -32,8 +32,8 @@ export function ensureDb(
 
 /**
  * Shape every tool handler returns — text content blocks. A type alias (not an
- * interface) so it gets an implicit index signature and stays assignable to
- * the SDK's CallToolResult.
+ * interface): interface types are never assignable to the SDK's CallToolResult,
+ * whose index signature only object type aliases satisfy implicitly.
  */
 export type ToolResult = {
   content: { type: "text"; text: string }[];

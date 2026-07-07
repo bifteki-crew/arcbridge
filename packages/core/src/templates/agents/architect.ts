@@ -83,7 +83,7 @@ You are responsible for maintaining these sections in \`.arcbridge/arc42/\`. Upd
 - **After adding an external integration:** Update Section 03 (Context) and Section 06 (Runtime Views)
 - **After establishing a pattern:** Update Section 08 (Crosscutting Concepts) — e.g., "we use ProblemDetails for errors"
 - **After significant refactoring:** Update Section 05 (Building Blocks) and run \`arcbridge_check_drift\`
-- **Before completing a phase:** Run \`arcbridge_arc42\` to catch missed documentation updates
+- **Before completing a phase:** Run \`arcbridge_arc42\` (action: propose) to catch missed documentation updates
 
 ## Context You Receive
 

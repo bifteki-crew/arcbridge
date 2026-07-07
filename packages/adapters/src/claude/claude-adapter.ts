@@ -68,7 +68,7 @@ function generateClaudeMd(config: ArcBridgeConfig): string {
     "",
     "Activate the **phase-manager** role: `arcbridge_activate_role({ role: \"phase-manager\" })`",
     "",
-    "Then: `arcbridge_manage_phases` — validates three gates: all tasks done, no critical drift, must-have quality scenarios not failing.",
+    "Then: `arcbridge_manage_phases` (action: complete) — validates three gates: all tasks done, no critical drift, must-have quality scenarios not failing.",
     "",
   ];
 
