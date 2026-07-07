@@ -85,7 +85,7 @@ export async function handleGetSymbol(
           })
           .join("\n");
 
-        lines.push("## Source", "", "```typescript", snippet, "```", "");
+        lines.push("## Source", "", "```" + (symbol.language ?? ""), snippet, "```", "");
       }
     } catch (err) {
       logWarn(`Could not read source for symbol ${symbol.id} (${symbol.file_path})`, err);
