@@ -47,8 +47,8 @@ Restart your AI agent and approve the MCP server when prompted.
 | Tool | Description |
 |------|-------------|
 | `arcbridge_get_building_blocks` | All blocks with code paths and quality links |
-| `arcbridge_get_building_block` | Deep dive: one block with ADRs, tasks, scenarios |
-| `arcbridge_get_quality_scenarios` | Quality requirements, filterable by category/status |
+| `arcbridge_get_building_blocks` | Deep dive: one block with ADRs, tasks, scenarios |
+| `arcbridge_quality_scenarios` | Quality requirements, filterable by category/status |
 | `arcbridge_get_relevant_adrs` | ADRs for a file path or building block |
 
 ### Planning
@@ -56,20 +56,20 @@ Restart your AI agent and approve the MCP server when prompted.
 | Tool | Description |
 |------|-------------|
 | `arcbridge_get_phase_plan` | Phase plan with tasks — filterable by phase_id, status, include_completed |
-| `arcbridge_get_current_tasks` | Tasks for the current or a specific phase (via phase_id) |
-| `arcbridge_update_task` | Mark tasks in-progress, done, blocked, or cancelled |
-| `arcbridge_create_task` | Add a task to any phase |
-| `arcbridge_delete_task` | Remove one or more tasks permanently (batch via task_ids array) |
-| `arcbridge_create_phase` | Add a new phase to the project plan |
-| `arcbridge_delete_phase` | Remove a phase and all its tasks permanently |
+| `arcbridge_get_phase_plan` | Tasks for the current or a specific phase (via phase_id) |
+| `arcbridge_manage_tasks` | Mark tasks in-progress, done, blocked, or cancelled |
+| `arcbridge_manage_tasks` | Add a task to any phase |
+| `arcbridge_manage_tasks` | Remove one or more tasks permanently (batch via task_ids array) |
+| `arcbridge_manage_phases` | Add a new phase to the project plan |
+| `arcbridge_manage_phases` | Remove a phase and all its tasks permanently |
 
 ### Code Intelligence
 
 | Tool | Description |
 |------|-------------|
 | `arcbridge_reindex` | Index/re-index TypeScript symbols (incremental) |
-| `arcbridge_search_symbols` | Search by name, kind, file path, or building block |
-| `arcbridge_get_symbol` | Full detail: signature, source, relationships |
+| `arcbridge_query_symbols` | Search by name, kind, file path, or building block |
+| `arcbridge_query_symbols` | Full detail: signature, source, relationships |
 | `arcbridge_get_dependency_graph` | Import/dependency graph for a module |
 
 ### React & Next.js
@@ -87,18 +87,18 @@ Restart your AI agent and approve the MCP server when prompted.
 | `arcbridge_check_drift` | Detect drift between docs and code |
 | `arcbridge_get_guidance` | Context-aware guidance for a file or block |
 | `arcbridge_get_open_questions` | Unresolved architectural questions and risks |
-| `arcbridge_propose_arc42_update` | Generate arc42 update proposals from code changes |
+| `arcbridge_arc42` | Generate arc42 update proposals from code changes |
 | `arcbridge_get_practice_review` | 5-dimension review: architecture, security, testing, docs, complexity |
-| `arcbridge_update_arc42_section` | Read or update any arc42 markdown section (frontmatter preserved) |
+| `arcbridge_arc42` | Read or update any arc42 markdown section (frontmatter preserved) |
 
 ### Roles & Sync
 
 | Tool | Description |
 |------|-------------|
-| `arcbridge_complete_phase` | Validate phase gates and transition to next phase |
+| `arcbridge_manage_phases` | Validate phase gates and transition to next phase |
 | `arcbridge_activate_role` | Load agent role with tools and pre-loaded context |
 | `arcbridge_verify_scenarios` | Run linked tests for quality scenarios |
-| `arcbridge_update_scenario_status` | Manually update scenario status and link test files |
+| `arcbridge_quality_scenarios` | Manually update scenario status and link test files |
 | `arcbridge_run_role_check` | Run a role's quality checks against code |
 
 ### Metrics
@@ -107,7 +107,7 @@ Restart your AI agent and approve the MCP server when prompted.
 |------|-------------|
 | `arcbridge_record_activity` | Record agent activity — model, tokens, cost, duration, quality snapshot |
 | `arcbridge_get_metrics` | Query and aggregate activity by model, task, phase, tool, or day |
-| `arcbridge_export_metrics` | Export metrics to JSON, CSV, or Markdown for git commits |
+| `arcbridge_get_metrics` | Export metrics to JSON, CSV, or Markdown for git commits |
 
 ## How It Works
 

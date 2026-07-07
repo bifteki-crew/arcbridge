@@ -18,7 +18,7 @@ export function registerGetBuildingBlocks(
 ): void {
   server.tool(
     "arcbridge_get_building_blocks",
-    "Get the architecture building blocks with code mappings, responsibilities, and linked quality scenarios. Pass `block_id` for the deep view of one block (arc42 description, code modules, interfaces, ADRs, tasks). Replaces arcbridge_get_building_block (0.10.0).",
+    "Get the architecture building blocks with code mappings, responsibilities, and linked quality scenarios. Pass `block_id` for the deep view of one block (arc42 description, code modules, interfaces, ADRs, tasks).",
     {
       target_dir: z
         .string()

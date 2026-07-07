@@ -12,7 +12,7 @@ export function registerGetPhasePlan(
 ): void {
   server.tool(
     "arcbridge_get_phase_plan",
-    "Get the phase plan with phases, tasks, status, and gate requirements. Use filters to reduce output for large projects. Set `view: tasks` for just the task list of one phase — defaulting to the active phase — which replaces arcbridge_get_current_tasks (0.10.0).",
+    "Get the phase plan with phases, tasks, status, and gate requirements. Use filters to reduce output for large projects. Set `view: tasks` for just the task list of one phase — defaulting to the active phase.",
     {
       target_dir: z
         .string()

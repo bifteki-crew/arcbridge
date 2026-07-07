@@ -28,16 +28,20 @@ const ROOTS = [
   join(__dirname, "..", "tools"),
   join(__dirname, "..", "..", "..", "adapters", "src"),
   join(__dirname, "..", "..", "..", "core", "src", "templates"),
+  join(__dirname, "..", "..", "README.md"),
+  // This repo's committed, agent-facing role files (generated from templates)
+  join(__dirname, "..", "..", "..", "..", ".arcbridge", "agents"),
 ];
 
-function collectTsFiles(dir: string): string[] {
+function collectFiles(path: string): string[] {
+  if (statSync(path).isFile()) return [path];
   const out: string[] = [];
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
+  for (const entry of readdirSync(path)) {
+    const full = join(path, entry);
     if (statSync(full).isDirectory()) {
       if (entry === "__tests__" || entry === "node_modules") continue;
-      out.push(...collectTsFiles(full));
-    } else if (entry.endsWith(".ts")) {
+      out.push(...collectFiles(full));
+    } else if (entry.endsWith(".ts") || entry.endsWith(".md")) {
       out.push(full);
     }
   }
@@ -48,7 +52,7 @@ describe("no stale tool names (0.10.0 consolidation)", () => {
   it("retired tool names do not appear in tool sources, adapters, or role templates", () => {
     const offenders: string[] = [];
     for (const root of ROOTS) {
-      for (const file of collectTsFiles(root)) {
+      for (const file of collectFiles(root)) {
         const content = readFileSync(file, "utf-8");
         for (const name of RETIRED_TOOLS) {
           // Word boundary: `arcbridge_get_building_block` must not match
@@ -57,11 +61,10 @@ describe("no stale tool names (0.10.0 consolidation)", () => {
           for (const match of content.matchAll(re)) {
             const line = content.slice(0, match.index).split("\n").length;
             const context = content.split("\n")[line - 1] ?? "";
-            // The merged registrations intentionally say "replaces <old name>"
-            // in their descriptions and doc comments — comments are for
-            // maintainers; only agent-facing strings must be clean.
-            if (/replaces/i.test(context)) continue;
-            if (/^\s*(\*|\/\/)/.test(context)) continue;
+            // Code comments are maintainer-facing (e.g. "replaces X" notes in
+            // the merged registrations' doc comments) — everything else,
+            // including tool description strings, must be clean.
+            if (file.endsWith(".ts") && /^\s*(\*|\/\/)/.test(context)) continue;
             offenders.push(`${file}:${line} → ${name}`);
           }
         }

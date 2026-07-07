@@ -11,7 +11,7 @@ export function registerGetMetrics(
 ): void {
   server.tool(
     "arcbridge_get_metrics",
-    "Query agent activity metrics — filter by model, task, phase, or time range. Group by model/task/phase/tool/day for aggregated views. Set `format` to json/csv/markdown to export the filtered metrics to a file in .arcbridge/metrics/ instead (replaces arcbridge_export_metrics, 0.10.0).",
+    "Query agent activity metrics — filter by model, task, phase, or time range. Group by model/task/phase/tool/day for aggregated views. Set `format` to json/csv/markdown to export the filtered metrics to a file in .arcbridge/metrics/ instead.",
     {
       target_dir: z.string().describe("Absolute path to the project directory"),
       task_id: z.string().optional().describe("Filter by task ID"),

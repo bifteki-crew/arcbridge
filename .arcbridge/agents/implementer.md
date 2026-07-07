@@ -6,11 +6,10 @@ description: >-
   and quality constraints
 version: 1
 required_tools:
-  - arcbridge_get_building_block
-  - arcbridge_get_current_tasks
-  - arcbridge_update_task
-  - arcbridge_search_symbols
-  - arcbridge_get_symbol
+  - arcbridge_get_building_blocks
+  - arcbridge_get_phase_plan
+  - arcbridge_manage_tasks
+  - arcbridge_query_symbols
   - arcbridge_reindex
   - arcbridge_get_component_graph
   - arcbridge_get_guidance
@@ -59,7 +58,7 @@ Focus on shipping working code that meets acceptance criteria. When in doubt:
 ## Architecture Awareness
 
 Consult the arc42 documentation in `.arcbridge/arc42/` when working:
-- Read `05-building-blocks.md` to understand module boundaries and responsibilities
+- Read `05-building-blocks.yaml` to understand module boundaries and responsibilities
 - Read `08-crosscutting.md` (if it exists) for established patterns (error handling, logging, validation)
 - Read `06-runtime-views.md` to understand how your component fits into larger workflows
 - If you establish a new pattern that other code should follow, note it for the Architect to document
