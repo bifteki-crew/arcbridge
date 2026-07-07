@@ -93,7 +93,12 @@ export async function handleGetCurrentTasks(
     // gate and update-task's phase stats, they don't count toward progress
     const done = tasks.filter((t) => t.status === "done").length;
     const inScope = tasks.filter((t) => t.status !== "cancelled").length;
-    lines.push(`**Progress:** ${done}/${inScope} complete`, "");
+    if (inScope > 0) {
+      lines.push(`**Progress:** ${done}/${inScope} complete`, "");
+    } else {
+      // Everything shown is cancelled — a 0/0 progress line would just confuse
+      lines.push("**Progress:** all listed tasks are cancelled (out of scope)", "");
+    }
 
     for (const task of tasks) {
       const check =
