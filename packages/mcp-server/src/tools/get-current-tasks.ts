@@ -89,8 +89,11 @@ export async function handleGetCurrentTasks(
         : "No tasks in this phase.",
     );
   } else {
+    // Cancelled tasks are out of scope — consistent with the phase-completion
+    // gate and update-task's phase stats, they don't count toward progress
     const done = tasks.filter((t) => t.status === "done").length;
-    lines.push(`**Progress:** ${done}/${tasks.length} complete`, "");
+    const inScope = tasks.filter((t) => t.status !== "cancelled").length;
+    lines.push(`**Progress:** ${done}/${inScope} complete`, "");
 
     for (const task of tasks) {
       const check =
@@ -100,7 +103,9 @@ export async function handleGetCurrentTasks(
             ? "[>]"
             : task.status === "blocked"
               ? "[!]"
-              : "[ ]";
+              : task.status === "cancelled"
+                ? "[~]"
+                : "[ ]";
 
       lines.push(`## ${check} ${task.id}: ${task.title}`, "");
       lines.push(`**Status:** ${task.status}`);
@@ -120,9 +125,9 @@ export async function handleGetCurrentTasks(
       if (criteria.length > 0) {
         lines.push("", "**Acceptance criteria:**");
         for (const c of criteria) {
-          lines.push(
-            `- ${task.status === "done" ? "[x]" : "[ ]"} ${c}`,
-          );
+          const criterionCheck =
+            task.status === "done" ? "[x]" : task.status === "cancelled" ? "[~]" : "[ ]";
+          lines.push(`- ${criterionCheck} ${c}`);
         }
       }
 
