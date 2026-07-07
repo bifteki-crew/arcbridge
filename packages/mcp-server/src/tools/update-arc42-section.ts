@@ -26,7 +26,7 @@ function splitFrontmatter(raw: string): { frontmatterBlock: string; body: string
 /**
  * Sections that this tool manages — plain markdown with frontmatter.
  * Building blocks (05) and quality scenarios (10) have dedicated tools.
- * ADRs (09) are individual files managed by propose_arc42_update.
+ * ADRs (09) are individual files managed by arcbridge_arc42 (action: propose).
  */
 export const VALID_SECTIONS = [
   "01-introduction",

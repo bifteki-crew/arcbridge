@@ -17,7 +17,13 @@ export async function handleDeleteTask(
   const db = ensureDb(ctx, params.target_dir);
   if (!db) return notInitialized();
 
-  const ids = params.task_ids ?? (params.task_id ? [params.task_id] : []);
+  // task_ids only wins when non-empty — an empty array must not shadow a
+  // valid single task_id
+  const ids = params.task_ids?.length
+    ? params.task_ids
+    : params.task_id
+      ? [params.task_id]
+      : [];
   if (ids.length === 0) {
     return textResult("Provide `task_ids` (array) or `task_id` (string) to delete.");
   }
