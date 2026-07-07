@@ -88,7 +88,7 @@ It's like giving the agent a senior developer's mental model of the project on d
 
 ## The Full Tool Set
 
-ArcBridge exposes 34 MCP tools organized by concern:
+ArcBridge exposes 25 MCP tools organized by concern:
 
 - **Architecture** — query building blocks, quality scenarios, and ADRs
 - **Code Intelligence** — search symbols, trace dependencies, analyze components and routes
@@ -108,9 +108,9 @@ When an agent (or developer) changes code, ArcBridge detects the divergence and 
 
 1. **Drift detection** — `arcbridge_check_drift` compares indexed code against the architecture docs. If a new module appears that isn't mapped to a building block, or a declared code path no longer has any symbols, it flags the mismatch.
 
-2. **Update proposals** — `arcbridge_arc42` analyzes recent git changes and generates concrete proposals: "Add `src/lib/cache/` to the `data-access` building block" or "Create ADR for the new caching strategy."
+2. **Update proposals** — `arcbridge_arc42` (action: propose) analyzes recent git changes and generates concrete proposals: "Add `src/lib/cache/` to the `data-access` building block" or "Create ADR for the new caching strategy."
 
-3. **Phase gates enforce it** — When the agent tries to complete a phase via `arcbridge_manage_phases`, it checks three gates: all tasks done, no critical drift, and quality scenarios not failing. If new code introduced undocumented modules, the phase can't close until the docs are updated. This makes documentation a natural part of the workflow, not an afterthought.
+3. **Phase gates enforce it** — When the agent tries to complete a phase via `arcbridge_manage_phases` (action: complete), it checks three gates: all tasks done, no critical drift, and quality scenarios not failing. If new code introduced undocumented modules, the phase can't close until the docs are updated. This makes documentation a natural part of the workflow, not an afterthought.
 
 4. **Practice reviews** — `arcbridge_get_practice_review` scores the project across 5 dimensions (architecture, security, testing, documentation, complexity). Documentation gaps show up as low scores, prompting the agent to fix them.
 
@@ -118,7 +118,7 @@ When an agent (or developer) changes code, ArcBridge detects the divergence and 
 
 The sync works the other way too. When someone edits the YAML or markdown files directly — adding a new building block, changing a quality scenario, or updating the phase plan — the agent picks up those changes automatically:
 
-1. **Refresh on read** — Key MCP tools (`get_project_status`, `get_phase_plan`, `get_current_tasks`) call `refreshFromDocs()` before returning results. This rebuilds the database from the current YAML/markdown files, so manual edits are visible immediately — no restart or re-init needed.
+1. **Refresh on read** — Key MCP tools (`get_project_status`, `get_phase_plan` — including its `view: tasks` mode) call `refreshFromDocs()` before returning results. This rebuilds the database from the current YAML/markdown files, so manual edits are visible immediately — no restart or re-init needed.
 
 2. **Status preservation** — When the database refreshes from docs, it preserves runtime state. If a task was marked "done" in the DB but the YAML still says "todo" (because YAML tracks the initial state), the "done" status is kept. The agent's progress isn't lost.
 

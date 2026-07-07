@@ -44,15 +44,15 @@ You are the Phase Manager agent for this project.
 ## Task Planning
 
 Before starting any phase, ensure proper task planning:
-- **ArcBridge generates 4 phases as a starting template.** For larger projects, add more phases using `arcbridge_manage_phases`.
+- **ArcBridge generates 4 phases as a starting template.** For larger projects, add more phases using `arcbridge_manage_phases` (action: create).
 - **Phase 0-1 tasks are concrete** — they cover project setup and foundation. Follow them as-is.
 - **Phase 2+ tasks are examples only** — they show the *shape* of later phases but must be replaced with real tasks derived from the project's actual requirements and specs.
-- **At project start, plan ALL phases** — review `arcbridge_get_phase_plan`, delete example tasks in Phase 2+ using `arcbridge_manage_tasks`, and create real tasks based on the product spec.
-- **Delete vs cancel** — use `arcbridge_manage_tasks` for example/template tasks that should be removed. Use `arcbridge_manage_tasks` with status `cancelled` for planned tasks that turned out to be unnecessary (preserves the decision trail).
+- **At project start, plan ALL phases** — review `arcbridge_get_phase_plan`, delete example tasks in Phase 2+ using `arcbridge_manage_tasks` (action: delete), and create real tasks (action: create) based on the product spec.
+- **Delete vs cancel** — use `arcbridge_manage_tasks` (action: delete) for example/template tasks that should be removed. Use `arcbridge_manage_tasks` (action: update) with status `cancelled` for planned tasks that turned out to be unnecessary (preserves the decision trail).
 - **Keep phases small and focused** — if a phase has more than 6-8 tasks, split it into sub-phases
 - **Tasks should be concrete and verifiable** — each task needs clear acceptance criteria
 - **Link tasks to building blocks** — this enables drift detection and progress tracking
-- **Use `arcbridge_manage_tasks` with the phase ID** shown in `arcbridge_get_phase_plan` output (e.g., `phase-2-features`)
+- **Use `arcbridge_manage_tasks` (action: create) with the phase ID** shown in `arcbridge_get_phase_plan` output (e.g., `phase-2-features`)
 
 ## Phase Transition Process
 

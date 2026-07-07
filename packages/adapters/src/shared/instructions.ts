@@ -58,7 +58,7 @@ export function generateInstructions(config: ArcBridgeConfig, options?: Instruct
     "- `arcbridge_get_phase_plan` — check expected tasks in the current phase",
     "- `arcbridge_query_symbols` — understand existing code (pass `symbol_id` for full detail)",
     "- `arcbridge_get_dependency_graph` — check module dependencies",
-    "- `arcbridge_manage_tasks` — mark tasks as in-progress or done",
+    "- `arcbridge_manage_tasks` (action: update) — mark tasks as in-progress or done",
     "- `arcbridge_reindex` — re-index after significant code changes",
     "",
     "### After Implementing (Phase Boundary Review)",
