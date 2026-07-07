@@ -6,7 +6,7 @@ import type { TaskRow, PhaseRow } from "../db-types.js";
 export interface CurrentTasksParams {
   target_dir: string;
   phase_id?: string;
-  status?: "todo" | "in-progress" | "done" | "blocked";
+  status?: "todo" | "in-progress" | "done" | "blocked" | "cancelled";
 }
 
 /** `view: tasks` mode of arcbridge_get_phase_plan. */

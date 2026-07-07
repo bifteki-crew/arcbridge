@@ -30,7 +30,7 @@ export function registerGetPhasePlan(
         .optional()
         .describe("view 'plan': filter phases by status"),
       task_status: z
-        .enum(["todo", "in-progress", "done", "blocked"])
+        .enum(["todo", "in-progress", "done", "blocked", "cancelled"])
         .optional()
         .describe("view 'tasks': filter tasks by status"),
       include_completed: z
