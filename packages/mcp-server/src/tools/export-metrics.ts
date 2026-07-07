@@ -20,26 +20,26 @@ export async function handleExportMetrics(
   ctx: ServerContext,
   params: ExportMetricsParams,
 ): Promise<ToolResult> {
-      const db = ensureDb(ctx, params.target_dir);
-      if (!db) return notInitialized();
+  const db = ensureDb(ctx, params.target_dir);
+  if (!db) return notInitialized();
 
-      const filePath = exportMetrics(
-        db,
-        params.target_dir,
-        params.format,
-        {
-          taskId: params.task_id,
-          phaseId: params.phase_id,
-          model: params.model,
-          agentRole: params.agent_role,
-          toolName: params.tool_name,
-          since: params.since,
-          until: params.until,
-        },
-        params.max_rows,
-      );
+  const filePath = exportMetrics(
+    db,
+    params.target_dir,
+    params.format,
+    {
+      taskId: params.task_id,
+      phaseId: params.phase_id,
+      model: params.model,
+      agentRole: params.agent_role,
+      toolName: params.tool_name,
+      since: params.since,
+      until: params.until,
+    },
+    params.max_rows,
+  );
 
-      return textResult(
-        `Metrics exported to: ${filePath}\n\nYou can commit this file to preserve the activity record in git.`,
-      );
+  return textResult(
+    `Metrics exported to: ${filePath}\n\nYou can commit this file to preserve the activity record in git.`,
+  );
 }

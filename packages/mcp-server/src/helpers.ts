@@ -50,7 +50,7 @@ export function notInitialized(): ToolResult {
   };
 }
 
-export function textResult(text: string) {
+export function textResult(text: string): ToolResult {
   return {
     content: [{ type: "text" as const, text }],
   };

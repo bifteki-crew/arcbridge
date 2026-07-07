@@ -65,56 +65,56 @@ export async function handleArc42Section(
   ctx: ServerContext,
   params: Arc42SectionParams,
 ): Promise<ToolResult> {
-      const db = ensureDb(ctx, params.target_dir);
-      if (!db) return notInitialized();
+  const db = ensureDb(ctx, params.target_dir);
+  if (!db) return notInitialized();
 
-      // section is enum-validated; containment is defense in depth
-      const filePath = resolveWithin(
-        params.target_dir,
-        ".arcbridge",
-        "arc42",
-        `${params.section}.md`,
-      );
+  // section is enum-validated; containment is defense in depth
+  const filePath = resolveWithin(
+    params.target_dir,
+    ".arcbridge",
+    "arc42",
+    `${params.section}.md`,
+  );
 
-      if (!existsSync(filePath)) {
-        return textResult(
-          `Section file \`${params.section}.md\` not found. Run \`arcbridge_init_project\` first.`,
-        );
-      }
+  if (!existsSync(filePath)) {
+    return textResult(
+      `Section file \`${params.section}.md\` not found. Run \`arcbridge_init_project\` first.`,
+    );
+  }
 
-      // Read mode — return current content
-      if (params.content === undefined) {
-        const raw = readFileSync(filePath, "utf-8");
-        const { body } = splitFrontmatter(raw);
-        const label = SECTION_LABELS[params.section];
+  // Read mode — return current content
+  if (params.content === undefined) {
+    const raw = readFileSync(filePath, "utf-8");
+    const { body } = splitFrontmatter(raw);
+    const label = SECTION_LABELS[params.section];
 
-        const trimmedBody = body.trim();
-        const startsWithHeading = /^#\s+/.test(trimmedBody);
+    const trimmedBody = body.trim();
+    const startsWithHeading = /^#\s+/.test(trimmedBody);
 
-        const outputLines: string[] = [];
-        if (!startsWithHeading) {
-          outputLines.push(`# ${label}`, "");
-        }
-        outputLines.push(
-          `**File:** \`.arcbridge/arc42/${params.section}.md\``,
-          "",
-          trimmedBody,
-        );
+    const outputLines: string[] = [];
+    if (!startsWithHeading) {
+      outputLines.push(`# ${label}`, "");
+    }
+    outputLines.push(
+      `**File:** \`.arcbridge/arc42/${params.section}.md\``,
+      "",
+      trimmedBody,
+    );
 
-        return textResult(outputLines.join("\n"));
-      }
+    return textResult(outputLines.join("\n"));
+  }
 
-      // Write mode — update the markdown body, preserve frontmatter
-      const raw = readFileSync(filePath, "utf-8");
-      const { frontmatterBlock } = splitFrontmatter(raw);
+  // Write mode — update the markdown body, preserve frontmatter
+  const raw = readFileSync(filePath, "utf-8");
+  const { frontmatterBlock } = splitFrontmatter(raw);
 
-      const updated = frontmatterBlock
-        ? `${frontmatterBlock}\n${params.content}\n`
-        : `${params.content}\n`;
-      atomicWriteFileSync(filePath, updated);
+  const updated = frontmatterBlock
+    ? `${frontmatterBlock}\n${params.content}\n`
+    : `${params.content}\n`;
+  atomicWriteFileSync(filePath, updated);
 
-      const label = SECTION_LABELS[params.section];
-      return textResult(
-        `Updated **${label}** (\`${params.section}.md\`). Frontmatter preserved.`,
-      );
+  const label = SECTION_LABELS[params.section];
+  return textResult(
+    `Updated **${label}** (\`${params.section}.md\`). Frontmatter preserved.`,
+  );
 }
