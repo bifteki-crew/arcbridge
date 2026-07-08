@@ -1,21 +1,8 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { handleSearchSymbols, type SymbolKindFilter } from "./search-symbols.js";
+import { handleSearchSymbols, SYMBOL_KINDS, type SymbolKindFilter } from "./search-symbols.js";
 import { handleGetSymbol } from "./get-symbol.js";
-
-const SYMBOL_KINDS = [
-  "function",
-  "class",
-  "type",
-  "constant",
-  "interface",
-  "enum",
-  "variable",
-  "component",
-  "hook",
-  "context",
-] as const;
 
 /**
  * Consolidated symbol lookup (replaces arcbridge_search_symbols and

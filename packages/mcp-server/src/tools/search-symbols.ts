@@ -2,17 +2,22 @@ import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult, escapeLike, type ToolResult } from "../helpers.js";
 import type { SymbolRow } from "../db-types.js";
 
-export type SymbolKindFilter =
-  | "function"
-  | "class"
-  | "type"
-  | "constant"
-  | "interface"
-  | "enum"
-  | "variable"
-  | "component"
-  | "hook"
-  | "context";
+/** Single source of truth for symbol kinds — the zod enum in query-symbols
+ *  derives from this, as does the SymbolKindFilter type. */
+export const SYMBOL_KINDS = [
+  "function",
+  "class",
+  "type",
+  "constant",
+  "interface",
+  "enum",
+  "variable",
+  "component",
+  "hook",
+  "context",
+] as const;
+
+export type SymbolKindFilter = (typeof SYMBOL_KINDS)[number];
 
 export interface SearchSymbolsParams {
   target_dir: string;
