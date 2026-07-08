@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: bifteki-crew/arcbridge/action@main
+      - uses: bifteki-crew/arcbridge/action@v0.10.0
 ```
 
 Also running on `push` (e.g. to `main`)? Add the trigger but keep

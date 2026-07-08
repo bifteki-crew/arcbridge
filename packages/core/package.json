@@ -1,6 +1,6 @@
 {
   "name": "@arcbridge/core",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Core library for ArcBridge — schemas, database, indexer, drift detection, and generators",
   "license": "MIT",
   "type": "module",

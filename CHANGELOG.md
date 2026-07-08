@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.10.0 (2026-07-08)
+
+### Breaking Changes
+
+- **MCP tool surface consolidated from 35 to 25 tools.** Near-duplicate tools were merged behind an `action`/`view`/`block_id`/`symbol_id`/`format` discriminator, so agents choose between fewer, clearer tools and each tool carries a smaller schema (~40% less tool-schema context per session). Behavior is unchanged — each merged tool preserves its predecessor's logic — but the **tool names are the agent-facing API, so this is breaking**. Old → new mapping:
+
+  | Retired tool | Use instead |
+  |---|---|
+  | `arcbridge_get_building_block` | `arcbridge_get_building_blocks` with `block_id` |
+  | `arcbridge_search_symbols` | `arcbridge_query_symbols` |
+  | `arcbridge_get_symbol` | `arcbridge_query_symbols` with `symbol_id` |
+  | `arcbridge_create_task` | `arcbridge_manage_tasks` with `action: "create"` |
+  | `arcbridge_update_task` | `arcbridge_manage_tasks` with `action: "update"` |
+  | `arcbridge_delete_task` | `arcbridge_manage_tasks` with `action: "delete"` |
+  | `arcbridge_create_phase` | `arcbridge_manage_phases` with `action: "create"` |
+  | `arcbridge_delete_phase` | `arcbridge_manage_phases` with `action: "delete"` |
+  | `arcbridge_complete_phase` | `arcbridge_manage_phases` with `action: "complete"` |
+  | `arcbridge_get_quality_scenarios` | `arcbridge_quality_scenarios` (`action: "list"`, default) |
+  | `arcbridge_update_scenario_status` | `arcbridge_quality_scenarios` with `action: "update"` |
+  | `arcbridge_export_metrics` | `arcbridge_get_metrics` with `format: "json" \| "csv" \| "markdown"` |
+  | `arcbridge_propose_arc42_update` | `arcbridge_arc42` with `action: "propose"` |
+  | `arcbridge_update_arc42_section` | `arcbridge_arc42` with `action: "read" \| "update"` |
+  | `arcbridge_get_current_tasks` | `arcbridge_get_phase_plan` with `view: "tasks"` |
+
+  **Migration:** run `arcbridge generate-configs --force` (or re-run `arcbridge init`) to regenerate your platform config/skill files with the new tool names, then restart the agent so it re-reads the tool list. A `no-stale-tool-names` guard test now prevents retired names from reappearing in tool sources, adapters, role templates, docs, or the READMEs.
+
+### New Features
+
+- **Drift-check GitHub Action** (`bifteki-crew/arcbridge/action@v0.10.0`) — a composite action that runs `npx arcbridge drift --reindex --json`, writes a job summary, posts a sticky PR comment with the drift report, and can fail the job on a configurable severity threshold (after commenting). Hardened against shell injection (version pinned via an allowlist) and `::error::` escaping. This is the first release to contain `action/`, so its ref is now pinnable — the docs examples pin `@v0.10.0`.
+
+### Internal
+
+- **End-to-end MCP lifecycle test suite** — a real `Client`↔server run over `InMemoryTransport` driving the full Plan → Build → Sync → Review loop and asserting both tool output and on-disk YAML, plus CLI error-path and `adopt` coverage. This suite is the behavioral contract the tool consolidation was validated against.
+- Merged tools are implemented by keeping each old handler as an exported function (bodies verbatim) with a thin `action`-dispatching registration on top.
+
+### Stats
+
+- 25 MCP tools, 600 tests passing, 0 lint errors, 0 type errors
+
 ## 0.9.0 (2026-07-03)
 
 ### Changes
