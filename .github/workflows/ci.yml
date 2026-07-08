@@ -52,3 +52,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./action
+        with:
+          # The action's default arcbridge-version is 0.10.0, which isn't on npm
+          # until this release publishes. Pin CI to the latest published CLI so
+          # dogfooding stays green across the tag→publish window.
+          arcbridge-version: latest

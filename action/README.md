@@ -29,8 +29,7 @@ Also running on `push` (e.g. to `main`)? Add the trigger but keep
 posted on `pull_request` events, so push runs don't need the grant.
 
 > **Pin your ref.** `@main` can change without your review — prefer a release tag
-> (the first ArcBridge release tag that contains this action; `@main` is the only
-> valid ref until then) or, strictest, a full commit SHA:
+> like `@v0.10.0` (shown above) or, strictest, a full commit SHA:
 > `bifteki-crew/arcbridge/action@<sha>`.
 
 Requires a committed `.arcbridge/` directory (run `arcbridge init` /
@@ -44,7 +43,7 @@ committed — it is rebuilt from the YAML sources.
 | `working-directory` | `.` | Directory containing `.arcbridge/` (monorepo support) |
 | `severity-threshold` | `error` | Fail on drift at/above this severity: `error`, `warning`, `info` |
 | `comment` | `true` | Post/update the sticky PR comment (needs `pull-requests: write`) |
-| `arcbridge-version` | `0.9.0` | `arcbridge` npm version to run |
+| `arcbridge-version` | `0.10.0` | `arcbridge` npm version to run |
 | `node-version` | `22.16.0` | Node.js to set up (arcbridge needs ≥ 22.16; default pins the tested minimum) |
 
 ## Outputs
