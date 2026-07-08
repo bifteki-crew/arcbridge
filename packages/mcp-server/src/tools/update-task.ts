@@ -79,16 +79,22 @@ export async function handleUpdateTask(
       )
       .get(task.phase_id) as { total: number; done: number };
 
-    lines.push(
-      "",
-      `**Phase progress:** ${phaseStats.done}/${phaseStats.total} tasks complete`,
-    );
-
-    if (phaseStats.total > 0 && phaseStats.done === phaseStats.total) {
+    if (phaseStats.total > 0) {
       lines.push(
         "",
-        "All tasks in this phase are complete! The phase is ready to advance.",
+        `**Phase progress:** ${phaseStats.done}/${phaseStats.total} tasks complete`,
       );
+
+      if (phaseStats.done === phaseStats.total) {
+        lines.push(
+          "",
+          "All tasks in this phase are complete! The phase is ready to advance.",
+        );
+      }
+    } else {
+      // Every task in the phase is cancelled — a 0/0 line would just confuse,
+      // consistent with the tasks view
+      lines.push("", "**Phase progress:** all tasks are cancelled (out of scope)");
     }
   }
 
