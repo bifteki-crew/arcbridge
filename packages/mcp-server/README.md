@@ -1,6 +1,6 @@
 # @arcbridge/mcp-server
 
-MCP server for ArcBridge — exposes 34 architecture tools to AI coding agents via the [Model Context Protocol](https://modelcontextprotocol.io).
+MCP server for ArcBridge — exposes 25 architecture tools to AI coding agents via the [Model Context Protocol](https://modelcontextprotocol.io).
 
 ## Install
 
