@@ -31,6 +31,8 @@ const ROOTS = [
   join(__dirname, "..", "..", "..", "adapters", "src"),
   join(__dirname, "..", "..", "..", "core", "src", "templates"),
   join(__dirname, "..", "..", "README.md"),
+  // The repo-root README — the primary user/agent-facing tool reference
+  join(REPO_ROOT, "README.md"),
   // This repo's committed, agent-facing role files (generated from templates)
   join(REPO_ROOT, ".arcbridge", "agents"),
   // User/agent-facing usage docs — tutorials that show real tool calls. The
@@ -72,8 +74,9 @@ describe("no stale tool names (0.10.0 consolidation)", () => {
             const context = content.split("\n")[line - 1] ?? "";
             // Code comments are maintainer-facing (e.g. "replaces X" notes in
             // the merged registrations' doc comments) — everything else,
-            // including tool description strings, must be clean.
-            if (file.endsWith(".ts") && /^\s*(\*|\/\/)/.test(context)) continue;
+            // including tool description strings, must be clean. Covers line
+            // comments (//), block/JSDoc openers (/* /**) and continuation (*).
+            if (file.endsWith(".ts") && /^\s*(\/\/|\/\*|\*)/.test(context)) continue;
             offenders.push(`${file}:${line} → ${name}`);
           }
         }

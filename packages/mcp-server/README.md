@@ -99,7 +99,7 @@ Restart your AI agent and approve the MCP server when prompted.
 
 | Tool | Description |
 |------|-------------|
-| `arcbridge_record_activity` | Record agent activity — model, tokens, cost, duration |
+| `arcbridge_record_activity` | Record agent activity — model, tokens, cost, duration, optional quality snapshot (drift/test/lint/typecheck) |
 | `arcbridge_get_metrics` | Query/aggregate activity; `format: json/csv/markdown` exports to a file |
 
 ## How It Works
