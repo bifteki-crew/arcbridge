@@ -39,7 +39,7 @@ export const VALID_SECTIONS = [
   "11-risks-debt",
 ] as const;
 
-type SectionId = (typeof VALID_SECTIONS)[number];
+export type SectionId = (typeof VALID_SECTIONS)[number];
 
 const SECTION_LABELS: Record<SectionId, string> = {
   "01-introduction": "Introduction & Goals",
@@ -52,11 +52,9 @@ const SECTION_LABELS: Record<SectionId, string> = {
   "11-risks-debt": "Risks & Technical Debt",
 };
 
-export type Arc42SectionId = (typeof VALID_SECTIONS)[number];
-
 export interface Arc42SectionParams {
   target_dir: string;
-  section: Arc42SectionId;
+  section: SectionId;
   content?: string;
 }
 
