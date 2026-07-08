@@ -184,7 +184,11 @@ export async function handleGetBuildingBlock(
           ? "[x]"
           : task.status === "in-progress"
             ? "[>]"
-            : "[ ]";
+            : task.status === "blocked"
+              ? "[!]"
+              : task.status === "cancelled"
+                ? "[~]"
+                : "[ ]";
       lines.push(`- ${check} ${task.id}: ${task.title} (${task.status})`);
     }
   }
