@@ -235,6 +235,63 @@ describe("task mutations", () => {
   });
 });
 
+// Pins an intentional behavior change introduced during the 0.10.0 review:
+// the tasks view (get_phase_plan view:tasks / former get_current_tasks) treats
+// cancelled tasks as out of scope, matching the phase-completion gate and
+// update-task's phase stats. This is a contract, not incidental output.
+// Tasks are seeded via the phase YAML (the source of truth the handler
+// refreshes from) rather than direct DB writes, which refreshFromDocs discards.
+describe("tasks view — cancelled tasks are out of scope", () => {
+  const PHASE = "phase-0-setup";
+
+  function writePhaseTasks(rows: { id: string; status: string }[]): void {
+    const yaml = [
+      "schema_version: 1",
+      `phase_id: ${PHASE}`,
+      "tasks:",
+      ...rows.flatMap((r) => [
+        `  - id: ${r.id}`,
+        `    title: Task ${r.id}`,
+        `    status: ${r.status}`,
+        "    quality_scenarios: []",
+        "    acceptance_criteria:",
+        "      - criterion A",
+      ]),
+      "",
+    ].join("\n");
+    writeFileSync(join(tempDir, ".arcbridge", "plan", "tasks", `${PHASE}.yaml`), yaml);
+  }
+
+  it("excludes cancelled tasks from the progress denominator", async () => {
+    writePhaseTasks([
+      { id: "task-0.1-a", status: "done" },
+      { id: "task-0.2-b", status: "todo" },
+      { id: "task-0.3-c", status: "cancelled" },
+    ]);
+
+    const { handleGetCurrentTasks } = await import("../tools/get-current-tasks.js");
+    const res = await handleGetCurrentTasks(_ctx, { target_dir: tempDir, phase_id: PHASE });
+    const text = res.content[0].text;
+
+    // 1 done of 2 in-scope (cancelled excluded), not 1/3
+    expect(text).toContain("**Progress:** 1/2 complete");
+    // cancelled task and its criteria render with the distinct [~] marker
+    expect(text).toContain("[~] task-0.3-c");
+    expect(text).toMatch(/\[~\] criterion A/);
+  });
+
+  it("reports all-cancelled instead of a 0/0 progress line", async () => {
+    writePhaseTasks([{ id: "task-0.1-a", status: "cancelled" }]);
+
+    const { handleGetCurrentTasks } = await import("../tools/get-current-tasks.js");
+    const res = await handleGetCurrentTasks(_ctx, { target_dir: tempDir, phase_id: PHASE });
+    const text = res.content[0].text;
+
+    expect(text).not.toContain("0/0");
+    expect(text).toContain("all listed tasks are cancelled");
+  });
+});
+
 describe("refreshFromDocs picks up YAML-only changes", () => {
   it("loads new tasks added to YAML after initial generation", () => {
     // DB has the initial tasks from generateDatabase
