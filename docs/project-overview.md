@@ -241,7 +241,7 @@ The agent codes **within architectural boundaries**:
 - **Flags boundary crossings** instead of silently adding dependencies
 
 ```
-arcbridge_get_symbol({ symbol_id: "src/lib/auth/middleware.ts::verifyToken#function" })
+arcbridge_query_symbols({ symbol_id: "src/lib/auth/middleware.ts::verifyToken#function" })
 ```
 ```
 Signature:   (token: string) => Promise<DecodedToken | null>

@@ -24,13 +24,22 @@ const RETIRED_TOOLS = [
   "arcbridge_get_current_tasks",
 ] as const;
 
+const REPO_ROOT = join(__dirname, "..", "..", "..", "..");
+
 const ROOTS = [
   join(__dirname, "..", "tools"),
   join(__dirname, "..", "..", "..", "adapters", "src"),
   join(__dirname, "..", "..", "..", "core", "src", "templates"),
   join(__dirname, "..", "..", "README.md"),
   // This repo's committed, agent-facing role files (generated from templates)
-  join(__dirname, "..", "..", "..", "..", ".arcbridge", "agents"),
+  join(REPO_ROOT, ".arcbridge", "agents"),
+  // User/agent-facing usage docs — tutorials that show real tool calls. The
+  // internal planning docs (arcbridge-*-plan.md) are deliberately NOT scanned:
+  // they record history and old→new mappings that must keep the retired names.
+  join(REPO_ROOT, "docs", "project-overview.md"),
+  join(REPO_ROOT, "docs", "how-agents-use-arcbridge.md"),
+  join(REPO_ROOT, "docs", "walkthrough.md"),
+  join(REPO_ROOT, "docs", "adopting-existing-codebases.md"),
 ];
 
 function collectFiles(path: string): string[] {
