@@ -166,7 +166,7 @@ args = ["-y", "@arcbridge/mcp-server"]
 
 **OpenCode** — runs automatically when `--platform opencode` is passed during init. Creates `opencode.json` with MCP config, `OPENCODE.md` for project instructions, and `.opencode/agents/` for role-based subagents.
 
-Restart your AI agent — approve the MCP server when prompted, and all 34 architecture tools become available.
+Restart your AI agent — approve the MCP server when prompted, and all 25 architecture tools become available.
 
 When running `arcbridge init`, use `--platform` to generate platform-specific instruction and configuration files for your selected AI agent(s). Multiple platforms can be combined (e.g., `--platform claude --platform codex`).
 
