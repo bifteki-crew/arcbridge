@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { queryMetrics, type AggregatedRow, type ActivityRow } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { handleExportMetrics } from "./export-metrics.js";
 
 export function registerGetMetrics(
   server: McpServer,
@@ -10,7 +11,7 @@ export function registerGetMetrics(
 ): void {
   server.tool(
     "arcbridge_get_metrics",
-    "Query agent activity metrics — filter by model, task, phase, or time range. Group by model/task/phase/tool/day for aggregated views.",
+    "Query agent activity metrics — filter by model, task, phase, or time range. Group by model/task/phase/tool/day for aggregated views. Set `format` to json/csv/markdown to export the filtered metrics to a file in .arcbridge/metrics/ instead.",
     {
       target_dir: z.string().describe("Absolute path to the project directory"),
       task_id: z.string().optional().describe("Filter by task ID"),
@@ -21,11 +22,29 @@ export function registerGetMetrics(
       since: z.string().optional().describe("ISO 8601 timestamp — activity after this time"),
       until: z.string().optional().describe("ISO 8601 timestamp — activity before this time"),
       group_by: z.enum(["model", "task", "phase", "tool", "day", "none"]).default("none")
-        .describe("Group results for aggregation"),
+        .describe("Group results for aggregation (summary format only)"),
       limit: z.number().int().min(1).max(500).default(50)
-        .describe("Max rows in detail view (group_by=none)"),
+        .describe("Max rows in detail view (group_by=none, summary format)"),
+      format: z.enum(["summary", "json", "csv", "markdown"]).default("summary")
+        .describe("'summary' renders inline; json/csv/markdown export to a file for git commits or reporting"),
+      max_rows: z.number().int().min(1).default(100_000)
+        .describe("Export formats: maximum rows to export"),
     },
     async (params) => {
+      if (params.format !== "summary") {
+        return handleExportMetrics(ctx, {
+          target_dir: params.target_dir,
+          format: params.format,
+          task_id: params.task_id,
+          phase_id: params.phase_id,
+          model: params.model,
+          agent_role: params.agent_role,
+          tool_name: params.tool_name,
+          since: params.since,
+          until: params.until,
+          max_rows: params.max_rows,
+        });
+      }
       const db = ensureDb(ctx, params.target_dir);
       if (!db) return notInitialized();
 

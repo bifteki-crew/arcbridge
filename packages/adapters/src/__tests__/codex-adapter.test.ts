@@ -140,7 +140,7 @@ describe("CodexAdapter", () => {
       const content = readFileSync(skillPath, "utf-8");
       expect(content).toContain("name: arcbridge-review");
       expect(content).toContain("arcbridge_verify_scenarios");
-      expect(content).toContain("arcbridge_complete_phase");
+      expect(content).toContain("arcbridge_manage_phases");
     });
 
     it("skills have valid YAML frontmatter", () => {

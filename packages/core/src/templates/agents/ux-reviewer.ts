@@ -9,10 +9,8 @@ export function uxReviewerTemplate(): AgentRole {
     version: 1,
     required_tools: [
       "arcbridge_get_building_blocks",
-      "arcbridge_get_building_block",
-      "arcbridge_get_quality_scenarios",
-      "arcbridge_search_symbols",
-      "arcbridge_get_symbol",
+      "arcbridge_quality_scenarios",
+      "arcbridge_query_symbols",
       "arcbridge_get_component_graph",
       "arcbridge_get_route_map",
       "arcbridge_get_boundary_analysis",
@@ -52,7 +50,7 @@ export function uxReviewerTemplate(): AgentRole {
 You cannot see screenshots, but you CAN reason about UI quality through code:
 - **Component graph** — Use \`arcbridge_get_component_graph\` to see which components render which, detect deep nesting, find components that should be shared
 - **Route structure** — Use \`arcbridge_get_route_map\` to evaluate page hierarchy and navigation flow
-- **Component props** — Use \`arcbridge_search_symbols\` with \`kind: "component"\` to find all components, then check their prop interfaces for consistency
+- **Component props** — Use \`arcbridge_query_symbols\` with \`kind: "component"\` to find all components, then check their prop interfaces for consistency
 - **Client/server boundaries** — Use \`arcbridge_get_boundary_analysis\` to verify interactive components are client-side and data-fetching stays server-side
 - **Accessibility** — Search for ARIA attributes, keyboard event handlers, and semantic HTML usage in component code
 - **Styling patterns** — Check for consistent use of design tokens, utility classes, or CSS modules

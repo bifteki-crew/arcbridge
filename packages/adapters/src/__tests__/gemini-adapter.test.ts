@@ -43,7 +43,7 @@ const TEST_ROLES: AgentRole[] = [
     name: "Code Reviewer",
     description: "On-demand code review",
     version: 1,
-    required_tools: ["arcbridge_get_building_block"],
+    required_tools: ["arcbridge_get_building_blocks"],
     denied_tools: [],
     read_only: true,
     quality_focus: ["maintainability", "reliability"],
@@ -178,7 +178,7 @@ describe("GeminiAdapter", () => {
       expect(content).toContain("read_file");
       expect(content).toContain("grep_search");
       // Per-tool wildcards matching the role's required_tools
-      expect(content).toContain("mcp_*_arcbridge_get_building_block");
+      expect(content).toContain("mcp_*_arcbridge_get_building_blocks");
       expect(content).not.toContain("mcp_arcbridge_*");
       // No duplicate tools: key
       expect((content.match(/^tools:/gm) ?? []).length).toBe(1);

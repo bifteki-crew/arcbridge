@@ -147,13 +147,15 @@ Symbol-level indexing
 </div>
 </div>
 
-All queryable through **34 MCP tools** your agent already speaks.
+All queryable through **25 MCP tools** your agent already speaks.
 
 ---
 
 # One Call. Full Context.
 
 Agent gets a task: *"Fix the auth middleware to check token expiry"*
+
+> Tool-call examples show only the salient parameters. Every tool also takes a required `target_dir` (the absolute project path), omitted here for readability.
 
 ```
 arcbridge_get_guidance({ file_path: "src/lib/auth/middleware.ts" })
@@ -241,7 +243,7 @@ The agent codes **within architectural boundaries**:
 - **Flags boundary crossings** instead of silently adding dependencies
 
 ```
-arcbridge_get_symbol({ symbol_id: "src/lib/auth/middleware.ts::verifyToken#function" })
+arcbridge_query_symbols({ symbol_id: "src/lib/auth/middleware.ts::verifyToken#function" })
 ```
 ```
 Signature:   (token: string) => Promise<DecodedToken | null>

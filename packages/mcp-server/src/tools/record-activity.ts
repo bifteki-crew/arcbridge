@@ -13,7 +13,7 @@ export function registerRecordActivity(
     "Record agent activity — model, tokens, cost, duration, and optional quality snapshot. Use this to track what work was done and measure agent performance.",
     {
       target_dir: z.string().describe("Absolute path to the project directory"),
-      tool_name: z.string().describe("Name of the tool or action performed (e.g., 'arcbridge_update_task', 'code_edit')"),
+      tool_name: z.string().describe("Name of the tool or action performed (e.g., 'arcbridge_manage_tasks', 'code_edit')"),
       action: z.string().optional().describe("Human-readable label (e.g., 'implement login form')"),
       model: z.string().optional().describe("Model identifier (e.g., 'claude-sonnet-4-20250514')"),
       agent_role: z.string().optional().describe("Active ArcBridge role (e.g., 'implementer')"),

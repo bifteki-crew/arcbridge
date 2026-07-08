@@ -30,7 +30,16 @@ export function ensureDb(
   return ctx.db;
 }
 
-export function notInitialized() {
+/**
+ * Shape every tool handler returns — text content blocks. A type alias (not an
+ * interface): interface types are never assignable to the SDK's CallToolResult,
+ * whose index signature only object type aliases satisfy implicitly.
+ */
+export type ToolResult = {
+  content: { type: "text"; text: string }[];
+};
+
+export function notInitialized(): ToolResult {
   return {
     content: [
       {
@@ -41,7 +50,7 @@ export function notInitialized() {
   };
 }
 
-export function textResult(text: string) {
+export function textResult(text: string): ToolResult {
   return {
     content: [{ type: "text" as const, text }],
   };

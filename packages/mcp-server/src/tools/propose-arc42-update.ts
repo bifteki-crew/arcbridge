@@ -1,5 +1,3 @@
-import { z } from "zod";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   resolveRef,
   getChangedFiles,
@@ -9,95 +7,83 @@ import {
 } from "@arcbridge/core";
 import type { Database } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath, escapeLike } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, safeParseJson, normalizeCodePath, escapeLike, type ToolResult } from "../helpers.js";
 import type { BlockRow, SymbolRow } from "../db-types.js";
 
-export function registerProposeArc42Update(
-  server: McpServer,
+export interface ProposeArc42Params {
+  target_dir: string;
+  changes_since: string;
+  update_sync_point: boolean;
+}
+
+/** `propose` action of arcbridge_arc42. */
+export async function handleProposeArc42Update(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_propose_arc42_update",
-    "Analyze code changes since a reference point and generate specific, actionable proposals for updating arc42 documentation.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      changes_since: z
-        .string()
-        .default("last-sync")
-        .describe("Reference point: 'last-commit', 'last-sync', 'last-phase', or a git ref"),
-      update_sync_point: z
-        .boolean()
-        .default(false)
-        .describe("Update the stored sync commit to HEAD after generating proposals"),
-    },
-    async (params) => {
-      const db = ensureDb(ctx, params.target_dir);
-      if (!db) return notInitialized();
+  params: ProposeArc42Params,
+): Promise<ToolResult> {
+  const db = ensureDb(ctx, params.target_dir);
+  if (!db) return notInitialized();
 
-      const projectRoot = ctx.projectRoot ?? params.target_dir;
-      const ref = resolveRef(projectRoot, params.changes_since, db);
-      const changedFiles = getChangedFiles(projectRoot, ref.sha);
+  const projectRoot = ctx.projectRoot ?? params.target_dir;
+  const ref = resolveRef(projectRoot, params.changes_since, db);
+  const changedFiles = getChangedFiles(projectRoot, ref.sha);
 
-      if (changedFiles.length === 0) {
-        return textResult(
-          `# Arc42 Update Proposals\n\nNo code changes detected since ${ref.label}. Documentation is up to date.`,
-        );
-      }
+  if (changedFiles.length === 0) {
+    return textResult(
+      `# Arc42 Update Proposals\n\nNo code changes detected since ${ref.label}. Documentation is up to date.`,
+    );
+  }
 
-      const blocks = db
-        .prepare("SELECT id, name, code_paths, interfaces, description FROM building_blocks")
-        .all() as BlockRow[];
+  const blocks = db
+    .prepare("SELECT id, name, code_paths, interfaces, description FROM building_blocks")
+    .all() as BlockRow[];
 
-      const proposals = generateProposals(db, blocks, changedFiles, projectRoot);
+  const proposals = generateProposals(db, blocks, changedFiles, projectRoot);
 
-      const lines: string[] = [
-        `# Arc42 Update Proposals`,
-        "",
-        `**Changes since:** ${ref.label}`,
-        `**Files changed:** ${changedFiles.length}`,
-        `**Proposals:** ${proposals.length}`,
-        "",
-      ];
+  const lines: string[] = [
+    `# Arc42 Update Proposals`,
+    "",
+    `**Changes since:** ${ref.label}`,
+    `**Files changed:** ${changedFiles.length}`,
+    `**Proposals:** ${proposals.length}`,
+    "",
+  ];
 
-      if (proposals.length === 0) {
-        lines.push(
-          "No documentation updates needed — all changes are within documented building blocks and don't introduce new patterns.",
-        );
-      } else {
-        // Group proposals by target section
-        const bySection = new Map<string, Proposal[]>();
-        for (const p of proposals) {
-          const existing = bySection.get(p.section) ?? [];
-          existing.push(p);
-          bySection.set(p.section, existing);
-        }
+  if (proposals.length === 0) {
+    lines.push(
+      "No documentation updates needed — all changes are within documented building blocks and don't introduce new patterns.",
+    );
+  } else {
+    // Group proposals by target section
+    const bySection = new Map<string, Proposal[]>();
+    for (const p of proposals) {
+      const existing = bySection.get(p.section) ?? [];
+      existing.push(p);
+      bySection.set(p.section, existing);
+    }
 
-        for (const [section, items] of bySection) {
-          lines.push(`## ${section}`, "");
-          for (const item of items) {
-            lines.push(`### ${item.title}`, "");
-            lines.push(item.description, "");
-            if (item.suggestedChange) {
-              lines.push("**Suggested change:**", "", item.suggestedChange, "");
-            }
-          }
+    for (const [section, items] of bySection) {
+      lines.push(`## ${section}`, "");
+      for (const item of items) {
+        lines.push(`### ${item.title}`, "");
+        lines.push(item.description, "");
+        if (item.suggestedChange) {
+          lines.push("**Suggested change:**", "", item.suggestedChange, "");
         }
       }
+    }
+  }
 
-      // Update sync point if requested
-      if (params.update_sync_point) {
-        const headSha = getHeadSha(projectRoot);
-        if (headSha) {
-          setSyncCommit(db, "last_sync_commit", headSha);
-          lines.push("---", `*Sync point updated to ${headSha.slice(0, 7)}.*`, "");
-        }
-      }
+  // Update sync point if requested
+  if (params.update_sync_point) {
+    const headSha = getHeadSha(projectRoot);
+    if (headSha) {
+      setSyncCommit(db, "last_sync_commit", headSha);
+      lines.push("---", `*Sync point updated to ${headSha.slice(0, 7)}.*`, "");
+    }
+  }
 
-      return textResult(lines.join("\n"));
-    },
-  );
+  return textResult(lines.join("\n"));
 }
 
 interface Proposal {

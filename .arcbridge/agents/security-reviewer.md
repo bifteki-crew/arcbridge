@@ -6,11 +6,10 @@ description: >-
   scenarios, and checks auth coverage
 version: 1
 required_tools:
-  - arcbridge_get_quality_scenarios
+  - arcbridge_quality_scenarios
   - arcbridge_get_building_blocks
   - arcbridge_get_relevant_adrs
-  - arcbridge_search_symbols
-  - arcbridge_get_symbol
+  - arcbridge_query_symbols
   - arcbridge_get_route_map
   - arcbridge_get_boundary_analysis
   - arcbridge_get_practice_review

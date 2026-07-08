@@ -55,7 +55,7 @@ As the project grows, this architecture documentation grows with it. When you ad
 
 ### Build — code with architectural context
 
-During development, the AI agent has access to 35 MCP tools. Instead of working file-by-file, it knows:
+During development, the AI agent has access to 25 MCP tools. Instead of working file-by-file, it knows:
 
 - Which **building block** a file belongs to, and what quality scenarios apply
 - What **tasks** are in the current phase and their acceptance criteria
@@ -166,7 +166,7 @@ args = ["-y", "@arcbridge/mcp-server"]
 
 **OpenCode** — runs automatically when `--platform opencode` is passed during init. Creates `opencode.json` with MCP config, `OPENCODE.md` for project instructions, and `.opencode/agents/` for role-based subagents.
 
-Restart your AI agent — approve the MCP server when prompted, and all 34 architecture tools become available.
+Restart your AI agent — approve the MCP server when prompted, and all 25 architecture tools become available.
 
 When running `arcbridge init`, use `--platform` to generate platform-specific instruction and configuration files for your selected AI agent(s). Multiple platforms can be combined (e.g., `--platform claude --platform codex`).
 
@@ -188,7 +188,7 @@ ArcBridge auto-detects your project type and tailors the scaffolded architecture
 
 ## Language Support
 
-ArcBridge indexes code symbols and dependencies to power `arcbridge_search_symbols`, `arcbridge_get_symbol`, and `arcbridge_get_dependency_graph`. Language is auto-detected from project files.
+ArcBridge indexes code symbols and dependencies to power `arcbridge_query_symbols` and `arcbridge_get_dependency_graph`. Language is auto-detected from project files.
 
 | Language | Status | Detection | Symbols | Dependencies | Routes |
 |----------|--------|-----------|---------|--------------|--------|
@@ -218,7 +218,9 @@ The first 5 roles participate in the automatic Plan → Build → Sync → Revie
 
 Roles are loaded from `.arcbridge/agents/*.md` files. Edit the markdown frontmatter to customize tools, quality focus, and model preferences per role.
 
-## MCP Tools (35)
+## MCP Tools (25)
+
+> **Upgrading from ≤ 0.9.x?** 0.10.0 consolidated the tool surface from 35 to 25 tools (smaller schemas, fewer near-duplicates for agents to choose between). See the [CHANGELOG](CHANGELOG.md) for the full old → new mapping.
 
 ### Lifecycle
 
@@ -231,22 +233,17 @@ Roles are loaded from `.arcbridge/agents/*.md` files. Edit the markdown frontmat
 
 | Tool | Description |
 |------|-------------|
-| `arcbridge_get_building_blocks` | All blocks with code paths and quality links |
-| `arcbridge_get_building_block` | Deep dive: one block with ADRs, tasks, scenarios |
-| `arcbridge_get_quality_scenarios` | Quality requirements, filterable by category/status |
+| `arcbridge_get_building_blocks` | All blocks with code paths and quality links; pass `block_id` for the deep view (ADRs, tasks, scenarios) |
+| `arcbridge_quality_scenarios` | List quality scenarios (filter by category/status/priority) or update a scenario's status and linked tests (`action`) |
 | `arcbridge_get_relevant_adrs` | ADRs for a file path or building block |
 
 ### Planning
 
 | Tool | Description |
 |------|-------------|
-| `arcbridge_get_phase_plan` | Phase plan with tasks — filterable by phase_id, status, include_completed |
-| `arcbridge_get_current_tasks` | Tasks for the current or a specific phase (via phase_id) |
-| `arcbridge_update_task` | Mark tasks in-progress, done, or blocked |
-| `arcbridge_create_task` | Add a task to any phase |
-| `arcbridge_delete_task` | Remove one or more tasks permanently (batch via task_ids array) |
-| `arcbridge_create_phase` | Add a new phase to the project plan |
-| `arcbridge_delete_phase` | Remove a phase and all its tasks permanently |
+| `arcbridge_get_phase_plan` | Phase plan with tasks and gates; `view: tasks` shows one phase's task list (defaults to the active phase) |
+| `arcbridge_manage_tasks` | Create, update, or delete tasks (`action`) — batch delete via task_ids |
+| `arcbridge_manage_phases` | Create or delete phases, or complete one against its gates (`action`) |
 
 ### Code Intelligence
 
@@ -254,8 +251,7 @@ Roles are loaded from `.arcbridge/agents/*.md` files. Edit the markdown frontmat
 |------|-------------|
 | `arcbridge_reindex` | Index/re-index code symbols — TypeScript, C#, Python (experimental), Go (experimental) |
 | `arcbridge_propose_building_blocks` | Reverse-engineer building blocks from existing code (brownfield adoption) |
-| `arcbridge_search_symbols` | Search symbols by name, kind, file path, or building block |
-| `arcbridge_get_symbol` | Full symbol detail: signature, source code, relationships |
+| `arcbridge_query_symbols` | Search symbols by name/kind/path/block, or pass `symbol_id` for full detail with source and relationships |
 | `arcbridge_get_dependency_graph` | Import/dependency graph for a module |
 
 ### React & Next.js
@@ -273,18 +269,15 @@ Roles are loaded from `.arcbridge/agents/*.md` files. Edit the markdown frontmat
 | `arcbridge_check_drift` | Detect drift between architecture docs and code |
 | `arcbridge_get_guidance` | Context-aware guidance for a file path or building block |
 | `arcbridge_get_open_questions` | Unresolved architectural questions and risks |
-| `arcbridge_propose_arc42_update` | Generate arc42 update proposals from recent code changes |
+| `arcbridge_arc42` | Read or update arc42 sections, or propose doc updates from recent code changes (`action`) |
 | `arcbridge_get_practice_review` | 5-dimension review: architecture, security, testing, docs, complexity |
-| `arcbridge_update_arc42_section` | Read or update any arc42 markdown section (frontmatter preserved) |
 
 ### Roles & Sync
 
 | Tool | Description |
 |------|-------------|
-| `arcbridge_complete_phase` | Validate phase gates (tasks, drift, quality) and transition |
 | `arcbridge_activate_role` | Load agent role with tools, quality focus, and pre-loaded context |
 | `arcbridge_verify_scenarios` | Run linked tests for quality scenarios and update pass/fail status |
-| `arcbridge_update_scenario_status` | Manually update scenario status and link test files |
 | `arcbridge_run_role_check` | Run a role's quality checks against a file or building block |
 
 ### Metrics
@@ -292,8 +285,7 @@ Roles are loaded from `.arcbridge/agents/*.md` files. Edit the markdown frontmat
 | Tool | Description |
 |------|-------------|
 | `arcbridge_record_activity` | Record agent activity — model, tokens, cost, duration, quality snapshot |
-| `arcbridge_get_metrics` | Query and aggregate activity by model, task, phase, tool, or day |
-| `arcbridge_export_metrics` | Export metrics to JSON, CSV, or Markdown for git commits |
+| `arcbridge_get_metrics` | Query/aggregate activity by model, task, phase, tool, or day; `format: json/csv/markdown` exports to a file |
 
 ## CLI
 

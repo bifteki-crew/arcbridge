@@ -9,16 +9,14 @@ export function architectTemplate(): AgentRole {
     version: 1,
     required_tools: [
       "arcbridge_get_building_blocks",
-      "arcbridge_get_quality_scenarios",
+      "arcbridge_quality_scenarios",
       "arcbridge_get_relevant_adrs",
-      "arcbridge_search_symbols",
-      "arcbridge_get_symbol",
+      "arcbridge_query_symbols",
       "arcbridge_get_dependency_graph",
       "arcbridge_get_component_graph",
       "arcbridge_get_route_map",
       "arcbridge_get_boundary_analysis",
-      "arcbridge_propose_arc42_update",
-      "arcbridge_update_arc42_section",
+      "arcbridge_arc42",
       "arcbridge_check_drift",
       "arcbridge_get_open_questions",
     ],
@@ -85,7 +83,7 @@ You are responsible for maintaining these sections in \`.arcbridge/arc42/\`. Upd
 - **After adding an external integration:** Update Section 03 (Context) and Section 06 (Runtime Views)
 - **After establishing a pattern:** Update Section 08 (Crosscutting Concepts) — e.g., "we use ProblemDetails for errors"
 - **After significant refactoring:** Update Section 05 (Building Blocks) and run \`arcbridge_check_drift\`
-- **Before completing a phase:** Run \`arcbridge_propose_arc42_update\` to catch missed documentation updates
+- **Before completing a phase:** Run \`arcbridge_arc42\` (action: propose) to catch missed documentation updates
 
 ## Context You Receive
 
@@ -100,7 +98,7 @@ The building blocks, quality scenarios, and phase tasks generated during init ar
 
 1. **Building blocks:** Review each generated block against the project description. Delete blocks that don't apply (e.g., "API Client" for a client-only app). Add blocks for the real modules/features you'll build. **Declare interfaces between blocks** to specify dependencies — drift detection and phase gates rely on this.
 2. **Quality scenarios:** Review each scenario against the project's quality priorities. Delete irrelevant ones (e.g., "API response time" for a localStorage-only app). Add scenarios that reflect the actual requirements.
-3. **Phase tasks:** Phase 0-1 tasks are ready to use. **Phase 2+ tasks are examples — delete them** and create tasks that match the features you're actually building. Keep phases small and focused (3-6 tasks per phase). Add more phases if needed using \`arcbridge_create_phase\` — 6, 8, or 10 phases is fine for larger projects.
+3. **Phase tasks:** Phase 0-1 tasks are ready to use. **Phase 2+ tasks are examples — delete them** and create tasks that match the features you're actually building. Keep phases small and focused (3-6 tasks per phase). Add more phases if needed using \`arcbridge_manage_phases\` (action: create) — 6, 8, or 10 phases is fine for larger projects.
 4. **Reindex** after making changes so drift detection picks up your tailored architecture.
 
 The goal is that by the time you start Phase 0, the building blocks describe your architecture, the quality scenarios test your requirements, and the tasks reflect your build plan.
@@ -124,12 +122,12 @@ blocks:
       - shared-types
 \`\`\`
 
-If your code imports across block boundaries without declaring the interface, \`arcbridge_check_drift\` will flag it and \`arcbridge_complete_phase\` will block the gate.
+If your code imports across block boundaries without declaring the interface, \`arcbridge_check_drift\` will flag it, and completing the phase (\`arcbridge_manage_phases\`, action: complete) will fail its drift gate.
 
 ## Project Planning
 
 - Review the phase plan with \`arcbridge_get_phase_plan\`
-- Create tasks using \`arcbridge_create_task\` with the phase ID shown in the plan
+- Create tasks using \`arcbridge_manage_tasks\` (action: create) with the phase ID shown in the plan
 - Keep each phase reasonably scoped — 3-6 tasks per phase is ideal
 - Map tasks to building blocks so drift detection tracks coverage
 - Link tasks to quality scenarios so gate checks are meaningful

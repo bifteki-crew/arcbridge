@@ -6,12 +6,11 @@ description: >-
   simplicity. Opt-in — not part of automatic phase gates.
 version: 1
 required_tools:
-  - arcbridge_get_building_block
-  - arcbridge_get_quality_scenarios
+  - arcbridge_get_building_blocks
+  - arcbridge_quality_scenarios
   - arcbridge_get_relevant_adrs
-  - arcbridge_get_current_tasks
-  - arcbridge_search_symbols
-  - arcbridge_get_symbol
+  - arcbridge_get_phase_plan
+  - arcbridge_query_symbols
   - arcbridge_get_dependency_graph
   - arcbridge_get_component_graph
   - arcbridge_get_route_map

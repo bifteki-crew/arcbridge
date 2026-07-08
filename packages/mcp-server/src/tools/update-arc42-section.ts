@@ -1,9 +1,7 @@
-import { z } from "zod";
 import { existsSync, readFileSync } from "node:fs";
 import { atomicWriteFileSync, resolveWithin } from "@arcbridge/core";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { ensureDb, notInitialized, textResult } from "../helpers.js";
+import { ensureDb, notInitialized, textResult, type ToolResult } from "../helpers.js";
 
 /**
  * Split a markdown file with YAML frontmatter into frontmatter block and body.
@@ -28,9 +26,9 @@ function splitFrontmatter(raw: string): { frontmatterBlock: string; body: string
 /**
  * Sections that this tool manages — plain markdown with frontmatter.
  * Building blocks (05) and quality scenarios (10) have dedicated tools.
- * ADRs (09) are individual files managed by propose_arc42_update.
+ * ADRs (09) are individual files managed by arcbridge_arc42 (action: propose).
  */
-const VALID_SECTIONS = [
+export const VALID_SECTIONS = [
   "01-introduction",
   "02-constraints",
   "03-context",
@@ -41,7 +39,7 @@ const VALID_SECTIONS = [
   "11-risks-debt",
 ] as const;
 
-type SectionId = (typeof VALID_SECTIONS)[number];
+export type SectionId = (typeof VALID_SECTIONS)[number];
 
 const SECTION_LABELS: Record<SectionId, string> = {
   "01-introduction": "Introduction & Goals",
@@ -54,84 +52,67 @@ const SECTION_LABELS: Record<SectionId, string> = {
   "11-risks-debt": "Risks & Technical Debt",
 };
 
-export function registerUpdateArc42Section(
-  server: McpServer,
+export interface Arc42SectionParams {
+  target_dir: string;
+  section: SectionId;
+  content?: string;
+}
+
+/** `read`/`update` actions of arcbridge_arc42 (content present = update). */
+export async function handleArc42Section(
   ctx: ServerContext,
-): void {
-  server.tool(
-    "arcbridge_update_arc42_section",
-    "Read or update an arc42 documentation section. Omit `content` to read the current section. Provide `content` to replace the markdown body (frontmatter is preserved automatically). Use this for sections without dedicated tools: introduction, constraints, context, solution strategy, runtime views, deployment, crosscutting concepts, risks & debt. For building blocks use `arcbridge_get_building_blocks`, for quality scenarios use `arcbridge_get_quality_scenarios`.",
-    {
-      target_dir: z
-        .string()
-        .describe("Absolute path to the project directory"),
-      section: z
-        .enum(VALID_SECTIONS)
-        .describe(
-          "Arc42 section to read or update: " +
-          VALID_SECTIONS.map((s) => `${s} (${SECTION_LABELS[s]})`).join(", "),
-        ),
-      content: z
-        .string()
-        .optional()
-        .describe(
-          "New markdown content for the section body. Omit to read the current content. " +
-          "Frontmatter is preserved automatically — only provide the markdown body.",
-        ),
-    },
-    async (params) => {
-      const db = ensureDb(ctx, params.target_dir);
-      if (!db) return notInitialized();
+  params: Arc42SectionParams,
+): Promise<ToolResult> {
+  const db = ensureDb(ctx, params.target_dir);
+  if (!db) return notInitialized();
 
-      // section is enum-validated; containment is defense in depth
-      const filePath = resolveWithin(
-        params.target_dir,
-        ".arcbridge",
-        "arc42",
-        `${params.section}.md`,
-      );
+  // section is enum-validated; containment is defense in depth
+  const filePath = resolveWithin(
+    params.target_dir,
+    ".arcbridge",
+    "arc42",
+    `${params.section}.md`,
+  );
 
-      if (!existsSync(filePath)) {
-        return textResult(
-          `Section file \`${params.section}.md\` not found. Run \`arcbridge_init_project\` first.`,
-        );
-      }
+  if (!existsSync(filePath)) {
+    return textResult(
+      `Section file \`${params.section}.md\` not found. Run \`arcbridge_init_project\` first.`,
+    );
+  }
 
-      // Read mode — return current content
-      if (params.content === undefined) {
-        const raw = readFileSync(filePath, "utf-8");
-        const { body } = splitFrontmatter(raw);
-        const label = SECTION_LABELS[params.section];
+  // Read mode — return current content
+  if (params.content === undefined) {
+    const raw = readFileSync(filePath, "utf-8");
+    const { body } = splitFrontmatter(raw);
+    const label = SECTION_LABELS[params.section];
 
-        const trimmedBody = body.trim();
-        const startsWithHeading = /^#\s+/.test(trimmedBody);
+    const trimmedBody = body.trim();
+    const startsWithHeading = /^#\s+/.test(trimmedBody);
 
-        const outputLines: string[] = [];
-        if (!startsWithHeading) {
-          outputLines.push(`# ${label}`, "");
-        }
-        outputLines.push(
-          `**File:** \`.arcbridge/arc42/${params.section}.md\``,
-          "",
-          trimmedBody,
-        );
+    const outputLines: string[] = [];
+    if (!startsWithHeading) {
+      outputLines.push(`# ${label}`, "");
+    }
+    outputLines.push(
+      `**File:** \`.arcbridge/arc42/${params.section}.md\``,
+      "",
+      trimmedBody,
+    );
 
-        return textResult(outputLines.join("\n"));
-      }
+    return textResult(outputLines.join("\n"));
+  }
 
-      // Write mode — update the markdown body, preserve frontmatter
-      const raw = readFileSync(filePath, "utf-8");
-      const { frontmatterBlock } = splitFrontmatter(raw);
+  // Write mode — update the markdown body, preserve frontmatter
+  const raw = readFileSync(filePath, "utf-8");
+  const { frontmatterBlock } = splitFrontmatter(raw);
 
-      const updated = frontmatterBlock
-        ? `${frontmatterBlock}\n${params.content}\n`
-        : `${params.content}\n`;
-      atomicWriteFileSync(filePath, updated);
+  const updated = frontmatterBlock
+    ? `${frontmatterBlock}\n${params.content}\n`
+    : `${params.content}\n`;
+  atomicWriteFileSync(filePath, updated);
 
-      const label = SECTION_LABELS[params.section];
-      return textResult(
-        `Updated **${label}** (\`${params.section}.md\`). Frontmatter preserved.`,
-      );
-    },
+  const label = SECTION_LABELS[params.section];
+  return textResult(
+    `Updated **${label}** (\`${params.section}.md\`). Frontmatter preserved.`,
   );
 }

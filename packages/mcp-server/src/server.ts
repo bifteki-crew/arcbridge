@@ -7,20 +7,14 @@ import { createContext, type ServerContext } from "./context.js";
 import { registerInitProject } from "./tools/init-project.js";
 import { registerGetProjectStatus } from "./tools/get-project-status.js";
 import { registerGetBuildingBlocks } from "./tools/get-building-blocks.js";
-import { registerGetBuildingBlock } from "./tools/get-building-block.js";
-import { registerGetQualityScenarios } from "./tools/get-quality-scenarios.js";
+import { registerQualityScenarios } from "./tools/quality-scenarios.js";
 import { registerGetPhasePlan } from "./tools/get-phase-plan.js";
-import { registerGetCurrentTasks } from "./tools/get-current-tasks.js";
-import { registerUpdateTask } from "./tools/update-task.js";
-import { registerCreateTask } from "./tools/create-task.js";
-import { registerDeleteTask } from "./tools/delete-task.js";
-import { registerCreatePhase } from "./tools/create-phase.js";
-import { registerDeletePhase } from "./tools/delete-phase.js";
+import { registerManageTasks } from "./tools/manage-tasks.js";
+import { registerManagePhases } from "./tools/manage-phases.js";
 import { registerGetRelevantAdrs } from "./tools/get-relevant-adrs.js";
 import { registerReindex } from "./tools/reindex.js";
 import { registerProposeBuildingBlocks } from "./tools/propose-building-blocks.js";
-import { registerSearchSymbols } from "./tools/search-symbols.js";
-import { registerGetSymbol } from "./tools/get-symbol.js";
+import { registerQuerySymbols } from "./tools/query-symbols.js";
 import { registerGetDependencyGraph } from "./tools/get-dependency-graph.js";
 import { registerGetComponentGraph } from "./tools/get-component-graph.js";
 import { registerGetRouteMap } from "./tools/get-route-map.js";
@@ -28,22 +22,21 @@ import { registerGetBoundaryAnalysis } from "./tools/get-boundary-analysis.js";
 import { registerCheckDrift } from "./tools/check-drift.js";
 import { registerGetGuidance } from "./tools/get-guidance.js";
 import { registerGetOpenQuestions } from "./tools/get-open-questions.js";
-import { registerProposeArc42Update } from "./tools/propose-arc42-update.js";
+import { registerArc42 } from "./tools/arc42.js";
 import { registerGetPracticeReview } from "./tools/get-practice-review.js";
-import { registerCompletePhase } from "./tools/complete-phase.js";
 import { registerActivateRole } from "./tools/activate-role.js";
 import { registerVerifyScenarios } from "./tools/verify-scenarios.js";
 import { registerRunRoleCheck } from "./tools/run-role-check.js";
-import { registerUpdateScenarioStatus } from "./tools/update-scenario-status.js";
 import { registerRecordActivity } from "./tools/record-activity.js";
 import { registerGetMetrics } from "./tools/get-metrics.js";
-import { registerExportMetrics } from "./tools/export-metrics.js";
-import { registerUpdateArc42Section } from "./tools/update-arc42-section.js";
 
 /**
  * Create the ArcBridge MCP server. An explicit `ctx` may be passed so callers
  * that own the lifecycle (tests) can close the cached database handle; when
  * omitted, a fresh context is created (production behavior, unchanged).
+ *
+ * 0.10.0 consolidated the tool surface from 35 to 25 tools — see the
+ * CHANGELOG for the old → new mapping.
  */
 export function createArcBridgeServer(ctx: ServerContext = createContext()): McpServer {
   const server = new McpServer({
@@ -57,24 +50,18 @@ export function createArcBridgeServer(ctx: ServerContext = createContext()): Mcp
 
   // Architecture
   registerGetBuildingBlocks(server, ctx);
-  registerGetBuildingBlock(server, ctx);
-  registerGetQualityScenarios(server, ctx);
+  registerQualityScenarios(server, ctx);
   registerGetRelevantAdrs(server, ctx);
 
   // Planning
   registerGetPhasePlan(server, ctx);
-  registerGetCurrentTasks(server, ctx);
-  registerUpdateTask(server, ctx);
-  registerCreateTask(server, ctx);
-  registerDeleteTask(server, ctx);
-  registerCreatePhase(server, ctx);
-  registerDeletePhase(server, ctx);
+  registerManageTasks(server, ctx);
+  registerManagePhases(server, ctx);
 
   // Code Intelligence
   registerReindex(server, ctx);
   registerProposeBuildingBlocks(server, ctx);
-  registerSearchSymbols(server, ctx);
-  registerGetSymbol(server, ctx);
+  registerQuerySymbols(server, ctx);
   registerGetDependencyGraph(server, ctx);
 
   // React & Next.js Analysis
@@ -86,21 +73,15 @@ export function createArcBridgeServer(ctx: ServerContext = createContext()): Mcp
   registerCheckDrift(server, ctx);
   registerGetGuidance(server, ctx);
   registerGetOpenQuestions(server, ctx);
-  registerProposeArc42Update(server, ctx);
+  registerArc42(server, ctx);
   registerGetPracticeReview(server, ctx);
-  registerCompletePhase(server, ctx);
   registerActivateRole(server, ctx);
   registerVerifyScenarios(server, ctx);
-  registerUpdateScenarioStatus(server, ctx);
   registerRunRoleCheck(server, ctx);
-
-  // Arc42 Documentation
-  registerUpdateArc42Section(server, ctx);
 
   // Metrics
   registerRecordActivity(server, ctx);
   registerGetMetrics(server, ctx);
-  registerExportMetrics(server, ctx);
 
   return server;
 }

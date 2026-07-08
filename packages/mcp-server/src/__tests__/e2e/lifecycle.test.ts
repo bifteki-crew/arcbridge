@@ -132,8 +132,8 @@ describe.sequential("MCP e2e lifecycle (Plan → Build → Sync → Review)", ()
     expect(symbols).toBeGreaterThanOrEqual(6);
   });
 
-  it("Build: search_symbols finds a fixture function", async () => {
-    const out = await call("arcbridge_search_symbols", { target_dir: project, query: "createItem" });
+  it("Build: query_symbols finds a fixture function", async () => {
+    const out = await call("arcbridge_query_symbols", { target_dir: project, query: "createItem" });
     expect(out).toContain("createItem");
     expect(out).toContain("src/api/routes.ts");
   });
@@ -153,9 +153,10 @@ describe.sequential("MCP e2e lifecycle (Plan → Build → Sync → Review)", ()
     expect(out).not.toContain("dependency_violation");
   });
 
-  it("Plan: create_task writes through to the phase task YAML", async () => {
-    const out = await call("arcbridge_create_task", {
+  it("Plan: manage_tasks(create) writes through to the phase task YAML", async () => {
+    const out = await call("arcbridge_manage_tasks", {
       target_dir: project,
+      action: "create",
       phase_id: "phase-0-setup",
       title: "E2E lifecycle task",
       acceptance_criteria: ["asserted by the e2e suite"],
@@ -171,14 +172,15 @@ describe.sequential("MCP e2e lifecycle (Plan → Build → Sync → Review)", ()
     expect(task?.status).toBe("todo");
   });
 
-  it("Build: update_task syncs the new status to YAML", async () => {
+  it("Build: manage_tasks(update) syncs the new status to YAML", async () => {
     const before = parse(fileIn(".arcbridge", "plan", "tasks", "phase-0-setup.yaml")) as {
       tasks: Array<{ id: string; title: string }>;
     };
     const taskId = before.tasks.find((t) => t.title === "E2E lifecycle task")!.id;
 
-    const out = await call("arcbridge_update_task", {
+    const out = await call("arcbridge_manage_tasks", {
       target_dir: project,
+      action: "update",
       task_id: taskId,
       status: "done",
     });
@@ -192,9 +194,10 @@ describe.sequential("MCP e2e lifecycle (Plan → Build → Sync → Review)", ()
     expect(task?.completed_at).toBeTruthy();
   });
 
-  it("Review: complete_phase refuses while tasks are open (gate)", async () => {
-    const out = await call("arcbridge_complete_phase", {
+  it("Review: manage_phases(complete) refuses while tasks are open (gate)", async () => {
+    const out = await call("arcbridge_manage_phases", {
       target_dir: project,
+      action: "complete",
       phase_id: "phase-0-setup",
       auto_infer: false,
       run_tests: false,
@@ -207,9 +210,10 @@ describe.sequential("MCP e2e lifecycle (Plan → Build → Sync → Review)", ()
     expect(phases.phases.find((p) => p.id === "phase-0-setup")?.status).not.toBe("complete");
   });
 
-  it("Plan: create_phase and delete_phase write through to phases.yaml", async () => {
-    const out = await call("arcbridge_create_phase", {
+  it("Plan: manage_phases create/delete write through to phases.yaml", async () => {
+    const out = await call("arcbridge_manage_phases", {
       target_dir: project,
+      action: "create",
       name: "E2E extra phase",
       description: "Temporary phase created by the e2e suite",
     });
@@ -221,7 +225,7 @@ describe.sequential("MCP e2e lifecycle (Plan → Build → Sync → Review)", ()
     const created = withPhase.phases.find((p) => p.name === "E2E extra phase");
     expect(created).toBeTruthy();
 
-    await call("arcbridge_delete_phase", { target_dir: project, phase_id: created!.id });
+    await call("arcbridge_manage_phases", { target_dir: project, action: "delete", phase_id: created!.id });
     const withoutPhase = parse(fileIn(".arcbridge", "plan", "phases.yaml")) as {
       phases: Array<{ id: string }>;
     };
