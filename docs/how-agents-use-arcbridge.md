@@ -18,6 +18,8 @@ Without architectural context, the agent has to guess and scan. On a large codeb
 
 ArcBridge pre-indexes the codebase into a SQLite database and links it to architecture documentation. The agent queries this database through MCP tools instead of scanning files.
 
+> The tool-call examples below show only the parameters that matter for the step. Every tool also takes a required `target_dir` (the absolute project path), omitted here for readability.
+
 ### Step 1 — Get architectural context for a file
 
 The agent calls `arcbridge_get_guidance` with `{ file_path: "src/lib/auth/middleware.ts" }`.

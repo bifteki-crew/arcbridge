@@ -30,7 +30,7 @@ export async function handleUpdateTask(
       content: [
         {
           type: "text" as const,
-          text: `Task '${params.task_id}' not found. Use \`arcbridge_get_phase_plan\` to see available tasks.`,
+          text: `Task '${params.task_id}' not found. Use \`arcbridge_get_phase_plan\` (view: tasks) to see available tasks.`,
         },
       ],
     };

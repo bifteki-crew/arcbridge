@@ -155,6 +155,8 @@ All queryable through **34 MCP tools** your agent already speaks.
 
 Agent gets a task: *"Fix the auth middleware to check token expiry"*
 
+> Tool-call examples show only the salient parameters. Every tool also takes a required `target_dir` (the absolute project path), omitted here for readability.
+
 ```
 arcbridge_get_guidance({ file_path: "src/lib/auth/middleware.ts" })
 ```
