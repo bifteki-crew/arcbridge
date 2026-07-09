@@ -1,19 +1,23 @@
 # ArcBridge Improvement Plan — June 2026 (updated July 2026)
 
-Status: Phases A, B, and C DONE. Phase A released v0.6.2/v0.6.3; monorepo
-per-service indexing (unplanned but load-bearing) shipped v0.7.0; Phase C
-`arcbridge adopt` shipped v0.8.0; Phase B (demo GIF, FAQ, example repo) landed
-July 2026, and v0.9.0 moved building blocks to `05-building-blocks.yaml` for
-clean GitHub rendering. Phase D (drift GitHub Action) DONE July 2026. Phases E
-and F remain.
-Baseline (when written): v0.6.1 — 34 MCP tools, 7 templates, 5 adapters, 4 language indexers, 534 tests.
-Now: v0.9.0 — 35 MCP tools, 578 tests.
+Status: **Phases A–E all DONE and released through v0.10.0.** Phase A shipped
+v0.6.2/v0.6.3; monorepo per-service indexing (unplanned but load-bearing) shipped
+v0.7.0; Phase C `arcbridge adopt` shipped v0.8.0; Phase B (demo GIF, FAQ, example
+repo) landed July 2026; v0.9.0 moved building blocks to `05-building-blocks.yaml`
+for clean GitHub rendering; **v0.10.0 (2026-07-08)** bundled Phase D (drift GitHub
+Action), Phase E1 (e2e MCP lifecycle suite), and Phase E2 (breaking tool
+consolidation 35 → 25). **What remains open: E3 (arc42 sections as MCP resources)
+and the whole "Phase F+" roadmap below.**
+Baseline (June 2026): v0.6.1 — 34 MCP tools, 7 templates, 5 adapters, 4 language indexers, 534 tests.
+Now: v0.10.0 — 25 MCP tools, 600 tests, 7 templates, 5 adapters, 4 indexers, route analysis for 7 frameworks.
 
-This plan turns the June 2026 project assessment into workstreams, ordered by
-release. The strategic thesis: ArcBridge is engineering-mature but has no brownfield
-adoption path and no public visibility. The headline investment is `arcbridge adopt`
-(reverse-engineer building blocks from existing code); everything else either
-de-risks it (hardening, tests) or amplifies it (demo assets, CI action).
+This plan turned the June 2026 project assessment into workstreams, ordered by
+release. The original thesis: ArcBridge was engineering-mature but had no brownfield
+adoption path and no public visibility — so the headline investment was `arcbridge
+adopt`, with everything else de-risking it (hardening, tests) or amplifying it
+(demo assets, CI action). **That arc is now complete.** The next arc (Phase F+,
+below) is reframed around a different gap — see [Phase F+ — Roadmap beyond
+v0.10.0](#phase-f--roadmap-beyond-v0100).
 
 ```
 v0.6.2/.3  Phase A: Hardening (quick wins)             DONE
@@ -21,16 +25,16 @@ v0.7.0     (unplanned) Monorepo per-service indexing   DONE — enabled dogfoodi
 v0.8.0     Phase C: arcbridge adopt                    DONE — the headline
 —          Phase B: Demo & adoption assets             DONE — GIF, FAQ, example repo
 v0.9.0     (unplanned) Building blocks as .yaml        DONE — clean GitHub rendering
-—          Phase D: GitHub Action for drift            DONE — in-repo composite action
-—          Phase E: Integration tests, then            NEXT (~7–9 days)
-                    MCP tool consolidation (breaking)
-Later      Phase F: Perf, contracts, metrics dashboard backlog
+v0.10.0    Phase D: GitHub Action for drift            DONE — in-repo composite action
+v0.10.0    Phase E1: Integration tests                 DONE — e2e MCP lifecycle suite
+v0.10.0    Phase E2: MCP tool consolidation 35→25      DONE — breaking; contract-pinned by E1
+—          Phase E3: arc42 sections as MCP resources   OPEN (stretch)
+0.11.0 →   Phase F+: Prove the thesis, build the moat  NEXT — see roadmap below
 ```
 
 > Version note: Phase C was originally slated for v0.7.0, but v0.7.0 shipped the
 > monorepo per-service indexing that dogfooding (Phase A6) surfaced as a
-> prerequisite, so `adopt` released as v0.8.0. The Phase D/E version labels below
-> are historical estimates — treat the ordering above as current.
+> prerequisite, so `adopt` released as v0.8.0. Phase D/E landed together in v0.10.0.
 
 ---
 
@@ -280,7 +284,7 @@ channel (every adopting repo shows ArcBridge comments to its contributors).
 
 ---
 
-## Phase E — Integration tests, then tool consolidation (v0.8.0, ~7–9 days)
+## Phase E — Integration tests, then tool consolidation (v0.10.0) — DONE
 
 Order matters: the test layer lands first because it's the regression net for the
 breaking tool changes.
@@ -355,26 +359,247 @@ turns. Tools remain the compatibility path since not all clients consume resourc
 
 ---
 
-## Phase F — Later (backlog, post-0.8)
+## Phase F+ — Roadmap beyond v0.10.0
 
-In rough priority order; not scheduled:
+**The reframe.** Phases A–E built the *engine* and gave it a brownfield on-ramp.
+What's still missing is different in kind: the whole pitch rests on two success
+metrics from the project plan that **nothing currently measures**, and the spec's
+self-declared *"killer feature — cross-service contract alignment, which no
+competitor has"* is only half-built. So the next arc is organized around four
+questions, not a flat backlog.
 
-1. **Indexing performance** — content-hash skipping for the Python/Go tree-sitter
-   indexers (TS already has it); investigate scoping dependency re-extraction to
-   changed files (cross-file edges make this nontrivial — currently a documented
-   full re-extract per service). Add a 1k-file synthetic benchmark to CI as a
-   regression tripwire. Becomes urgent as `adopt` pulls in larger repos.
-2. **Contracts table population** — schema exists, unpopulated. The route analyzers
-   already see both sides in fullstack-nextjs-dotnet (Next.js fetch sites ↔ ASP.NET
-   route definitions): populate contracts, add a `contract_violation` drift kind.
-   Concrete, demo-able cross-service value no competitor has.
-3. **Metrics dashboard** — `record_activity`/`get_metrics` data → static HTML
-   report (`arcbridge report`): drift trends per block, scenario pass rates over
-   time, agent-session correlation. The "architecture observability for AI teams"
-   story.
-4. **Git ref caching** — memoize `resolveRef()` (30–60s TTL) to cut subprocess
-   overhead in tool calls that resolve refs 2–4×.
-5. **Diff-scoped drift** (`drift --base <ref>`) to power PR-incremental action mode.
+The two unproven north-star metrics (from `arcbridge-project-plan.md`):
+- **"Token usage for common tasks is reduced by 60%+ vs raw file reading."**
+- **"Arc42 documents stay within 1 session of accuracy — drift is never more than
+  one coding session old."**
+
+And the load-bearing risk the plan names explicitly: *"The sync loop is
+load-bearing — if it's clunky, slow, or low-quality, the whole convention
+collapses."* Its quality is currently untested.
+
+### Four strategic lenses
+
+1. **"Is it true?" — Prove the thesis.** Instrument and benchmark the two metrics
+   above. A reproducible harness demonstrating the token reduction is both product
+   validation and the "honest marketing" the plan values (0 stars today; a credible
+   number beats any GIF).
+2. **"Why us?" — Build the moat.** Cross-service **contract alignment**: the one
+   capability nothing else has. The route analyzers already parse both sides in
+   `fullstack-nextjs-dotnet`; the contracts table is defined but empty.
+3. **"Will they stay?" — Make the loop frictionless.** Diff-scoped drift for fast
+   PR checks, indexer perf, and — most importantly — actually *evaluating*
+   sync-proposal quality and latency.
+4. **"Will they find it?" — Distribution & convention.** The meta-goal is ecosystem
+   adoption of the *convention*, not the tool (convention guide, case study, VS Code
+   surface). Marketing-shaped; runs in parallel, off the engineering critical path.
+
+### The autonomous-loop reframe (2026)
+
+The original metrics assumed **interactive coding sessions with a human in the
+loop**. Usage is trending toward **autonomous, orchestrated agent loops** (we
+prototyped this early with spawned example builds, and the system works in that
+mode). This *sharpens* the four lenses rather than replacing them — the core
+concept is untouched:
+
+- **Drift detection stops being a convenience and becomes the enforcement layer.**
+  With no human watching in real time, the only thing between an agent and
+  accumulated architectural rot is a programmatic gate — exactly what `check_drift`,
+  the `complete_phase` gates, and the CI Action already are (Phase D). Lens 3 quietly
+  grows to include multi-agent. This machinery is built; it's just framed today as a
+  dev convenience rather than the autonomous-era governor it actually is.
+- **Token savings compound instead of being a one-session win.** A single session
+  saves tokens once; an N-step loop that re-scans files every iteration wastes it
+  N×. So the proof point (lens 1) shifts from *"60% per task"* to **"stays
+  architecturally coherent across N unattended steps at roughly flat context
+  cost."** The 60% doesn't shrink — it's just the wrong framing for a loop.
+- **ArcBridge is already a shared-state substrate for orchestration.** The
+  YAML-source-of-truth + queryable DB + phase/task model + drift log is the
+  "blackboard" spawned agents need to coordinate: what's decided, what's done,
+  what's next, what's out of bounds.
+
+**Design guardrail:** ArcBridge is the architectural memory + governance layer an
+orchestrator plugs into — it does **not** own the loop. Plenty of orchestrators
+exist (subagents, fleet mode, LangGraph, CrewAI); competing with them would betray
+the plan's own principle, *"put the brain in the MCP server, put the UX in the agent
+config."* "More loop focus" means *be an excellent MCP-native context + governance
+provider for orchestrated agents*, never *build our own loop.*
+
+### Milestone sequence
+
+| Milestone | Theme (lens) | Contents |
+|---|---|---|
+| **0.11.0** | Prove it + fast feedback (1, 3) | **validation corpus + harness (F0)**; token-savings + coherence benchmark on it; `drift --base <ref>` + Action diff mode; Python/Go content-hash skipping; git-ref cache |
+| **0.12.0** | The moat (2) | symbol-ID namespacing fix → populate contracts table → `contract_violation` drift → surface tool + demo on the example repo |
+| **0.13.0** | Observability + retention (3) | `arcbridge report` metrics dashboard; sync-proposal quality/latency hardening; **E3** arc42 sections as MCP resources |
+| Candidate | Orchestration-readiness (3) | parallelizable-task surface from the building-block graph; single-writer reconciliation as the recommended pattern; fleet observability — see sketch below |
+| Parallel | Distribution (4) | standalone convention guide (Phase 9); before/after `adopt` case study; VS Code surface (Phase 8, later) |
+| Deferred | Breadth | security/quality scanning (Phase 7); deeper .NET DI/EF/middleware (Phase 10); full cross-service tasks/scenarios (monorepo P3) |
+
+Rationale for leading with 0.11.0: proving the token claim is the highest-leverage
+*non-obvious* move (the entire pitch rests on an unmeasured number), the pieces are
+mostly ready-to-build and low-risk, and `drift --base` also unlocks the Action's
+incremental mode — real user value. The release opens with **F0, a small
+validation corpus + harness**, because it's the substrate every other item leans on
+— F1 can't be honest without it, and it becomes the shared fixture for 0.12.0
+(contracts need a fullstack project) and 0.13.0 (drift-staleness) too, so building it
+once pays off three times. Contract alignment (0.12.0) is the strategic centerpiece
+but is higher-effort and depends on the namespacing fix, so it follows the de-risking
+milestone.
+
+### 0.11.0 — detailed breakdown (NEXT)
+
+**F0. Validation corpus + harness** *(the substrate — build this first)*
+- A small, pinned set of **2–3 projects spanning the shapes that exercise different
+  code paths**: a TS frontend (the existing `example-bookmarks`, or a react-vite
+  fixture), a backend (`api-service` or `dotnet-webapi` — exercises the C#/route
+  paths), and a fullstack/monorepo (needed for 0.12.0 anyway; holds both contract
+  sides). Optionally a **brownfield repo with no `.arcbridge/`** to validate `adopt`
+  end-to-end. Some can be generated-from-template fixtures (zero maintenance); at
+  least one should be a real committed repo (honest + doubles as a public example).
+- **Two harness layers, matching two testing modes:**
+  - *Functional smoke (gates in CI):* run init/index/`adopt`/drift across the corpus
+    and assert sane output + zero unexpected errors. Catches regressions across
+    templates, indexers, and languages. (Partly exists today — the `check` job runs
+    `drift --reindex` on the dogfood repo — this generalizes it to more shapes.)
+  - *Deterministic token proxy (non-gating report in CI):* for a fixed question set,
+    compare `tokens(ArcBridge tool response)` vs `tokens(the files an agent would
+    otherwise read to answer)`. No live model — fully reproducible, stable enough to
+    report on every PR without flakiness.
+- **Explicitly out of scope for CI:** the *live-agent* eval (a real model driving
+  tool calls vs. raw file reading, measuring tokens-to-*complete*). That is
+  non-deterministic and costs money per run — reserve it for a **periodic/manual**
+  job once the corpus exists (it's F1's multi-step-autonomous scenario, run
+  on-demand, never as a PR gate).
+- Acceptance: the corpus is committed/pinned; the functional-smoke job is green in
+  CI; the token-proxy job emits a deterministic table.
+
+**F1. Token-savings + coherence benchmark harness** *(the credibility artifact — runs on F0's corpus)*
+- **Two scenario classes, not one** — reflecting the autonomous-loop reframe:
+  - *Single-shot Q&A:* realistic agent questions ("where does auth belong?", "what
+    calls `verifyToken`?", "what quality constraints apply to this file?") run two
+    ways — (a) ArcBridge MCP tools, (b) a raw-file-reading baseline — measuring
+    tokens-to-answer. This substantiates the classic "60%+" per-task claim.
+  - *Multi-step autonomous:* a small unattended build/change loop (N steps) run
+    with-ArcBridge vs. baseline, measuring **two** things: cumulative
+    tokens-to-complete *and* **architectural drift accumulated** (drift entries at
+    the end) with gates vs. without. This is the loop-era proof point — coherence at
+    roughly flat context cost across unattended steps.
+- Runs on the **F0 corpus** so results are reproducible by anyone. The single-shot
+  class uses F0's deterministic token proxy (CI, per-PR); the multi-step-autonomous
+  class is the live-agent eval reserved for a periodic/manual job (not a PR gate).
+- Output a small report (numbers + methodology) suitable for the README. Target:
+  substantiate or honestly revise both claims. **Do not cherry-pick** — if the real
+  number is lower, publish it; a defensible 35% beats an unbelievable 60%.
+- Acceptance: `pnpm bench:tokens` (or similar) produces a deterministic table for the
+  single-shot class in CI; the multi-step report is regenerated on demand.
+
+**F2. Diff-scoped drift — `arcbridge drift --base <ref>`** *(also unblocks the Action)*
+- Restrict drift analysis to files changed since `<ref>` (e.g. the PR base), so PR
+  checks are fast and comment only on what the PR touched.
+- Wire an optional `base` input into the composite Action for a PR-incremental mode
+  (the v1 Action deliberately cut this — see Phase D scope note).
+- Watch the file→block assignment: a changed file must still resolve against the
+  *full* building-block set (longest-prefix rule), not just changed blocks.
+- Acceptance: on a PR touching one file, drift reports only that file's issues;
+  Action comment scopes to the diff; whole-repo mode unchanged by default.
+
+**F3. Python/Go content-hash skipping** *(perf; TS already has it)*
+- Extend the content-hash incremental-skip the TS indexer uses to the Python/Go
+  tree-sitter indexers, so unchanged files aren't re-parsed every run.
+- Add a ~1k-file synthetic-repo benchmark to CI as a regression tripwire (the
+  original Phase F item 1).
+- Acceptance: second `reindex` on an unchanged Python/Go tree does near-zero parse
+  work; benchmark records index time.
+
+**F4. Git-ref caching** *(small perf)*
+- Memoize `resolveRef()` with a 30–60s TTL to cut subprocess overhead where a
+  single tool call resolves refs 2–4×.
+- Acceptance: repeated ref resolution within the TTL issues one `git` subprocess.
+
+> Sequencing within 0.11.0: **F0 first** (the corpus + harness — everything else
+> validates against it), then F2 (`drift --base`, highest user value + unblocks the
+> Action), then F1 (the benchmark — ideally *use* F2's speed in the "with ArcBridge"
+> path), then F3/F4 (perf polish). F1 is the release's headline number; F3/F4 can
+> slip to 0.11.x if needed. The live-agent eval is periodic/manual, not part of the
+> release gate.
+
+### 0.12.0 — the moat (contract alignment), sketch
+
+The differentiator, detailed enough to size but not yet scheduled:
+1. **Symbol-ID namespacing (foundation)** — monorepo P0 from the project plan:
+   symbol IDs currently collide across services. Namespace them by service before
+   any cross-service feature can be trusted. Migration + tests.
+2. **Populate the contracts table** — the schema exists but is empty. Drive it from
+   the `fullstack-nextjs-dotnet` route analyzers, which already see both the Next.js
+   fetch sites and the ASP.NET route/DTO definitions.
+3. **`contract_violation` drift kind** — detect field-name/casing/type/nullability
+   mismatches between a frontend client type and its backend DTO; surface via a tool
+   and the drift report.
+4. **Demo it** — a deliberately-broken contract in the example repo that the tool
+   catches, mirroring the `adopt` dogfooding pattern (a permanent fixture + honest
+   marketing).
+
+### Native orchestration pattern + orchestration-readiness (candidate)
+
+Running the ArcBridge loop with multiple agents mirrors the loop itself: **pick a
+phase → prepare shared context (Plan) → fan out independent sub-tasks (Build) →
+gather + Sync/Review.** A single lead/orchestrator owns the shared state; spawned
+agents do partitioned code work on their own tasks. We prototyped this early with
+spawned example builds; it works.
+
+Two observations reshape the earlier concurrency worry:
+
+- **Concurrency isn't ArcBridge-specific, and the natural shape avoids it.** Two
+  agents editing the same source file conflict on *any* project — handled the usual
+  way (partition the work, or one writer reconciles). Same for ArcBridge's shared
+  task/phase ledger: if the orchestrator is the single writer of status (agents
+  report results up, it writes them back through the YAML-sync path), the
+  read-modify-write lost-update case never arises. So it's a **known limitation with
+  a natural workaround (single-writer / partitioned work)**, not a blocker — document
+  it; don't necessarily engineer around it.
+- **ArcBridge can tell you what's safe to parallelize — that's the real value-add.**
+  Tasks already map to building blocks, and building blocks already declare their
+  dependency edges (`interfaces` — the same ones drift uses for
+  `dependency_violation`). So the model already knows which sub-tasks touch
+  *disjoint, non-dependent* blocks (fan out concurrently) vs. which share a block or
+  a dependency edge (serialize). Surfacing that — "here are the tasks you can safely
+  run in parallel right now" — is something an orchestrator can't easily derive on
+  its own, and it's uniquely ours because we hold the architecture graph.
+
+Candidate scope (not scheduled; pull forward if orchestrated usage becomes a
+priority):
+1. **Parallelizable-task surface (the differentiated piece).** Extend the work-queue
+   idea: return next unblocked tasks *annotated with a parallel-safe grouping*
+   derived from building-block boundaries + dependency edges, so an orchestrator
+   knows what to fan out vs. serialize.
+2. **Single-writer reconciliation as the recommended pattern.** Document it (the
+   orchestrator owns shared-state writes). Only if direct concurrent writes are ever
+   genuinely needed, add optimistic concurrency (version/mtime check + retry) — the
+   read-modify-write path in `core/src/sync/yaml-writer.ts` is corruption-safe but
+   not lost-update-safe today.
+3. **Fleet observability (leans on 0.13.0).** `record_activity`/`get_metrics` already
+   carry `model`/`agent_role`/`session` dimensions — the dashboard becomes
+   observability across a fleet of autonomous agents, mostly a framing + reporting
+   win on existing data.
+
+> Guardrail (repeat): a first-class *state + governance provider* for orchestrators,
+> not an orchestrator. If it starts to look like a scheduler, stop.
+
+### Backlog / deferred (unchanged, mapped into the lenses above)
+
+- **Metrics dashboard** (`arcbridge report`) — static HTML from
+  `record_activity`/`get_metrics`: drift trends per block, scenario pass rates over
+  time, agent-session correlation → **0.13.0** (lens 3). Also the natural home for
+  the "1 session of accuracy" drift-staleness measurement.
+- **Sync-proposal quality/latency** — evaluate `propose_arc42_update` output quality
+  and hold it to the <10s budget the plan sets → **0.13.0** (lens 3); this is the
+  load-bearing risk.
+- **E3 — arc42 sections as MCP resources** (`arcbridge://arc42/<section>`) → **0.13.0**.
+- **Convention guide, adopt case study, VS Code surface** → parallel distribution
+  track (Project-plan Phases 8/9; lens 4).
+- **Security/quality scanning** (Project-plan Phase 7), **deeper .NET** (DI/EF/
+  middleware, Phase 10), **full cross-service tasks/scenarios** (monorepo P3) →
+  deferred breadth; pull in when a concrete user or demo demands them.
 
 ---
 
