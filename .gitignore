@@ -22,3 +22,6 @@ obj/
 
 # ArcBridge adopt proposals (review artifacts — apply, don't commit)
 .arcbridge/proposals/
+
+# Generated benchmark reports (timestamped; regenerate with `pnpm --filter @arcbridge/bench bench:tokens`)
+packages/bench/reports/

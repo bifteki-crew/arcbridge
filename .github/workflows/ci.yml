@@ -38,6 +38,17 @@ jobs:
       # .arcbridge/ model. Reindexes the monorepo and fails on error-severity
       # drift (e.g. an undeclared cross-block dependency or undocumented module).
       - run: node packages/cli/dist/index.js drift --reindex
+      # F0 functional smoke: run the real init → adopt → drift pipeline + the
+      # consolidated MCP tools across the validation corpus. Gating.
+      - run: pnpm --filter @arcbridge/bench smoke
+      # F0 token-savings proxy: deterministic report, non-gating (numbers move,
+      # but a token delta never fails the build). Surfaced in the job summary.
+      - name: Token-savings proxy (non-gating report)
+        run: |
+          pnpm --filter @arcbridge/bench bench:tokens || true
+          if [ -f packages/bench/reports/token-savings.md ]; then
+            cat packages/bench/reports/token-savings.md >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   # Dogfood the drift GitHub Action (action/) itself: same architecture check,
   # but through the published-CLI path + summary + sticky PR comment.

@@ -20,6 +20,14 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ["**/dist/", "**/node_modules/", "**/*.config.ts", "**/*.config.js"],
+    // Benchmark corpus fixtures are indexed as test data, not project source —
+    // they are deliberately minimal and not part of any lint tsconfig project.
+    ignores: [
+      "**/dist/",
+      "**/node_modules/",
+      "**/*.config.ts",
+      "**/*.config.js",
+      "packages/bench/corpus/",
+    ],
   },
 );
