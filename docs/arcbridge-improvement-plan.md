@@ -428,7 +428,7 @@ provider for orchestrated agents*, never *build our own loop.*
 
 | Milestone | Theme (lens) | Contents |
 |---|---|---|
-| **0.11.0** | Prove it + fast feedback (1, 3) | token-savings benchmark harness; `drift --base <ref>` + Action diff mode; Python/Go content-hash skipping; git-ref cache |
+| **0.11.0** | Prove it + fast feedback (1, 3) | **validation corpus + harness (F0)**; token-savings + coherence benchmark on it; `drift --base <ref>` + Action diff mode; Python/Go content-hash skipping; git-ref cache |
 | **0.12.0** | The moat (2) | symbol-ID namespacing fix → populate contracts table → `contract_violation` drift → surface tool + demo on the example repo |
 | **0.13.0** | Observability + retention (3) | `arcbridge report` metrics dashboard; sync-proposal quality/latency hardening; **E3** arc42 sections as MCP resources |
 | Candidate | Orchestration-readiness (3) | parallelizable-task surface from the building-block graph; single-writer reconciliation as the recommended pattern; fleet observability — see sketch below |
@@ -438,13 +438,42 @@ provider for orchestrated agents*, never *build our own loop.*
 Rationale for leading with 0.11.0: proving the token claim is the highest-leverage
 *non-obvious* move (the entire pitch rests on an unmeasured number), the pieces are
 mostly ready-to-build and low-risk, and `drift --base` also unlocks the Action's
-incremental mode — real user value. Contract alignment (0.12.0) is the strategic
-centerpiece but is higher-effort and depends on the namespacing fix, so it follows
-the de-risking milestone.
+incremental mode — real user value. The release opens with **F0, a small
+validation corpus + harness**, because it's the substrate every other item leans on
+— F1 can't be honest without it, and it becomes the shared fixture for 0.12.0
+(contracts need a fullstack project) and 0.13.0 (drift-staleness) too, so building it
+once pays off three times. Contract alignment (0.12.0) is the strategic centerpiece
+but is higher-effort and depends on the namespacing fix, so it follows the de-risking
+milestone.
 
 ### 0.11.0 — detailed breakdown (NEXT)
 
-**F1. Token-savings + coherence benchmark harness** *(the credibility artifact)*
+**F0. Validation corpus + harness** *(the substrate — build this first)*
+- A small, pinned set of **2–3 projects spanning the shapes that exercise different
+  code paths**: a TS frontend (the existing `example-bookmarks`, or a react-vite
+  fixture), a backend (`api-service` or `dotnet-webapi` — exercises the C#/route
+  paths), and a fullstack/monorepo (needed for 0.12.0 anyway; holds both contract
+  sides). Optionally a **brownfield repo with no `.arcbridge/`** to validate `adopt`
+  end-to-end. Some can be generated-from-template fixtures (zero maintenance); at
+  least one should be a real committed repo (honest + doubles as a public example).
+- **Two harness layers, matching two testing modes:**
+  - *Functional smoke (gates in CI):* run init/index/`adopt`/drift across the corpus
+    and assert sane output + zero unexpected errors. Catches regressions across
+    templates, indexers, and languages. (Partly exists today — the `check` job runs
+    `drift --reindex` on the dogfood repo — this generalizes it to more shapes.)
+  - *Deterministic token proxy (non-gating report in CI):* for a fixed question set,
+    compare `tokens(ArcBridge tool response)` vs `tokens(the files an agent would
+    otherwise read to answer)`. No live model — fully reproducible, stable enough to
+    report on every PR without flakiness.
+- **Explicitly out of scope for CI:** the *live-agent* eval (a real model driving
+  tool calls vs. raw file reading, measuring tokens-to-*complete*). That is
+  non-deterministic and costs money per run — reserve it for a **periodic/manual**
+  job once the corpus exists (it's F1's multi-step-autonomous scenario, run
+  on-demand, never as a PR gate).
+- Acceptance: the corpus is committed/pinned; the functional-smoke job is green in
+  CI; the token-proxy job emits a deterministic table.
+
+**F1. Token-savings + coherence benchmark harness** *(the credibility artifact — runs on F0's corpus)*
 - **Two scenario classes, not one** — reflecting the autonomous-loop reframe:
   - *Single-shot Q&A:* realistic agent questions ("where does auth belong?", "what
     calls `verifyToken`?", "what quality constraints apply to this file?") run two
@@ -455,13 +484,14 @@ the de-risking milestone.
     tokens-to-complete *and* **architectural drift accumulated** (drift entries at
     the end) with gates vs. without. This is the loop-era proof point — coherence at
     roughly flat context cost across unattended steps.
-- Run against the committed dogfood `.arcbridge/` and the public example repo so
-  results are reproducible by anyone.
+- Runs on the **F0 corpus** so results are reproducible by anyone. The single-shot
+  class uses F0's deterministic token proxy (CI, per-PR); the multi-step-autonomous
+  class is the live-agent eval reserved for a periodic/manual job (not a PR gate).
 - Output a small report (numbers + methodology) suitable for the README. Target:
   substantiate or honestly revise both claims. **Do not cherry-pick** — if the real
   number is lower, publish it; a defensible 35% beats an unbelievable 60%.
-- Acceptance: `pnpm bench:tokens` (or similar) produces a deterministic table for
-  both scenario classes; a CI job runs it as a non-gating report.
+- Acceptance: `pnpm bench:tokens` (or similar) produces a deterministic table for the
+  single-shot class in CI; the multi-step report is regenerated on demand.
 
 **F2. Diff-scoped drift — `arcbridge drift --base <ref>`** *(also unblocks the Action)*
 - Restrict drift analysis to files changed since `<ref>` (e.g. the PR base), so PR
@@ -486,10 +516,12 @@ the de-risking milestone.
   single tool call resolves refs 2–4×.
 - Acceptance: repeated ref resolution within the TTL issues one `git` subprocess.
 
-> Sequencing within 0.11.0: F2 first (highest user value + unblocks the Action),
-> then F1 (the benchmark — ideally *use* F2's speed in the "with ArcBridge" path),
-> then F3/F4 (perf polish). F1 is the release's headline; F3/F4 can slip to 0.11.x
-> if needed.
+> Sequencing within 0.11.0: **F0 first** (the corpus + harness — everything else
+> validates against it), then F2 (`drift --base`, highest user value + unblocks the
+> Action), then F1 (the benchmark — ideally *use* F2's speed in the "with ArcBridge"
+> path), then F3/F4 (perf polish). F1 is the release's headline number; F3/F4 can
+> slip to 0.11.x if needed. The live-agent eval is periodic/manual, not part of the
+> release gate.
 
 ### 0.12.0 — the moat (contract alignment), sketch
 
