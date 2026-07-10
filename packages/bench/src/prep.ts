@@ -23,13 +23,15 @@ export function runCli(args: string[], cwd: string): CliStep {
     });
     return { cmd: `arcbridge ${args.join(" ")}`, ok: true, code: 0, stdout, stderr: "" };
   } catch (err) {
-    const e = err as { status?: number; stdout?: string; stderr?: string };
+    // execFileSync errors can carry stdout/stderr as Buffers depending on
+    // Node/options — coerce to string so downstream .trim()/.slice() are safe.
+    const e = err as { status?: number; stdout?: string | Buffer; stderr?: string | Buffer };
     return {
       cmd: `arcbridge ${args.join(" ")}`,
       ok: false,
       code: e.status ?? 1,
-      stdout: e.stdout ?? "",
-      stderr: e.stderr ?? String(err),
+      stdout: e.stdout?.toString() ?? "",
+      stderr: e.stderr?.toString() ?? String(err),
     };
   }
 }

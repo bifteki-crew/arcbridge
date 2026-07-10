@@ -41,7 +41,10 @@ function listSourceFiles(projectRoot: string): SourceFile[] {
       if (statSync(full).isDirectory()) {
         walk(full);
       } else if (/\.(ts|tsx)$/.test(entry)) {
-        out.push({ rel: relative(projectRoot, full), content: readFileSync(full, "utf-8") });
+        // Normalize to forward slashes so baseline matching lines up with the
+        // YAML code_paths (which always use `/`), including on Windows.
+        const rel = relative(projectRoot, full).split(sep).join("/");
+        out.push({ rel, content: readFileSync(full, "utf-8") });
       }
     }
   };
@@ -62,9 +65,13 @@ function readBlocks(projectRoot: string): YamlBlock[] {
   return doc.blocks ?? [];
 }
 
-/** Strip trailing glob suffixes so a code_path becomes a plain path prefix. */
+/**
+ * Strip trailing glob suffixes so a code_path becomes a plain path prefix.
+ * code_paths are always forward-slashed, so strip a literal trailing `/`
+ * (not `path.sep`, which is `\` on Windows and would escape `$` in a regex).
+ */
 function normalizePrefix(codePath: string): string {
-  return codePath.replace(/\/?\*+$/, "").replace(new RegExp(`${sep}$`), "");
+  return codePath.replace(/\/?\*+$/, "").replace(/\/$/, "");
 }
 
 function firstSymbolId(searchOutput: string): string | null {
