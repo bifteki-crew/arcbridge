@@ -74,6 +74,16 @@ function normalizePrefix(codePath: string): string {
   return codePath.replace(/\/?\*+$/, "").replace(/\/$/, "");
 }
 
+/**
+ * Whether `path` is at or under `prefix`, respecting path-segment boundaries so
+ * `src/routes` does NOT match `src/routes2`. An empty prefix is the repo root
+ * and covers everything (adopt stores a whole-project block's code path as "").
+ */
+function underPrefix(path: string, prefix: string): boolean {
+  if (prefix === "") return true;
+  return path === prefix || path.startsWith(prefix + "/");
+}
+
 function firstSymbolId(searchOutput: string): string | null {
   const m = searchOutput.match(/\*\*ID:\*\*\s*`([^`]+)`/);
   return m ? m[1] : null;
@@ -95,30 +105,39 @@ async function runQuestion(
 
   if (q.kind === "structure") {
     const answer = await call("arcbridge_get_building_blocks", { target_dir: projectRoot });
-    const baseline = files;
+    const baselineTokens = sumTokens(files.map((f) => f.content));
+    const arcbridgeTokens = countTokens(answer);
     return {
       ...base,
       tool: "get_building_blocks",
-      arcbridgeTokens: countTokens(answer),
-      baselineTokens: sumTokens(baseline.map((f) => f.content)),
-      baselineFiles: baseline.length,
-      savingPct: pct(sumTokens(baseline.map((f) => f.content)), countTokens(answer)),
+      arcbridgeTokens,
+      baselineTokens,
+      baselineFiles: files.length,
+      savingPct: pct(baselineTokens, arcbridgeTokens),
     };
   }
 
   if (q.kind === "block") {
-    const block = readBlocks(projectRoot).find((b) =>
-      (b.code_paths ?? []).some((cp) => {
+    const target = q.blockPathPrefix!;
+    // Pick the block whose code path covers the target dir (either direction,
+    // segment-aware), preferring the most specific — the longest matching code
+    // path — mirroring the drift detector's longest-prefix rule.
+    let best: { block: YamlBlock; specificity: number } | null = null;
+    for (const b of readBlocks(projectRoot)) {
+      for (const cp of b.code_paths ?? []) {
         const p = normalizePrefix(cp);
-        return p === q.blockPathPrefix || p.startsWith(q.blockPathPrefix!) || q.blockPathPrefix!.startsWith(p);
-      }),
-    );
-    if (!block) {
-      return { ...base, tool: "get_building_blocks", arcbridgeTokens: 0, baselineTokens: 0, baselineFiles: 0, savingPct: null, note: `no block matched prefix ${q.blockPathPrefix}` };
+        if (underPrefix(target, p) || underPrefix(p, target)) {
+          if (!best || p.length > best.specificity) best = { block: b, specificity: p.length };
+        }
+      }
     }
+    if (!best) {
+      return { ...base, tool: "get_building_blocks", arcbridgeTokens: 0, baselineTokens: 0, baselineFiles: 0, savingPct: null, note: `no block matched prefix ${target}` };
+    }
+    const block = best.block;
     const answer = await call("arcbridge_get_building_blocks", { target_dir: projectRoot, block_id: block.id });
-    const prefixes = (block.code_paths ?? []).map(normalizePrefix).filter(Boolean);
-    const baseline = files.filter((f) => prefixes.some((p) => f.rel.startsWith(p)));
+    const prefixes = (block.code_paths ?? []).map(normalizePrefix);
+    const baseline = files.filter((f) => prefixes.some((p) => underPrefix(f.rel, p)));
     const baselineTokens = sumTokens(baseline.map((f) => f.content));
     const arcbridgeTokens = countTokens(answer);
     return {
