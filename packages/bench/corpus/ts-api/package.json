@@ -1,0 +1,10 @@
+{
+  "name": "ts-api-fixture",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Benchmark corpus fixture — a small TypeScript API service (lib / routes / middleware).",
+  "dependencies": {
+    "express": "^4.19.0"
+  }
+}

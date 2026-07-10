@@ -1,0 +1,10 @@
+{
+  "name": "ts-frontend-fixture",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Benchmark corpus fixture — a small React/Vite bookmarks UI (components / hooks / lib).",
+  "dependencies": {
+    "react": "^18.3.0"
+  }
+}

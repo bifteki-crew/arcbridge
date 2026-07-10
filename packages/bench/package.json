@@ -1,0 +1,22 @@
+{
+  "name": "@arcbridge/bench",
+  "version": "0.10.0",
+  "private": true,
+  "type": "module",
+  "description": "F0 validation corpus + token-savings harness (not published)",
+  "scripts": {
+    "smoke": "tsx src/smoke.ts",
+    "bench:tokens": "tsx src/run.ts",
+    "clean": "rm -rf dist reports/*.md"
+  },
+  "dependencies": {
+    "@arcbridge/core": "workspace:*",
+    "@arcbridge/mcp-server": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "gpt-tokenizer": "^2.9.0",
+    "yaml": "^2.5.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}
