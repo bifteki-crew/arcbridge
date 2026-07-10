@@ -119,14 +119,17 @@ async function runQuestion(
 
   if (q.kind === "block") {
     const target = q.blockPathPrefix!;
-    // Pick the block whose code path covers the target dir (either direction,
-    // segment-aware), preferring the most specific — the longest matching code
-    // path — mirroring the drift detector's longest-prefix rule.
+    // Pick the block whose code path *covers* the target module (one-way:
+    // target is at or under the block's code path), preferring the most
+    // specific — the longest such code path — mirroring the drift detector's
+    // longest-prefix rule. The match is deliberately not bidirectional: a block
+    // scoped to a child of the target (e.g. a single file under src/routes/)
+    // must not out-specific the intended module-level block.
     let best: { block: YamlBlock; specificity: number } | null = null;
     for (const b of readBlocks(projectRoot)) {
       for (const cp of b.code_paths ?? []) {
         const p = normalizePrefix(cp);
-        if (underPrefix(target, p) || underPrefix(p, target)) {
+        if (underPrefix(target, p)) {
           if (!best || p.length > best.specificity) best = { block: b, specificity: p.length };
         }
       }
