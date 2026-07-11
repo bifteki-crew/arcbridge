@@ -43,8 +43,34 @@ committed — it is rebuilt from the YAML sources.
 | `working-directory` | `.` | Directory containing `.arcbridge/` (monorepo support) |
 | `severity-threshold` | `error` | Fail on drift at/above this severity: `error`, `warning`, `info` |
 | `comment` | `true` | Post/update the sticky PR comment (needs `pull-requests: write`) |
+| `base` | `""` | Only report drift on files changed since this ref (branch/tag/SHA) — a PR-incremental check. Empty checks the whole model. Needs full git history (see below). |
 | `arcbridge-version` | `0.10.0` | `arcbridge` npm version to run |
 | `node-version` | `22.16.0` | Node.js to set up (arcbridge needs ≥ 22.16; default pins the tested minimum) |
+
+### PR-incremental mode (`base`)
+
+To comment only on drift the PR actually introduced, pass the base ref — and
+fetch enough history for it to resolve (`actions/checkout` is shallow by
+default, so the base SHA isn't present without `fetch-depth: 0`):
+
+```yaml
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # --base needs history to diff against
+      - uses: bifteki-crew/arcbridge/action@v0.10.0
+        with:
+          base: ${{ github.event.pull_request.base.sha }}
+```
+
+Detection still runs against the full building-block model (so file→block
+assignment is unchanged); `base` only scopes the reported findings + the
+pass/fail verdict to changed files. Model-level drift with no single file
+(e.g. a newly added dependency) is not shown in `base` mode — run without
+`base` for the complete picture.
 
 ## Outputs
 

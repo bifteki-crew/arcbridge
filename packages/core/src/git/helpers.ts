@@ -140,6 +140,24 @@ export function getUncommittedChanges(projectRoot: string): ChangedFile[] {
 }
 
 /**
+ * Whether a git ref/SHA resolves in this repo. Used to hard-fail a typo'd
+ * `--base` rather than silently scoping to an empty/partial changed set.
+ */
+export function refExists(projectRoot: string, ref: string): boolean {
+  try {
+    execFileSync("git", ["rev-parse", "--verify", "--quiet", `${ref}^{commit}`], {
+      cwd: projectRoot,
+      encoding: "utf-8",
+      timeout: 5000,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Get current HEAD commit SHA.
  */
 export function getHeadSha(projectRoot: string): string | null {
