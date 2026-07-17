@@ -84,13 +84,17 @@ runs:
           fi
           # `--base` ships in arcbridge 0.11.0; older CLIs silently ignore the
           # flag, which would masquerade as a full-model check. Hard-fail early
-          # for exact x.y.z versions below 0.11.0. Anything else — dist-tags
+          # for exact x.y.z versions below 0.11.0, compared with pure bash
+          # arithmetic (no GNU sort -V dependency). Anything else — dist-tags
           # (latest) and prereleases (0.11.0-beta) — can't be reliably compared
-          # with sort -V and passes through.
-          if [[ "$ARCBRIDGE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
-             [ "$(printf '%s\n' "0.11.0" "$ARCBRIDGE_VERSION" | sort -V | head -n1)" != "0.11.0" ]; then
-            echo "::error::The base input requires arcbridge >= 0.11.0 (got $ARCBRIDGE_VERSION) — older CLIs silently ignore --base. Bump arcbridge-version or drop base."
-            exit 1
+          # and passes through.
+          if [[ "$ARCBRIDGE_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJ=$((10#${BASH_REMATCH[1]})) MIN=$((10#${BASH_REMATCH[2]})) PAT=$((10#${BASH_REMATCH[3]}))
+            REQ_MAJ=0 REQ_MIN=11 REQ_PAT=0  # --base minimum: 0.11.0
+            if (( MAJ < REQ_MAJ || (MAJ == REQ_MAJ && (MIN < REQ_MIN || (MIN == REQ_MIN && PAT < REQ_PAT))) )); then
+              echo "::error::The base input requires arcbridge >= $REQ_MAJ.$REQ_MIN.$REQ_PAT (got $ARCBRIDGE_VERSION) — older CLIs silently ignore --base. Bump arcbridge-version or drop base."
+              exit 1
+            fi
           fi
           ARGS+=(--base "$ARCBRIDGE_BASE")
         fi
