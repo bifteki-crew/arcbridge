@@ -20,7 +20,9 @@ export class UnresolvableRefError extends Error {
  * `ref` accepts the same values as `resolveRef` ("last-commit", "last-sync",
  * "last-phase", or a literal branch/tag/SHA). Pass `db` so "last-sync" /
  * "last-phase" resolve the stored sync points in `arcbridge_meta` — without it
- * they fall back to HEAD~1/HEAD~5.
+ * they fall back to HEAD~1/HEAD~5, and if that fallback commit doesn't exist
+ * either (shallow clone, single-commit repo) `getChangedScope` throws
+ * `UnresolvableRefError` rather than silently scoping to nothing.
  */
 export interface ChangedScope {
   /** Human-readable resolved ref label, for reporting. */
