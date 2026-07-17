@@ -109,7 +109,13 @@ function parseArgs(args: string[]): ParsedArgs {
       apply = true;
     } else if (arg === "--service" && i + 1 < args.length) {
       service = args[++i]!;
-    } else if (arg === "--base" && i + 1 < args.length) {
+    } else if (arg === "--base") {
+      // A missing value must not silently degrade to an unscoped drift check —
+      // that would masquerade as a diff-scoped run.
+      if (i + 1 >= args.length) {
+        console.error("Error: --base requires a git ref (branch, tag, SHA, or last-commit/last-sync/last-phase)");
+        process.exit(1);
+      }
       base = args[++i]!;
     } else if (arg === "--max-blocks" && i + 1 < args.length) {
       const raw = args[++i]!;

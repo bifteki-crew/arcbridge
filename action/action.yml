@@ -84,9 +84,10 @@ runs:
           fi
           # `--base` ships in arcbridge 0.11.0; older CLIs silently ignore the
           # flag, which would masquerade as a full-model check. Hard-fail early
-          # for exact versions below 0.11.0 (dist-tags like `latest` can't be
-          # compared and pass through).
-          if [[ "$ARCBRIDGE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] && \
+          # for exact x.y.z versions below 0.11.0. Anything else — dist-tags
+          # (latest) and prereleases (0.11.0-beta) — can't be reliably compared
+          # with sort -V and passes through.
+          if [[ "$ARCBRIDGE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && \
              [ "$(printf '%s\n' "0.11.0" "$ARCBRIDGE_VERSION" | sort -V | head -n1)" != "0.11.0" ]; then
             echo "::error::The base input requires arcbridge >= 0.11.0 (got $ARCBRIDGE_VERSION) — older CLIs silently ignore --base. Bump arcbridge-version or drop base."
             exit 1
