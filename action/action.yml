@@ -23,9 +23,12 @@ inputs:
     default: "true"
   base:
     description: >-
-      Only report drift on files changed since this git ref (branch, tag, or SHA)
-      — a PR-incremental check. Empty (default) checks the whole model. For PRs,
-      pass the base SHA (github.event.pull_request.base.sha); see the README.
+      Only report drift on files changed since this git ref — a PR-incremental
+      check. Accepts a branch, tag, or SHA, or the arcbridge keywords
+      last-commit/last-sync/last-phase (note: in a fresh CI checkout the
+      keywords fall back to recent-commit heuristics, so prefer an explicit
+      ref). Empty (default) checks the whole model. For PRs, pass the base SHA
+      (github.event.pull_request.base.sha); see the README.
     required: false
     default: ""
   arcbridge-version:
