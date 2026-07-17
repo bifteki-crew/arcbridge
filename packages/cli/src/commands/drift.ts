@@ -63,13 +63,17 @@ export async function drift(
     if (base !== undefined) {
       let scope;
       try {
-        scope = getChangedScope(dir, base);
+        // Pass the open DB so last-sync/last-phase resolve the stored sync
+        // points in arcbridge_meta instead of falling back to HEAD~1/HEAD~5.
+        scope = getChangedScope(dir, base, db);
       } catch (err) {
         if (err instanceof UnresolvableRefError) {
+          // Always emit the human-readable reason to stderr — the GitHub
+          // Action captures stderr into its log, so CI stays diagnosable even
+          // when stdout carries JSON.
+          console.error(err.message);
           if (json) {
             console.log(JSON.stringify({ error: err.message }, null, 2));
-          } else {
-            console.error(err.message);
           }
           process.exitCode = 1;
           return;

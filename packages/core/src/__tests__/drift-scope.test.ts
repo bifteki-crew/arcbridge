@@ -8,6 +8,8 @@ import {
   getChangedScope,
   UnresolvableRefError,
 } from "../drift/scope.js";
+import { openMemoryDatabase } from "../db/connection.js";
+import { initializeSchema } from "../db/schema.js";
 import type { DriftEntry } from "../drift/detector.js";
 
 function entry(partial: Partial<DriftEntry> & Pick<DriftEntry, "affectedFile">): DriftEntry {
@@ -97,5 +99,29 @@ describe("getChangedScope with a real git repo", () => {
 
   it("throws UnresolvableRefError for an unknown ref", () => {
     expect(() => getChangedScope(repoDir, "no-such-ref-xyz")).toThrow(UnresolvableRefError);
+  });
+
+  it("resolves last-sync via the DB's stored sync point", () => {
+    const firstSha = git("rev-parse", "HEAD");
+
+    writeFileSync(join(repoDir, "kept.ts"), "export const a = 2;");
+    git("add", "kept.ts");
+    git("commit", "-m", "change kept");
+
+    const db = openMemoryDatabase();
+    initializeSchema(db);
+    db.prepare(
+      "INSERT INTO arcbridge_meta (key, value) VALUES ('last_sync_commit', ?)",
+    ).run(firstSha);
+
+    try {
+      const scope = getChangedScope(repoDir, "last-sync", db);
+      // The stored sync point resolved (label carries the sha, not the
+      // "no sync point" fallback), and the diff since it sees the change.
+      expect(scope.label).toContain(firstSha.slice(0, 7));
+      expect(scope.paths.has("kept.ts")).toBe(true);
+    } finally {
+      db.close();
+    }
   });
 });

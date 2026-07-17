@@ -49,6 +49,11 @@ committed — it is rebuilt from the YAML sources.
 
 ### PR-incremental mode (`base`)
 
+> Requires the action **and** CLI at **0.11.0 or later** (the `base` input and
+> `arcbridge drift --base` ship together in 0.11.0; the 0.10.0 tag has
+> neither). The example pins `@main` until the 0.11.0 tag exists — switch to
+> `@v0.11.0` once released.
+
 To comment only on drift the PR actually introduced, pass the base ref — and
 fetch enough history for it to resolve (`actions/checkout` is shallow by
 default, so the base SHA isn't present without `fetch-depth: 0`):
@@ -61,9 +66,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0   # --base needs history to diff against
-      - uses: bifteki-crew/arcbridge/action@v0.10.0
+      - uses: bifteki-crew/arcbridge/action@main   # pin @v0.11.0 once released
         with:
           base: ${{ github.event.pull_request.base.sha }}
+          arcbridge-version: latest   # --base needs arcbridge >= 0.11.0
 ```
 
 Detection still runs against the full building-block model (so file→block

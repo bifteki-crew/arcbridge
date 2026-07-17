@@ -1,3 +1,4 @@
+import type { Database } from "../db/connection.js";
 import type { DriftEntry } from "./detector.js";
 import { resolveRef, getChangedFiles, scopeToProject, refExists } from "../git/helpers.js";
 
@@ -17,7 +18,9 @@ export class UnresolvableRefError extends Error {
  * forward slashes, matching indexed `file_path`s.
  *
  * `ref` accepts the same values as `resolveRef` ("last-commit", "last-sync",
- * "last-phase", or a literal branch/tag/SHA).
+ * "last-phase", or a literal branch/tag/SHA). Pass `db` so "last-sync" /
+ * "last-phase" resolve the stored sync points in `arcbridge_meta` — without it
+ * they fall back to HEAD~1/HEAD~5.
  */
 export interface ChangedScope {
   /** Human-readable resolved ref label, for reporting. */
@@ -29,8 +32,9 @@ export interface ChangedScope {
 export function getChangedScope(
   projectRoot: string,
   ref: string,
+  db?: Database,
 ): ChangedScope {
-  const resolved = resolveRef(projectRoot, ref);
+  const resolved = resolveRef(projectRoot, ref, db);
   if (!refExists(projectRoot, resolved.sha)) {
     throw new UnresolvableRefError(ref);
   }
