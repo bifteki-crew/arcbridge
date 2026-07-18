@@ -134,6 +134,7 @@ export {
   getUncommittedChanges,
   scopeToProject,
   refExists,
+  canonicalSha,
   getHeadSha,
   setSyncCommit,
   type ChangedFile,

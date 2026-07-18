@@ -1,6 +1,6 @@
 import type { Database } from "../db/connection.js";
 import type { DriftEntry } from "./detector.js";
-import { resolveRef, getChangedFiles, scopeToProject, refExists } from "../git/helpers.js";
+import { resolveRef, getChangedFiles, scopeToProject, canonicalSha } from "../git/helpers.js";
 
 /** Thrown when a `--base` ref cannot be resolved in the repo. */
 export class UnresolvableRefError extends Error {
@@ -41,10 +41,14 @@ export function getChangedScope(
   db?: Database,
 ): ChangedScope {
   const resolved = resolveRef(projectRoot, ref, db);
-  if (!refExists(projectRoot, resolved.sha)) {
+  // Canonicalize to a hex SHA: validates existence AND makes the value safe to
+  // pass into further git commands (a SHA can never start with "-", so
+  // getChangedFiles can't mis-parse it as an option and silently degrade).
+  const sha = canonicalSha(projectRoot, resolved.sha);
+  if (sha === null) {
     throw new UnresolvableRefError(ref);
   }
-  const changed = scopeToProject(getChangedFiles(projectRoot, resolved.sha), projectRoot);
+  const changed = scopeToProject(getChangedFiles(projectRoot, sha), projectRoot);
   return {
     label: resolved.label,
     paths: new Set(changed.map((f) => f.path)),

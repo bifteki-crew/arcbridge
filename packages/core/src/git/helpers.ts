@@ -140,23 +140,34 @@ export function getUncommittedChanges(projectRoot: string): ChangedFile[] {
 }
 
 /**
- * Whether a git ref/SHA resolves in this repo. Used to hard-fail a typo'd
- * `--base` rather than silently scoping to an empty/partial changed set.
+ * Resolve a git ref to its canonical commit SHA, or null if it doesn't exist.
+ * Used to hard-fail a typo'd `--base` rather than silently scoping to an
+ * empty/partial changed set — and the returned hex SHA is safe to pass to
+ * further git commands (it can never start with "-", so no option injection).
  */
-export function refExists(projectRoot: string, ref: string): boolean {
+export function canonicalSha(projectRoot: string, ref: string): string | null {
   try {
     // --end-of-options: a user-provided ref starting with "-" must be parsed
     // as a revision, never as a git option.
-    execFileSync("git", ["rev-parse", "--verify", "--quiet", "--end-of-options", `${ref}^{commit}`], {
-      cwd: projectRoot,
-      encoding: "utf-8",
-      timeout: 5000,
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-    return true;
+    const sha = execFileSync(
+      "git",
+      ["rev-parse", "--verify", "--quiet", "--end-of-options", `${ref}^{commit}`],
+      {
+        cwd: projectRoot,
+        encoding: "utf-8",
+        timeout: 5000,
+        stdio: ["pipe", "pipe", "pipe"],
+      },
+    ).trim();
+    return sha || null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+/** Whether a git ref/SHA resolves in this repo. */
+export function refExists(projectRoot: string, ref: string): boolean {
+  return canonicalSha(projectRoot, ref) !== null;
 }
 
 /**
