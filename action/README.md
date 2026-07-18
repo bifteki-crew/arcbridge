@@ -43,7 +43,7 @@ committed — it is rebuilt from the YAML sources.
 | `working-directory` | `.` | Directory containing `.arcbridge/` (monorepo support) |
 | `severity-threshold` | `error` | Fail on drift at/above this severity: `error`, `warning`, `info` |
 | `comment` | `true` | Post/update the sticky PR comment (needs `pull-requests: write`) |
-| `base` | `""` | Only report drift on files changed since this ref (branch/tag/SHA) — a PR-incremental check. Empty checks the whole model. Needs full git history (see below). |
+| `base` | `""` | Only report drift on files changed since this ref (branch/tag/SHA, or `last-commit`/`last-sync`/`last-phase` — prefer an explicit ref in CI) — a PR-incremental check. Empty checks the whole model. Needs full git history (see below). |
 | `arcbridge-version` | `0.10.0` | `arcbridge` npm version to run |
 | `node-version` | `22.16.0` | Node.js to set up (arcbridge needs ≥ 22.16; default pins the tested minimum) |
 
