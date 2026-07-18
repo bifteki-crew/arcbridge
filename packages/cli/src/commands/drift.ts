@@ -7,6 +7,7 @@ import {
   getChangedScope,
   scopeDriftToChangedFiles,
   UnresolvableRefError,
+  type ChangedScope,
   type DriftEntry,
   type DriftOptions,
 } from "@arcbridge/core";
@@ -61,7 +62,7 @@ export async function drift(
     let baseMeta: BaseMeta | undefined;
 
     if (base !== undefined) {
-      let scope;
+      let scope: ChangedScope;
       try {
         // Pass the open DB so last-sync/last-phase resolve the stored sync
         // points in arcbridge_meta instead of falling back to HEAD~1/HEAD~5.
