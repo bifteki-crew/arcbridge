@@ -21,6 +21,16 @@ inputs:
     description: "Post/update a sticky PR comment with the findings (needs pull-requests: write)."
     required: false
     default: "true"
+  base:
+    description: >-
+      Only report drift on files changed since this git ref — a PR-incremental
+      check. Accepts a branch, tag, or SHA, or the arcbridge keywords
+      last-commit/last-sync/last-phase (note: in a fresh CI checkout the
+      keywords fall back to recent-commit heuristics, so prefer an explicit
+      ref). Empty (default) checks the whole model. For PRs, pass the base SHA
+      (github.event.pull_request.base.sha); see the README.
+    required: false
+    default: ""
   arcbridge-version:
     description: "arcbridge npm version to run."
     required: false
@@ -60,14 +70,39 @@ runs:
         # Passed via env (not interpolated into the script) so shell
         # metacharacters in the input can't alter the command being run
         ARCBRIDGE_VERSION: ${{ inputs.arcbridge-version }}
+        ARCBRIDGE_BASE: ${{ inputs.base }}
       run: |
         # Exact version or dist-tag only (no ranges — their chars overlap shell syntax)
         if ! [[ "$ARCBRIDGE_VERSION" =~ ^[0-9A-Za-z.+-]+$ ]]; then
           echo "::error::Invalid arcbridge-version \"${ARCBRIDGE_VERSION//[^0-9A-Za-z.+-]/_}\" — use an exact npm version (e.g. 0.10.0) or dist-tag (e.g. latest)."
           exit 1
         fi
+        ARGS=(drift --reindex --json)
+        if [ -n "$ARCBRIDGE_BASE" ]; then
+          # A git ref/SHA — allow only ref-safe characters (branch names may
+          # contain '/'), reject anything that could alter the command.
+          if ! [[ "$ARCBRIDGE_BASE" =~ ^[0-9A-Za-z._/-]+$ ]]; then
+            echo "::error::Invalid base ref \"${ARCBRIDGE_BASE//[^0-9A-Za-z._/-]/_}\" — pass a branch, tag, or SHA."
+            exit 1
+          fi
+          # `--base` ships in arcbridge 0.11.0; older CLIs silently ignore the
+          # flag, which would masquerade as a full-model check. Hard-fail early
+          # for exact x.y.z versions below 0.11.0, compared with pure bash
+          # arithmetic (no GNU sort -V dependency). Anything else — dist-tags
+          # (latest) and prereleases (0.11.0-beta) — can't be reliably compared
+          # and passes through.
+          if [[ "$ARCBRIDGE_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJ=$((10#${BASH_REMATCH[1]})) MIN=$((10#${BASH_REMATCH[2]})) PAT=$((10#${BASH_REMATCH[3]}))
+            REQ_MAJ=0 REQ_MIN=11 REQ_PAT=0  # --base minimum: 0.11.0
+            if (( MAJ < REQ_MAJ || (MAJ == REQ_MAJ && (MIN < REQ_MIN || (MIN == REQ_MIN && PAT < REQ_PAT))) )); then
+              echo "::error::The base input requires arcbridge >= $REQ_MAJ.$REQ_MIN.$REQ_PAT (got $ARCBRIDGE_VERSION) — older CLIs silently ignore --base. Bump arcbridge-version or drop base."
+              exit 1
+            fi
+          fi
+          ARGS+=(--base "$ARCBRIDGE_BASE")
+        fi
         set +e
-        npx -y "arcbridge@$ARCBRIDGE_VERSION" drift --reindex --json \
+        npx -y "arcbridge@$ARCBRIDGE_VERSION" "${ARGS[@]}" \
           > "$RUNNER_TEMP/arcbridge-drift.json" 2> "$RUNNER_TEMP/arcbridge-drift.log"
         echo "exit-code=$?" >> "$GITHUB_OUTPUT"
         set -e

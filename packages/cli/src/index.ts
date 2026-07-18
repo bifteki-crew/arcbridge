@@ -48,6 +48,7 @@ Adopt options:
 
 Drift options:
   --reindex          Refresh from docs and reindex before checking (use in CI, where index.db is not committed)
+  --base <ref>       Only report drift on files changed since <ref> (branch, tag, SHA, or last-commit/last-sync/last-phase) — for PR-incremental checks
 
 Generate-configs options:
   --force            Force-regenerate files that would normally be preserved (e.g. skills)
@@ -67,6 +68,7 @@ interface ParsedArgs {
   apply: boolean;
   service?: string;
   maxBlocks?: number;
+  base?: string;
 }
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -83,6 +85,7 @@ function parseArgs(args: string[]): ParsedArgs {
   let apply = false;
   let service: string | undefined;
   let maxBlocks: number | undefined;
+  let base: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
@@ -106,6 +109,14 @@ function parseArgs(args: string[]): ParsedArgs {
       apply = true;
     } else if (arg === "--service" && i + 1 < args.length) {
       service = args[++i]!;
+    } else if (arg === "--base") {
+      // A missing value must not silently degrade to an unscoped drift check —
+      // that would masquerade as a diff-scoped run.
+      if (i + 1 >= args.length) {
+        console.error("Error: --base requires a git ref (branch, tag, SHA, or last-commit/last-sync/last-phase)");
+        process.exit(1);
+      }
+      base = args[++i]!;
     } else if (arg === "--max-blocks" && i + 1 < args.length) {
       const raw = args[++i]!;
       const v = Number(raw);
@@ -141,6 +152,7 @@ function parseArgs(args: string[]): ParsedArgs {
     apply,
     service,
     maxBlocks,
+    base,
   };
 }
 
@@ -173,7 +185,7 @@ async function main(): Promise<void> {
         await status(dir, json);
         break;
       case "drift":
-        await drift(dir, json, parsed.reindex);
+        await drift(dir, json, parsed.reindex, parsed.base);
         break;
       case "refresh":
         await refresh(dir, json);

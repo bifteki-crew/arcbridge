@@ -31,10 +31,12 @@ if (!(threshold in RANK)) {
 }
 
 let entries;
+let baseMeta = null; // present when the CLI ran with --base (PR-incremental mode)
 try {
   const parsed = JSON.parse(readFileSync(jsonPath, "utf-8"));
   if (!Array.isArray(parsed.drift)) throw new Error("missing `drift` array");
   entries = parsed.drift;
+  if (parsed.base && typeof parsed.base === "object") baseMeta = parsed.base;
 } catch (err) {
   // Not a drift verdict — the CLI itself failed (bad install, no .arcbridge/, …)
   let log = "";
@@ -67,8 +69,27 @@ for (const e of entries) counts[e.severity] = (counts[e.severity] ?? 0) + 1;
 const failing = entries.filter((e) => (RANK[e.severity] ?? 0) >= RANK[threshold]);
 
 const lines = [MARKER, "## ArcBridge drift check", ""];
+if (baseMeta) {
+  // PR-incremental mode: say what was scoped and what that scoping excluded,
+  // so the comment carries the same "nothing dropped silently" guarantee as
+  // the CLI footer.
+  const excluded = [];
+  if (baseMeta.excludedOtherFiles > 0) excluded.push(`${baseMeta.excludedOtherFiles} on unchanged files`);
+  if (baseMeta.excludedModelLevel > 0) excluded.push(`${baseMeta.excludedModelLevel} model-level (no single file)`);
+  lines.push(
+    `_Scoped to files changed since \`${baseMeta.ref}\` (${baseMeta.changedFiles} file(s)).` +
+      (excluded.length > 0
+        ? ` Excluded: ${excluded.join(" + ")} — run without \`base\` for the full report._`
+        : "_"),
+    "",
+  );
+}
 if (entries.length === 0) {
-  lines.push("✅ **No drift detected** — code matches the committed architecture model.");
+  lines.push(
+    baseMeta
+      ? "✅ **No drift on changed files** — this change matches the committed architecture model."
+      : "✅ **No drift detected** — code matches the committed architecture model.",
+  );
 } else {
   const badge = failing.length > 0 ? "❌" : "⚠️";
   lines.push(

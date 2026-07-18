@@ -84,6 +84,13 @@ export {
   type DriftSeverity,
   type DriftOptions,
 } from "./drift/detector.js";
+export {
+  getChangedScope,
+  scopeDriftToChangedFiles,
+  UnresolvableRefError,
+  type ChangedScope,
+  type ScopedDrift,
+} from "./drift/scope.js";
 
 // Sync
 export {
@@ -126,6 +133,8 @@ export {
   getChangedFiles,
   getUncommittedChanges,
   scopeToProject,
+  refExists,
+  canonicalSha,
   getHeadSha,
   setSyncCommit,
   type ChangedFile,

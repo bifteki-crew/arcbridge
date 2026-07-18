@@ -298,6 +298,7 @@ arcbridge sync                  # Reindex, detect drift, infer tasks, update syn
 arcbridge status                # Show project status
 arcbridge drift                 # Check for architecture drift
 arcbridge drift --reindex       # Self-contained drift check for CI (reindex first)
+arcbridge drift --base main     # Only report drift on files changed since <ref> (PR-incremental)
 
 arcbridge sync --json           # JSON output for CI pipelines
 arcbridge status --dir /path/to/project
