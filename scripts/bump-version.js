@@ -17,8 +17,8 @@ if (!version || !/^\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z
 
 const root = resolve(import.meta.dirname, "..");
 
-// npm packages
-const packages = ["core", "adapters", "cli", "mcp-server"];
+// npm packages (bench is private/unpublished but kept version-consistent)
+const packages = ["core", "adapters", "cli", "mcp-server", "bench"];
 for (const pkg of packages) {
   const path = resolve(root, `packages/${pkg}/package.json`);
   const json = JSON.parse(readFileSync(path, "utf-8"));

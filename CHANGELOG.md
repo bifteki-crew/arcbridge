@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.11.0 (2026-07-18)
+
+### New Features
+
+- **Diff-scoped drift: `arcbridge drift --base <ref>`** — report (and gate on) only drift touching files changed since `<ref>` (a branch, tag, SHA, or the keywords `last-commit`/`last-sync`/`last-phase`), making PR checks fast to read and relevant to the change. Detection still runs against the **full building-block graph** — the longest-prefix file→block assignment is unchanged — so `--base` only scopes the *reported* entries and the exit code. The `drift_log` keeps the complete model truth for phase gates and metrics. Nothing is dropped silently: a footer (and a `base` block in `--json`) reports how many entries were excluded as unchanged-file or model-level (no single file). A typo'd or unfetched ref hard-fails with a clear message instead of silently scoping to nothing, and refs are canonicalized to a commit SHA before diffing (a dash-leading ref can never be mis-parsed as a git option).
+- **GitHub Action: PR-incremental mode** — new optional `base` input on the drift action. Pass `${{ github.event.pull_request.base.sha }}` (with `actions/checkout` `fetch-depth: 0`) and the job summary + sticky PR comment scope to the diff, showing the scoped ref, changed-file count, and excluded counts. The action hard-fails early if `base` is combined with an `arcbridge-version` below 0.11.0 — older CLIs silently ignore `--base`, which would masquerade as a full-model check.
+
+### Internal
+
+- **Validation corpus + token-savings harness** (`@arcbridge/bench`, private) — the F0 substrate from the Phase F+ roadmap: pinned corpus fixtures spanning project shapes, a gating functional smoke (real `init → adopt → drift` pipeline + consolidated MCP tools per fixture, both pass with zero drift after adopt), and a deterministic token proxy (real BPE tokenizer) comparing ArcBridge tool responses against the files an agent would otherwise read. First honest numbers: ~92% median token saving on structure/navigation questions; per-category caveats documented in `packages/bench/README.md`. Runs in CI (smoke gating, proxy as a non-gating job-summary report).
+- `@arcbridge/mcp-server` gains an importable `@arcbridge/mcp-server/server` entry (server factory + context) for embedding in-process; the stdio binary is unchanged.
+- New core exports: `getChangedScope`, `scopeDriftToChangedFiles`, `UnresolvableRefError`, `canonicalSha`, `refExists`.
+
+### Stats
+
+- 25 MCP tools, 608 tests passing, 0 lint errors, 0 type errors
+
 ## 0.10.0 (2026-07-08)
 
 ### Breaking Changes
