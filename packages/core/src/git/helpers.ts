@@ -145,7 +145,9 @@ export function getUncommittedChanges(projectRoot: string): ChangedFile[] {
  */
 export function refExists(projectRoot: string, ref: string): boolean {
   try {
-    execFileSync("git", ["rev-parse", "--verify", "--quiet", `${ref}^{commit}`], {
+    // --end-of-options: a user-provided ref starting with "-" must be parsed
+    // as a revision, never as a git option.
+    execFileSync("git", ["rev-parse", "--verify", "--quiet", "--end-of-options", `${ref}^{commit}`], {
       cwd: projectRoot,
       encoding: "utf-8",
       timeout: 5000,

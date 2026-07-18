@@ -5,7 +5,11 @@ import { resolveRef, getChangedFiles, scopeToProject, refExists } from "../git/h
 /** Thrown when a `--base` ref cannot be resolved in the repo. */
 export class UnresolvableRefError extends Error {
   constructor(public readonly ref: string) {
-    super(`Cannot resolve git ref '${ref}'. Pass a branch, tag, SHA, or last-commit/last-sync/last-phase.`);
+    super(
+      `Cannot resolve git ref '${ref}'. Pass a branch, tag, SHA, or ` +
+        `last-commit/last-sync/last-phase. In CI, make sure the ref is fetched — ` +
+        `shallow checkouts often lack it (actions/checkout needs fetch-depth: 0).`,
+    );
     this.name = "UnresolvableRefError";
   }
 }
