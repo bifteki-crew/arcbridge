@@ -96,11 +96,13 @@ export async function indexProject(
       return indexDotnetProjectRoslyn(db, {
         projectRoot: options.projectRoot,
         service: options.service,
+        scanRoot: options.scanRoot,
       });
     }
     return await indexCSharpTreeSitter(db, {
       projectRoot: options.projectRoot,
       service: options.service,
+      scanRoot: options.scanRoot,
     });
   }
 
@@ -108,6 +110,7 @@ export async function indexProject(
     return await indexPythonTreeSitter(db, {
       projectRoot: options.projectRoot,
       service: options.service,
+      scanRoot: options.scanRoot,
     });
   }
 
@@ -115,6 +118,7 @@ export async function indexProject(
     return await indexGoTreeSitter(db, {
       projectRoot: options.projectRoot,
       service: options.service,
+      scanRoot: options.scanRoot,
     });
   }
 
@@ -164,6 +168,8 @@ const SERVICE_TYPE_LANGUAGE: Record<Service["type"], IndexerLanguage> = {
   hono: "typescript",
   dotnet: "csharp",
   unity: "csharp",
+  python: "python",
+  go: "go",
 };
 
 function emptyResult(): IndexResult {
@@ -226,44 +232,67 @@ export async function indexConfiguredProject(
   for (const svc of services) {
     const language = SERVICE_TYPE_LANGUAGE[svc.type];
 
-    if (language !== "typescript") {
-      warnings.push(
-        `Service '${svc.name}' (${svc.type}): per-service indexing currently supports TypeScript only — skipped. Document it in arc42 and add its path to drift.ignore_paths.`,
-      );
-      results.push({ ...emptyResult(), service: svc.name, skippedReason: "non-typescript service" });
-      continue;
-    }
-
     // svc.path / svc.tsconfig are user-authored config — contain them within
     // the project. tsconfig is resolved relative to the service path.
-    let manifestDir: string;
-    let tsconfigPath: string;
+    let serviceDir: string;
     try {
-      manifestDir = resolveWithin(projectRoot, svc.path);
-      tsconfigPath = resolveWithin(projectRoot, svc.path, svc.tsconfig ?? "tsconfig.json");
+      serviceDir = resolveWithin(projectRoot, svc.path);
     } catch {
       warnings.push(
-        `Service '${svc.name}': path '${svc.path}'/tsconfig escapes the project root — skipped.`,
+        `Service '${svc.name}': path '${svc.path}' escapes the project root — skipped.`,
       );
       results.push({ ...emptyResult(), service: svc.name, skippedReason: "path escapes project root" });
       continue;
     }
 
-    if (!existsSync(tsconfigPath)) {
-      warnings.push(`Service '${svc.name}': tsconfig not found at ${tsconfigPath} — skipped.`);
-      results.push({ ...emptyResult(), service: svc.name, skippedReason: "tsconfig not found" });
+    if (language === "typescript") {
+      let tsconfigPath: string;
+      try {
+        tsconfigPath = resolveWithin(projectRoot, svc.path, svc.tsconfig ?? "tsconfig.json");
+      } catch {
+        warnings.push(
+          `Service '${svc.name}': tsconfig path escapes the project root — skipped.`,
+        );
+        results.push({ ...emptyResult(), service: svc.name, skippedReason: "path escapes project root" });
+        continue;
+      }
+      if (!existsSync(tsconfigPath)) {
+        warnings.push(`Service '${svc.name}': tsconfig not found at ${tsconfigPath} — skipped.`);
+        results.push({ ...emptyResult(), service: svc.name, skippedReason: "tsconfig not found" });
+        continue;
+      }
+
+      const result = await indexProject(db, {
+        projectRoot,
+        tsconfigPath,
+        service: svc.name,
+        language: "typescript",
+        // Scan this package's own manifest, not the repo root's
+        manifestDir: serviceDir,
+      });
+      results.push({ ...result, service: svc.name });
       continue;
     }
 
-    const result = await indexProject(db, {
-      projectRoot,
-      tsconfigPath,
-      service: svc.name,
-      language: "typescript",
-      // Scan this package's own manifest, not the repo root's
-      manifestDir,
-    });
-    results.push({ ...result, service: svc.name });
+    // C#/Python/Go services: scan the service directory; stored paths (and
+    // symbol IDs) stay projectRoot-relative via scanRoot, so multiple services
+    // can't collide and drift's repo-relative code_paths match.
+    try {
+      const result = await indexProject(db, {
+        projectRoot,
+        service: svc.name,
+        language,
+        manifestDir: serviceDir,
+        scanRoot: serviceDir,
+      });
+      results.push({ ...result, service: svc.name });
+    } catch (err) {
+      // A broken service (e.g. missing .sln) shouldn't abort the other services
+      warnings.push(
+        `Service '${svc.name}' (${svc.type}): indexing failed — ${err instanceof Error ? err.message : String(err)}`,
+      );
+      results.push({ ...emptyResult(), service: svc.name, skippedReason: "indexing failed" });
+    }
   }
 
   const total = results.reduce<IndexResult>((acc, r) => addResults(acc, r), emptyResult());

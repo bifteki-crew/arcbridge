@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { resolve, join, dirname, relative, basename } from "node:path";
+import { resolve, join, dirname, relative, basename, sep, isAbsolute } from "node:path";
 import { readdirSync, readFileSync, existsSync, accessSync, constants } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { Database } from "../db/connection.js";
@@ -15,10 +15,19 @@ import {
 } from "./db-writer.js";
 
 export interface DotnetIndexerOptions {
+  /** Path basis: stored file_paths (and thus symbol IDs) are relative to this. */
   projectRoot: string;
   service?: string;
-  /** Explicit path to .csproj or .sln. If omitted, auto-detected from projectRoot. */
+  /** Explicit path to .csproj or .sln. If omitted, auto-detected from scanRoot/projectRoot. */
   csprojPath?: string;
+  /**
+   * Directory to look for the .sln/.csproj in (a service's subdirectory in a
+   * monorepo). Defaults to projectRoot. The Roslyn tool always emits paths
+   * relative to the solution dir; they are re-based onto projectRoot here so
+   * symbol IDs stay unique across services and match repo-relative
+   * building-block code_paths.
+   */
+  scanRoot?: string;
 }
 
 /** JSON shape emitted by the .NET console app */
@@ -282,9 +291,10 @@ export function indexDotnetProjectRoslyn(
   const start = Date.now();
   const service = options.service ?? "main";
   const projectRoot = resolve(options.projectRoot);
+  const scanRoot = resolve(options.scanRoot ?? options.projectRoot);
 
   // Find the .NET project/solution to analyze
-  const dotnetProject = options.csprojPath ?? findDotnetProject(projectRoot);
+  const dotnetProject = options.csprojPath ?? findDotnetProject(scanRoot);
   if (!dotnetProject) {
     throw new Error(
       "No .sln or .csproj file found in project root. " +
@@ -292,9 +302,32 @@ export function indexDotnetProjectRoslyn(
     );
   }
 
-  // Get existing hashes for incremental indexing
+  // The Roslyn tool emits paths relative to the .sln/.csproj directory. Re-base
+  // them onto projectRoot so stored paths (and the symbol IDs derived from
+  // them, which start with the path) are repo-relative and cross-service safe.
+  const basisDir = resolve(dirname(dotnetProject));
+  const storedPrefix = relative(projectRoot, basisDir).split(sep).join("/");
+  // A solution dir outside projectRoot would produce "../" stored paths,
+  // breaking the repo-relative path/ID contract (scanRoot/csprojPath are
+  // caller-provided, so guard here rather than trusting every caller).
+  if (storedPrefix.startsWith("..") || isAbsolute(storedPrefix)) {
+    throw new Error(
+      `.NET project '${dotnetProject}' resolves outside projectRoot '${projectRoot}' — stored paths must stay project-relative.`,
+    );
+  }
+  const addPrefix = (p: string): string => (storedPrefix ? `${storedPrefix}/${p}` : p);
+  const stripPrefix = (p: string): string =>
+    storedPrefix && p.startsWith(`${storedPrefix}/`) ? p.slice(storedPrefix.length + 1) : p;
+
+  // Get existing hashes for incremental indexing — keys are stored
+  // (projectRoot-relative) paths; the tool compares against its own
+  // solution-relative paths, so strip the prefix on the way in.
   const existingHashes = getExistingHashes(db, service, "csharp");
-  const hashesJson = JSON.stringify(Object.fromEntries(existingHashes));
+  const hashesJson = JSON.stringify(
+    Object.fromEntries(
+      [...existingHashes].map(([path, hash]) => [stripPrefix(path), hash]),
+    ),
+  );
 
   // Shell out to the .NET indexer — prefer global tool, fall back to monorepo source
   const stdout = runDotnetIndexer(dotnetProject, hashesJson, projectRoot);
@@ -315,8 +348,9 @@ export function indexDotnetProjectRoslyn(
     );
   }
 
-  // Remove stale symbols for changed + removed files (scoped by service + language)
-  const filesToClean = [...output.changedFiles, ...output.removedFiles];
+  // Remove stale symbols for changed + removed files (scoped by service +
+  // language). Tool output is solution-relative — re-base to stored paths.
+  const filesToClean = [...output.changedFiles, ...output.removedFiles].map(addPrefix);
   removeScopedSymbolsForFiles(db, filesToClean, service, "csharp");
 
   // All symbols from all projects in the solution go under one service.
@@ -324,11 +358,12 @@ export function indexDotnetProjectRoslyn(
   // these are layers of the same service, not separate services.
   // Agents can still filter by file_path prefix to scope to a specific layer.
   const symbols: ExtractedSymbol[] = output.symbols.map((s) => ({
-    id: s.id,
+    // The ID starts with the file path, so prefixing the whole string re-bases it
+    id: addPrefix(s.id),
     name: s.name,
     qualifiedName: s.qualifiedName,
     kind: s.kind as ExtractedSymbol["kind"],
-    filePath: s.filePath,
+    filePath: addPrefix(s.filePath),
     startLine: s.startLine,
     endLine: s.endLine,
     startCol: s.startCol,
@@ -345,8 +380,8 @@ export function indexDotnetProjectRoslyn(
 
   // Write dependencies
   const deps: ExtractedDependency[] = output.dependencies.map((d) => ({
-    sourceSymbolId: d.sourceSymbolId,
-    targetSymbolId: d.targetSymbolId,
+    sourceSymbolId: addPrefix(d.sourceSymbolId),
+    targetSymbolId: addPrefix(d.targetSymbolId),
     kind: d.kind as ExtractedDependency["kind"],
   }));
 
