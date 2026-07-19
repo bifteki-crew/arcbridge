@@ -133,7 +133,16 @@ describe("indexConfiguredProject (monorepo)", () => {
     expect(files.every((f) => f.file_path.startsWith("packages/"))).toBe(true);
   });
 
-  it("warns and skips non-TypeScript services", async () => {
+  it("a broken non-TypeScript service doesn't abort the other services", async () => {
+    // Force the tree-sitter backend so the test doesn't depend on a dotnet SDK
+    mkdirSync(join(repoRoot, ".arcbridge"), { recursive: true });
+    writeFileSync(
+      join(repoRoot, ".arcbridge", "config.yaml"),
+      "indexing:\n  csharp_indexer: tree-sitter\n",
+      "utf-8",
+    );
+    // The dotnet service's directory doesn't exist — indexing it yields nothing
+    // (or a warning), but must not prevent the TS services from indexing.
     const result = await indexConfiguredProject(db, repoRoot, {
       services: [
         ...SERVICES,
@@ -141,7 +150,9 @@ describe("indexConfiguredProject (monorepo)", () => {
       ],
     });
 
-    expect(result.warnings.some((w) => w.includes("indexer") && w.includes("TypeScript only"))).toBe(true);
+    const dotnet = result.services.find((s) => s.service === "indexer");
+    expect(dotnet).toBeDefined();
+    expect(dotnet!.symbolsIndexed).toBe(0);
     // TS services still indexed
     expect(result.total.symbolsIndexed).toBeGreaterThanOrEqual(2);
   });

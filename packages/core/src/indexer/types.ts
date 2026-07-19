@@ -14,6 +14,15 @@ export interface IndexerOptions {
    * and avoid attributing every package's deps to every service.
    */
   manifestDir?: string;
+  /**
+   * Directory to scan for sources (a service's subdirectory in a monorepo).
+   * Defaults to projectRoot. Used by the C#/Python/Go indexers: sources are
+   * discovered under scanRoot but stored paths (and thus symbol IDs) remain
+   * projectRoot-relative, keeping IDs unique across services and matching
+   * repo-relative building-block code_paths. The TypeScript indexer scopes via
+   * tsconfigPath instead and ignores this.
+   */
+  scanRoot?: string;
 }
 
 export type SymbolKind =

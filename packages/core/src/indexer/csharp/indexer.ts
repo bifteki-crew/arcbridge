@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import type { Database } from "../../db/connection.js";
 import { transaction } from "../../db/connection.js";
 import { globbySync } from "globby";
@@ -22,8 +22,16 @@ import {
 import { extractCSharpRoutes, type CSharpRoute } from "./route-analyzer.js";
 
 export interface CSharpTreeSitterOptions {
+  /** Path basis: stored file_paths (and thus symbol IDs) are relative to this. */
   projectRoot: string;
   service?: string;
+  /**
+   * Directory to scan for sources (a service's subdirectory in a monorepo).
+   * Defaults to projectRoot. Stored paths remain projectRoot-relative — e.g.
+   * scanning `api/` stores `api/Controllers/X.cs` — so symbol IDs stay unique
+   * across services and match repo-relative building-block code_paths.
+   */
+  scanRoot?: string;
 }
 
 /**
@@ -40,6 +48,9 @@ export async function indexCSharpTreeSitter(
   await ensureCSharpParser();
   const service = options.service ?? "main";
   const projectRoot = options.projectRoot;
+  const scanRoot = options.scanRoot ?? projectRoot;
+  // Prefix that maps scan-relative paths back to projectRoot-relative ones
+  const storedPrefix = relative(projectRoot, scanRoot).split(sep).join("/");
 
   // 1. Discover .cs files (skip build artifacts, Unity-managed dirs)
   const ignorePatterns = [
@@ -50,7 +61,7 @@ export async function indexCSharpTreeSitter(
     "Packages/**", "ProjectSettings/**",
   ];
   const csFiles = globbySync("**/*.cs", {
-    cwd: projectRoot,
+    cwd: scanRoot,
     ignore: ignorePatterns,
     absolute: false,
   });
@@ -64,10 +75,11 @@ export async function indexCSharpTreeSitter(
   let filesSkipped = 0;
 
   for (const filePath of csFiles) {
-    const relPath = filePath.replace(/\\/g, "/");
+    const scanRelPath = filePath.replace(/\\/g, "/");
+    const relPath = storedPrefix ? `${storedPrefix}/${scanRelPath}` : scanRelPath;
     currentPaths.add(relPath);
 
-    const fullPath = join(projectRoot, relPath);
+    const fullPath = join(scanRoot, scanRelPath);
     const content = readFileSync(fullPath, "utf-8");
     const hash = hashContent(content);
     const tree = parseCSharp(content);
