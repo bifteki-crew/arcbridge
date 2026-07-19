@@ -168,6 +168,8 @@ const SERVICE_TYPE_LANGUAGE: Record<Service["type"], IndexerLanguage> = {
   hono: "typescript",
   dotnet: "csharp",
   unity: "csharp",
+  python: "python",
+  go: "go",
 };
 
 function emptyResult(): IndexResult {

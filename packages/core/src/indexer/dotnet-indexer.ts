@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { resolve, join, dirname, relative, basename, sep } from "node:path";
+import { resolve, join, dirname, relative, basename, sep, isAbsolute } from "node:path";
 import { readdirSync, readFileSync, existsSync, accessSync, constants } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { Database } from "../db/connection.js";
@@ -307,6 +307,14 @@ export function indexDotnetProjectRoslyn(
   // them, which start with the path) are repo-relative and cross-service safe.
   const basisDir = resolve(dirname(dotnetProject));
   const storedPrefix = relative(projectRoot, basisDir).split(sep).join("/");
+  // A solution dir outside projectRoot would produce "../" stored paths,
+  // breaking the repo-relative path/ID contract (scanRoot/csprojPath are
+  // caller-provided, so guard here rather than trusting every caller).
+  if (storedPrefix.startsWith("..") || isAbsolute(storedPrefix)) {
+    throw new Error(
+      `.NET project '${dotnetProject}' resolves outside projectRoot '${projectRoot}' — stored paths must stay project-relative.`,
+    );
+  }
   const addPrefix = (p: string): string => (storedPrefix ? `${storedPrefix}/${p}` : p);
   const stripPrefix = (p: string): string =>
     storedPrefix && p.startsWith(`${storedPrefix}/`) ? p.slice(storedPrefix.length + 1) : p;

@@ -71,6 +71,17 @@ describe("scanRoot keeps symbol IDs unique across services", () => {
     expect(rows[0].file_path).toBe("services/a/Models/User.cs");
   });
 
+  it("rejects a scanRoot that escapes projectRoot", async () => {
+    csService("services/a");
+    await expect(
+      indexCSharpTreeSitter(db, {
+        projectRoot: join(repoRoot, "services", "a"),
+        scanRoot: repoRoot, // parent of projectRoot → "../" stored paths
+        service: "svc-a",
+      }),
+    ).rejects.toThrow(/escapes projectRoot/);
+  });
+
   it("incremental re-run with scanRoot skips unchanged files", async () => {
     csService("services/a");
     const opts = {
@@ -132,6 +143,39 @@ describe("indexConfiguredProject indexes non-TypeScript services", () => {
     for (const row of csRows) {
       expect(row.file_path.startsWith("api/")).toBe(true);
       expect(row.service).toBe("api");
+    }
+  });
+
+  it("python and go services are indexed per-service with repo-relative paths", async () => {
+    mkdirSync(join(repoRoot, "py-svc"), { recursive: true });
+    writeFileSync(join(repoRoot, "py-svc", "app.py"), "def handler():\n    return 1\n", "utf-8");
+    mkdirSync(join(repoRoot, "go-svc"), { recursive: true });
+    writeFileSync(
+      join(repoRoot, "go-svc", "main.go"),
+      "package main\n\nfunc Handler() int {\n\treturn 1\n}\n",
+      "utf-8",
+    );
+
+    const { services, warnings } = await indexConfiguredProject(db, repoRoot, {
+      services: [
+        { name: "py", path: "py-svc", type: "python" },
+        { name: "go", path: "go-svc", type: "go" },
+      ],
+    });
+
+    expect(warnings.join("\n")).not.toContain("TypeScript only");
+    for (const name of ["py", "go"]) {
+      const svc = services.find((s) => s.service === name);
+      expect(svc?.skippedReason).toBeUndefined();
+      expect(svc?.symbolsIndexed).toBeGreaterThan(0);
+    }
+
+    const rows = db
+      .prepare("SELECT file_path, service FROM symbols WHERE language IN ('python','go')")
+      .all() as { file_path: string; service: string }[];
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.file_path.startsWith(`${row.service}-svc/`)).toBe(true);
     }
   });
 

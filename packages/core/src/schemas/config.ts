@@ -5,7 +5,7 @@ export const ServiceSchema = z.object({
   name: z.string().min(1),
   /** Service root, relative to the project root. */
   path: z.string().default("."),
-  type: z.enum(["nextjs", "react", "fastify", "express", "hono", "dotnet", "unity", "angular"]),
+  type: z.enum(["nextjs", "react", "fastify", "express", "hono", "dotnet", "unity", "angular", "python", "go"]),
   /** tsconfig location, relative to `path` (defaults to `tsconfig.json`). */
   tsconfig: z.string().optional(),
   /** csproj location, relative to `path`. */

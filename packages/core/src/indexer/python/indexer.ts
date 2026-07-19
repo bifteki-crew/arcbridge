@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { join, relative, sep, isAbsolute } from "node:path";
 import { type Database, transaction } from "../../db/connection.js";
 import { globbySync } from "globby";
 import type { IndexResult, ExtractedSymbol } from "../types.js";
@@ -48,8 +48,15 @@ export async function indexPythonTreeSitter(
   const service = options.service ?? "main";
   const projectRoot = options.projectRoot;
   const scanRoot = options.scanRoot ?? projectRoot;
-  // Prefix that maps scan-relative paths back to projectRoot-relative ones
+  // Prefix that maps scan-relative paths back to projectRoot-relative ones.
+  // A scan root outside projectRoot would produce "../" stored paths, breaking
+  // the repo-relative path/ID contract and reading files outside the project.
   const storedPrefix = relative(projectRoot, scanRoot).split(sep).join("/");
+  if (storedPrefix.startsWith("..") || isAbsolute(storedPrefix)) {
+    throw new Error(
+      `scanRoot '${scanRoot}' escapes projectRoot '${projectRoot}' — stored paths must stay project-relative.`,
+    );
+  }
 
   // 1. Discover .py files (skip virtual envs, caches, build artifacts)
   const ignorePatterns = [
