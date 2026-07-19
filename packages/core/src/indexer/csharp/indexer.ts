@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { join, relative, sep, isAbsolute } from "node:path";
+import { join, relative, resolve, sep, isAbsolute } from "node:path";
 import type { Database } from "../../db/connection.js";
 import { transaction } from "../../db/connection.js";
 import { globbySync } from "globby";
@@ -47,8 +47,10 @@ export async function indexCSharpTreeSitter(
   // One-time async init of the WASM-based tree-sitter parser
   await ensureCSharpParser();
   const service = options.service ?? "main";
-  const projectRoot = options.projectRoot;
-  const scanRoot = options.scanRoot ?? projectRoot;
+  // Resolve both roots before deriving the prefix — a relative/absolute mix
+  // (or embedded "..") would otherwise skew the containment check below.
+  const projectRoot = resolve(options.projectRoot);
+  const scanRoot = resolve(options.scanRoot ?? projectRoot);
   // Prefix that maps scan-relative paths back to projectRoot-relative ones.
   // A scan root outside projectRoot would produce "../" stored paths, breaking
   // the repo-relative path/ID contract and reading files outside the project.
