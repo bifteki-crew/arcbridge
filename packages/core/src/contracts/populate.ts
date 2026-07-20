@@ -29,15 +29,15 @@ export function populateHttpContracts(db: Database): number {
     .prepare("SELECT DISTINCT url, method, service FROM api_calls")
     .all() as { url: string; method: string; service: string }[];
 
-  db.prepare("DELETE FROM contracts WHERE kind = 'http-endpoint'").run();
-  if (routes.length === 0) return 0;
-
   const insert = db.prepare(
     "INSERT OR REPLACE INTO contracts (id, kind, source_path, producer, consumers, last_verified) VALUES (?, 'http-endpoint', ?, ?, ?, ?)",
   );
   const now = new Date().toISOString();
 
+  // Delete + reinsert in ONE transaction so a crash mid-population can never
+  // leave consumers observing an empty/partial contracts view.
   transaction(db, () => {
+    db.prepare("DELETE FROM contracts WHERE kind = 'http-endpoint'").run();
     for (const route of routes) {
       // Analyzers emit one route row per HTTP method, so a consumer must match
       // the method too — a GET-only caller is not a consumer of the POST route.
@@ -55,7 +55,10 @@ export function populateHttpContracts(db: Database): number {
         ),
       ].sort();
       insert.run(
-        route.id,
+        // contracts.id is a global PK across contract kinds — namespace by
+        // kind so a future kind reusing route-style IDs can't silently
+        // overwrite these rows via INSERT OR REPLACE.
+        `http-endpoint::${route.id}`,
         route.route_path,
         route.service,
         JSON.stringify(consumers),

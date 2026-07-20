@@ -499,15 +499,23 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
     .all() as { url: string; method: string; file_path: string }[];
   if (calls.length === 0) return;
 
-  const routes = db
-    .prepare("SELECT route_path, http_methods, service FROM routes WHERE kind = 'api-route'")
-    .all() as { route_path: string; http_methods: string; service: string }[];
-  if (routes.length === 0) return;
+  const routeRows = db
+    .prepare("SELECT route_path, http_methods FROM routes WHERE kind = 'api-route'")
+    .all() as { route_path: string; http_methods: string }[];
+  if (routeRows.length === 0) return;
+
+  // Precompile once — segments + allowed methods per route — instead of
+  // re-splitting/re-parsing inside the calls × routes comparison loop.
+  const routes = routeRows.map((r) => ({
+    segs: splitSegments(r.route_path),
+    methods: safeParseJson<string[]>(r.http_methods, []),
+  }));
 
   for (const call of calls) {
     // Strip query/hash — routes are matched on the path only
     const url = call.url.split("?")[0].split("#")[0];
-    const matching = routes.filter((r) => routeMatchesUrl(r.route_path, url));
+    const urlSegs = splitSegments(url);
+    const matching = routes.filter((r) => segmentsMatch(r.segs, urlSegs));
 
     if (matching.length === 0) {
       entries.push({
@@ -520,9 +528,7 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
       continue;
     }
 
-    const allowed = new Set(
-      matching.flatMap((r) => safeParseJson<string[]>(r.http_methods, [])),
-    );
+    const allowed = new Set(matching.flatMap((r) => r.methods));
     if (allowed.size > 0 && !allowed.has(call.method)) {
       entries.push({
         kind: "contract_violation",
@@ -543,9 +549,14 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
  * routing is case-insensitive; this is a heuristic matcher, not a router).
  */
 export function routeMatchesUrl(routePath: string, url: string): boolean {
-  const routeSegs = routePath.split("/").filter(Boolean);
-  const urlSegs = url.split("/").filter(Boolean);
+  return segmentsMatch(splitSegments(routePath), splitSegments(url));
+}
 
+function splitSegments(path: string): string[] {
+  return path.split("/").filter(Boolean);
+}
+
+function segmentsMatch(routeSegs: string[], urlSegs: string[]): boolean {
   for (let i = 0; i < routeSegs.length; i++) {
     const rs = routeSegs[i];
     // A catch-all segment (Next.js [...slug]/*slug, Gin *path, ASP.NET
