@@ -528,8 +528,11 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
       continue;
     }
 
+    // A matching route with no declared methods means "any method" (some
+    // analyzers, e.g. Go net/http, leave http_methods empty) — don't flag.
+    const anyMethodRoute = matching.some((r) => r.methods.length === 0);
     const allowed = new Set(matching.flatMap((r) => r.methods));
-    if (allowed.size > 0 && !allowed.has(call.method)) {
+    if (!anyMethodRoute && allowed.size > 0 && !allowed.has(call.method)) {
       entries.push({
         kind: "contract_violation",
         severity: "warning",

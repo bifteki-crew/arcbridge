@@ -49,6 +49,18 @@ describe("extractApiCalls", () => {
     expect(calls).toHaveLength(0);
   });
 
+  it("ignores .fetch on non-global receivers", () => {
+    const calls = extractApiCalls(
+      parse(`
+        window.fetch("/api/a");
+        globalThis.fetch("/api/b");
+        someClient.fetch("/api/c");
+      `),
+      "src/client.ts",
+    );
+    expect(calls.map((c) => c.url).sort()).toEqual(["/api/a", "/api/b"]);
+  });
+
   it("detects axios verb methods and direct axios calls", () => {
     const calls = extractApiCalls(
       parse(`
@@ -227,6 +239,41 @@ namespace Api.Controllers
     expect(postRoute).toBeDefined();
     expect(JSON.parse(getRoute!.consumers)).toEqual(["frontend"]);
     expect(JSON.parse(postRoute!.consumers)).toEqual([]);
+  });
+
+  it("treats a matching route with empty http_methods as allowing any method", async () => {
+    await indexBoth();
+    // Simulate a Go-style ANY route on the same path with no declared methods
+    db.prepare(
+      "INSERT INTO routes (id, route_path, kind, http_methods, has_auth, service) VALUES ('api::any', '/api/users', 'api-route', '[]', 0, 'api')",
+    ).run();
+
+    const violations = detectDrift(db).filter((e) => e.kind === "contract_violation");
+    // The DELETE call now matches an any-method route → no method violation.
+    // Only the unknown /api/userz endpoint remains.
+    expect(violations).toHaveLength(1);
+    expect(violations[0].description).toContain("/api/userz");
+  });
+
+  it("prunes rows for services removed from config", async () => {
+    await indexBoth();
+    expect(
+      (db.prepare("SELECT COUNT(*) c FROM api_calls WHERE service = 'frontend'").get() as { c: number }).c,
+    ).toBeGreaterThan(0);
+
+    // Re-index with the frontend service removed
+    await indexConfiguredProject(db, repoRoot, {
+      services: [{ name: "api", path: "api", type: "dotnet" }],
+    });
+
+    for (const table of ["symbols", "routes", "api_calls"]) {
+      const row = db.prepare(`SELECT COUNT(*) c FROM ${table} WHERE service = 'frontend'`).get() as { c: number };
+      expect(row.c).toBe(0);
+    }
+    // API service rows survive
+    expect(
+      (db.prepare("SELECT COUNT(*) c FROM routes WHERE service = 'api'").get() as { c: number }).c,
+    ).toBeGreaterThan(0);
   });
 
   it("is silent for projects with no api-routes (frontend-only)", async () => {

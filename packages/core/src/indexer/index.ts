@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import YAML from "yaml";
 import type { Database } from "../db/connection.js";
+import { transaction } from "../db/connection.js";
 import type { ArcBridgeConfig, Service } from "../schemas/config.js";
 import type { IndexerOptions, IndexResult, IndexerLanguage } from "./types.js";
 import { createTsProgram } from "./program.js";
@@ -300,10 +301,33 @@ export async function indexConfiguredProject(
 
   const total = results.reduce<IndexResult>((acc, r) => addResults(acc, r), emptyResult());
 
+  // Drop index-derived rows for services no longer in config (removed/renamed)
+  // so stale routes/api_calls/symbols can't skew contracts or drift.
+  pruneStaleServices(db, services.map((s) => s.name));
+
   // Derive endpoint contracts now that all services' routes + api_calls are in
   populateHttpContracts(db);
 
   return { total, services: results, warnings };
+}
+
+/**
+ * Delete index-derived rows whose `service` is not in the current config.
+ * building_blocks are doc-derived (refreshFromDocs owns them) and are left
+ * untouched. dependencies have no service column — they're pruned via their
+ * (now-deleted) source symbols.
+ */
+function pruneStaleServices(db: Database, keep: string[]): void {
+  const placeholders = keep.map(() => "?").join(", ");
+  const notIn = `service NOT IN (${placeholders})`;
+  transaction(db, () => {
+    db.prepare(
+      `DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE ${notIn})`,
+    ).run(...keep);
+    for (const table of ["symbols", "routes", "api_calls", "package_dependencies"]) {
+      db.prepare(`DELETE FROM ${table} WHERE ${notIn}`).run(...keep);
+    }
+  });
 }
 
 /**

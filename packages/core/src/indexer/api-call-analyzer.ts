@@ -15,6 +15,7 @@ export interface ApiCall {
 }
 
 const AXIOS_METHODS = new Set(["get", "post", "put", "delete", "patch", "head", "options"]);
+const FETCH_GLOBALS = new Set(["window", "globalThis", "self"]);
 
 /**
  * Extract the URL from a fetch/axios first argument. Handles string literals
@@ -75,10 +76,15 @@ export function extractApiCalls(sf: ts.SourceFile, relPath: string): ApiCall[] {
     if (ts.isCallExpression(node) && node.arguments.length > 0) {
       const callee = node.expression;
 
-      // fetch(url, opts?) — also covers globalThis.fetch / window.fetch
+      // fetch(url, opts?) — bare `fetch`, or the global forms
+      // window/globalThis/self.fetch. A `.fetch` on any other receiver (e.g.
+      // someClient.fetch) is NOT the global fetch and is skipped.
       const isFetch =
         (ts.isIdentifier(callee) && callee.text === "fetch") ||
-        (ts.isPropertyAccessExpression(callee) && callee.name.text === "fetch");
+        (ts.isPropertyAccessExpression(callee) &&
+          callee.name.text === "fetch" &&
+          ts.isIdentifier(callee.expression) &&
+          FETCH_GLOBALS.has(callee.expression.text));
       if (isFetch) {
         const method = methodFromOptions(node.arguments[1]) ?? "GET";
         record(node.arguments[0], method, node.getStart(sf));
