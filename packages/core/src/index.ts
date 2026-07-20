@@ -91,6 +91,8 @@ export {
   type ChangedScope,
   type ScopedDrift,
 } from "./drift/scope.js";
+export { populateHttpContracts } from "./contracts/populate.js";
+export { extractApiCalls, analyzeApiCalls, type ApiCall } from "./indexer/api-call-analyzer.js";
 
 // Sync
 export {

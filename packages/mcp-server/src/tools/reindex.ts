@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { indexProject, refreshFromDocs } from "@arcbridge/core";
+import { indexProject, refreshFromDocs, populateHttpContracts } from "@arcbridge/core";
 import type { ServerContext } from "../context.js";
 import { ensureDb, notInitialized, textResult } from "../helpers.js";
 import { autoRecord } from "../auto-record.js";
@@ -44,6 +44,9 @@ export function registerReindex(
           service: params.service,
           language: params.language,
         });
+
+        // Re-derive endpoint contracts from the refreshed routes + api_calls
+        populateHttpContracts(db);
 
         const lines = [
           "# Reindex Complete",

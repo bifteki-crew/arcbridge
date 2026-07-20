@@ -1,6 +1,6 @@
 import type { Database } from "./connection.js";
 
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 const SCHEMA_SQL = `
 -- Metadata
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS adrs (
 
 CREATE TABLE IF NOT EXISTS contracts (
   id TEXT PRIMARY KEY,
-  kind TEXT NOT NULL CHECK(kind IN ('openapi','graphql','grpc','shared-types','event-schema')),
+  kind TEXT NOT NULL CHECK(kind IN ('openapi','graphql','grpc','shared-types','event-schema','http-endpoint')),
   source_path TEXT NOT NULL,
   producer TEXT NOT NULL,
   consumers TEXT NOT NULL DEFAULT '[]',
@@ -121,6 +121,18 @@ CREATE TABLE IF NOT EXISTS contracts (
   content_hash TEXT,
   last_verified TEXT
 );
+
+-- Outbound HTTP call sites (fetch/axios) detected in frontend code — the
+-- consumer half of endpoint contracts. Producer half lives in the routes table.
+CREATE TABLE IF NOT EXISTS api_calls (
+  id TEXT PRIMARY KEY,
+  url TEXT NOT NULL,
+  method TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  line INTEGER NOT NULL,
+  service TEXT NOT NULL DEFAULT 'main'
+);
+CREATE INDEX IF NOT EXISTS idx_api_calls_service ON api_calls(service);
 
 -- Package Dependencies (npm, NuGet)
 CREATE TABLE IF NOT EXISTS package_dependencies (
@@ -162,7 +174,7 @@ CREATE INDEX IF NOT EXISTS idx_phases_status ON phases(status);
 CREATE TABLE IF NOT EXISTS drift_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   detected_at TEXT NOT NULL,
-  kind TEXT NOT NULL CHECK(kind IN ('undocumented_module','missing_module','dependency_violation','unlinked_test','stale_adr','new_dependency')),
+  kind TEXT NOT NULL CHECK(kind IN ('undocumented_module','missing_module','dependency_violation','unlinked_test','stale_adr','new_dependency','contract_violation')),
   severity TEXT NOT NULL DEFAULT 'info' CHECK(severity IN ('info','warning','error')),
   description TEXT NOT NULL,
   affected_block TEXT,

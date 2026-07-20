@@ -7,7 +7,8 @@ export type DriftKind =
   | "dependency_violation"
   | "unlinked_test"
   | "stale_adr"
-  | "new_dependency";
+  | "new_dependency"
+  | "contract_violation";
 
 export type DriftSeverity = "info" | "warning" | "error";
 
@@ -112,6 +113,7 @@ export function detectDrift(
   detectUnlinkedTests(db, entries);
   detectStaleAdrs(db, entries);
   detectNewDependencies(db, entries);
+  detectContractViolations(db, entries);
 
   return entries;
 }
@@ -482,6 +484,87 @@ function detectNewDependencies(
 }
 
 // --- Helpers ---
+
+/**
+ * Detect endpoint-contract violations: outbound fetch/axios calls (api_calls,
+ * the consumer half) that no indexed service's api-route (routes, the producer
+ * half) satisfies — either the URL matches nothing, or it matches but the HTTP
+ * method isn't allowed. Runs only when the project exposes at least one
+ * api-route: a pure frontend calling an externally-deployed backend has no
+ * producer side in this repo, so flagging its calls would be pure noise.
+ */
+function detectContractViolations(db: Database, entries: DriftEntry[]): void {
+  const calls = db
+    .prepare("SELECT DISTINCT url, method, file_path FROM api_calls")
+    .all() as { url: string; method: string; file_path: string }[];
+  if (calls.length === 0) return;
+
+  const routes = db
+    .prepare("SELECT route_path, http_methods, service FROM routes WHERE kind = 'api-route'")
+    .all() as { route_path: string; http_methods: string; service: string }[];
+  if (routes.length === 0) return;
+
+  for (const call of calls) {
+    // Strip query/hash — routes are matched on the path only
+    const url = call.url.split("?")[0].split("#")[0];
+    const matching = routes.filter((r) => routeMatchesUrl(r.route_path, url));
+
+    if (matching.length === 0) {
+      entries.push({
+        kind: "contract_violation",
+        severity: "warning",
+        description: `\`${call.file_path}\` calls \`${call.method} ${url}\` but no indexed service exposes that endpoint.`,
+        affectedBlock: null,
+        affectedFile: call.file_path,
+      });
+      continue;
+    }
+
+    const allowed = new Set(
+      matching.flatMap((r) => safeParseJson<string[]>(r.http_methods, [])),
+    );
+    if (allowed.size > 0 && !allowed.has(call.method)) {
+      entries.push({
+        kind: "contract_violation",
+        severity: "warning",
+        description: `\`${call.file_path}\` calls \`${call.method} ${url}\` but the endpoint only allows ${[...allowed].sort().join(", ")}.`,
+        affectedBlock: null,
+        affectedFile: call.file_path,
+      });
+    }
+  }
+}
+
+/**
+ * Segment-wise route/URL match. A segment counts as a parameter placeholder in
+ * any analyzer's style — `:id` (Next/Gin), `{id}` (ASP.NET/FastAPI/Chi),
+ * `<id>` (Flask), `[id]`/`*` — and a placeholder on either side matches any
+ * concrete segment. Concrete segments compare case-insensitively (ASP.NET
+ * routing is case-insensitive; this is a heuristic matcher, not a router).
+ */
+export function routeMatchesUrl(routePath: string, url: string): boolean {
+  const routeSegs = routePath.split("/").filter(Boolean);
+  const urlSegs = url.split("/").filter(Boolean);
+  if (routeSegs.length !== urlSegs.length) return false;
+  return routeSegs.every((rs, i) => {
+    const us = urlSegs[i];
+    return (
+      isParamSegment(rs) ||
+      isParamSegment(us) ||
+      rs.toLowerCase() === us.toLowerCase()
+    );
+  });
+}
+
+function isParamSegment(seg: string): boolean {
+  return (
+    seg.startsWith(":") ||
+    seg.startsWith("*") ||
+    (seg.startsWith("{") && seg.endsWith("}")) ||
+    (seg.startsWith("<") && seg.endsWith(">")) ||
+    (seg.startsWith("[") && seg.endsWith("]"))
+  );
+}
 
 function normalizePath(codePath: string): string {
   // Remove trailing glob patterns: "src/lib/**" → "src/lib/", "src/lib/*" → "src/lib/"

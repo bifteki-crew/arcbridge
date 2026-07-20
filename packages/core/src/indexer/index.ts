@@ -11,6 +11,8 @@ import { extractSymbols } from "./symbol-extractor.js";
 import { extractDependencies, buildSymbolLookup } from "./dependency-extractor.js";
 import { analyzeComponents } from "./component-analyzer.js";
 import { analyzeRoutes } from "./route-analyzer.js";
+import { analyzeApiCalls } from "./api-call-analyzer.js";
+import { populateHttpContracts } from "../contracts/populate.js";
 import { hashContent } from "./content-hash.js";
 import {
   getExistingHashes,
@@ -219,6 +221,7 @@ export async function indexConfiguredProject(
   // No services configured — single root index (backward compatible)
   if (services.length === 0) {
     const result = await indexProject(db, { projectRoot });
+    populateHttpContracts(db);
     return {
       total: result,
       services: [{ ...result, service: "main" }],
@@ -296,6 +299,10 @@ export async function indexConfiguredProject(
   }
 
   const total = results.reduce<IndexResult>((acc, r) => addResults(acc, r), emptyResult());
+
+  // Derive endpoint contracts now that all services' routes + api_calls are in
+  populateHttpContracts(db);
+
   return { total, services: results, warnings };
 }
 
@@ -438,6 +445,10 @@ function indexTypeScriptProject(
 
   // 9. Analyze Next.js routes (populates routes table)
   const routesAnalyzed = analyzeRoutes(projectRoot, db, service);
+
+  // 10. Detect outbound fetch/axios call sites — the consumer half of
+  // endpoint contracts (compared against `routes` by drift detection)
+  analyzeApiCalls(sourceFiles, projectRoot, db, service);
 
   return {
     symbolsIndexed: allSymbols.length,
