@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import YAML from "yaml";
 import type { Database } from "../db/connection.js";
+import { transaction } from "../db/connection.js";
 import type { ArcBridgeConfig, Service } from "../schemas/config.js";
 import type { IndexerOptions, IndexResult, IndexerLanguage } from "./types.js";
 import { createTsProgram } from "./program.js";
@@ -11,6 +12,8 @@ import { extractSymbols } from "./symbol-extractor.js";
 import { extractDependencies, buildSymbolLookup } from "./dependency-extractor.js";
 import { analyzeComponents } from "./component-analyzer.js";
 import { analyzeRoutes } from "./route-analyzer.js";
+import { analyzeApiCalls } from "./api-call-analyzer.js";
+import { populateHttpContracts } from "../contracts/populate.js";
 import { hashContent } from "./content-hash.js";
 import {
   getExistingHashes,
@@ -219,6 +222,7 @@ export async function indexConfiguredProject(
   // No services configured — single root index (backward compatible)
   if (services.length === 0) {
     const result = await indexProject(db, { projectRoot });
+    populateHttpContracts(db);
     return {
       total: result,
       services: [{ ...result, service: "main" }],
@@ -296,7 +300,48 @@ export async function indexConfiguredProject(
   }
 
   const total = results.reduce<IndexResult>((acc, r) => addResults(acc, r), emptyResult());
+
+  // Drop index-derived rows for any service that wasn't freshly indexed this
+  // run — removed/renamed from config, OR still configured but skipped/failed
+  // (missing tsconfig, path escaped, indexing threw). Either way its stored
+  // rows are now stale and would skew contracts/drift, and the DB is a derived
+  // cache that a later successful run repopulates.
+  const indexedServices = results
+    .filter((r) => !r.skippedReason)
+    .map((r) => r.service);
+  pruneStaleServices(db, indexedServices);
+
+  // Derive endpoint contracts now that all services' routes + api_calls are in
+  populateHttpContracts(db);
+
   return { total, services: results, warnings };
+}
+
+/**
+ * Delete index-derived rows whose `service` is not in the current config.
+ * building_blocks are doc-derived (refreshFromDocs owns them) and are left
+ * untouched. Deletes in FK-safe order (PRAGMA foreign_keys = ON): rows
+ * referencing a pruned symbol — dependencies (source OR target, since a kept
+ * service's edge can point at a pruned service's symbol) and components — go
+ * before the symbols themselves.
+ */
+function pruneStaleServices(db: Database, keep: string[]): void {
+  // `NOT IN ()` is invalid SQL, so with nothing kept (every service
+  // skipped/failed) every index-derived row is stale → match all.
+  const notIn = keep.length > 0
+    ? `service NOT IN (${keep.map(() => "?").join(", ")})`
+    : "1 = 1";
+  const params = keep.length > 0 ? keep : [];
+  const prunedSymbols = `SELECT id FROM symbols WHERE ${notIn}`;
+  transaction(db, () => {
+    db.prepare(
+      `DELETE FROM dependencies WHERE source_symbol IN (${prunedSymbols}) OR target_symbol IN (${prunedSymbols})`,
+    ).run(...params, ...params);
+    db.prepare(`DELETE FROM components WHERE symbol_id IN (${prunedSymbols})`).run(...params);
+    for (const table of ["symbols", "routes", "api_calls", "package_dependencies"]) {
+      db.prepare(`DELETE FROM ${table} WHERE ${notIn}`).run(...params);
+    }
+  });
 }
 
 /**
@@ -438,6 +483,10 @@ function indexTypeScriptProject(
 
   // 9. Analyze Next.js routes (populates routes table)
   const routesAnalyzed = analyzeRoutes(projectRoot, db, service);
+
+  // 10. Detect outbound fetch/axios call sites — the consumer half of
+  // endpoint contracts (compared against `routes` by drift detection)
+  analyzeApiCalls(sourceFiles, projectRoot, db, service);
 
   return {
     symbolsIndexed: allSymbols.length,

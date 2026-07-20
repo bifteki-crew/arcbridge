@@ -7,7 +7,8 @@ export type DriftKind =
   | "dependency_violation"
   | "unlinked_test"
   | "stale_adr"
-  | "new_dependency";
+  | "new_dependency"
+  | "contract_violation";
 
 export type DriftSeverity = "info" | "warning" | "error";
 
@@ -112,6 +113,7 @@ export function detectDrift(
   detectUnlinkedTests(db, entries);
   detectStaleAdrs(db, entries);
   detectNewDependencies(db, entries);
+  detectContractViolations(db, entries);
 
   return entries;
 }
@@ -482,6 +484,116 @@ function detectNewDependencies(
 }
 
 // --- Helpers ---
+
+/**
+ * Detect endpoint-contract violations: outbound fetch/axios calls (api_calls,
+ * the consumer half) that no indexed service's api-route (routes, the producer
+ * half) satisfies — either the URL matches nothing, or it matches but the HTTP
+ * method isn't allowed. Runs only when the project exposes at least one
+ * api-route: a pure frontend calling an externally-deployed backend has no
+ * producer side in this repo, so flagging its calls would be pure noise.
+ */
+function detectContractViolations(db: Database, entries: DriftEntry[]): void {
+  const calls = db
+    .prepare("SELECT DISTINCT url, method, file_path FROM api_calls")
+    .all() as { url: string; method: string; file_path: string }[];
+  if (calls.length === 0) return;
+
+  const routeRows = db
+    .prepare("SELECT route_path, http_methods FROM routes WHERE kind = 'api-route'")
+    .all() as { route_path: string; http_methods: string }[];
+  if (routeRows.length === 0) return;
+
+  // Precompile once — segments + allowed methods per route — instead of
+  // re-splitting/re-parsing inside the calls × routes comparison loop.
+  const routes = routeRows.map((r) => ({
+    segs: splitSegments(r.route_path),
+    methods: safeParseJson<string[]>(r.http_methods, []),
+  }));
+
+  for (const call of calls) {
+    // Strip query/hash — routes are matched on the path only
+    const url = call.url.split("?")[0].split("#")[0];
+    const urlSegs = splitSegments(url);
+    const matching = routes.filter((r) => segmentsMatch(r.segs, urlSegs));
+
+    if (matching.length === 0) {
+      entries.push({
+        kind: "contract_violation",
+        severity: "warning",
+        description: `\`${call.file_path}\` calls \`${call.method} ${url}\` but no indexed service exposes that endpoint.`,
+        affectedBlock: null,
+        affectedFile: call.file_path,
+      });
+      continue;
+    }
+
+    // A matching route with no declared methods means "any method" (some
+    // analyzers, e.g. Go net/http, leave http_methods empty) — don't flag.
+    const anyMethodRoute = matching.some((r) => r.methods.length === 0);
+    const allowed = new Set(matching.flatMap((r) => r.methods));
+    if (!anyMethodRoute && allowed.size > 0 && !allowed.has(call.method)) {
+      entries.push({
+        kind: "contract_violation",
+        severity: "warning",
+        description: `\`${call.file_path}\` calls \`${call.method} ${url}\` but the endpoint only allows ${[...allowed].sort().join(", ")}.`,
+        affectedBlock: null,
+        affectedFile: call.file_path,
+      });
+    }
+  }
+}
+
+/**
+ * Segment-wise route/URL match. A segment counts as a parameter placeholder in
+ * any analyzer's style — `:id` (Next/Gin), `{id}` (ASP.NET/FastAPI/Chi),
+ * `<id>` (Flask), `[id]`/`*` — and a placeholder on either side matches any
+ * concrete segment. Concrete segments compare case-insensitively (ASP.NET
+ * routing is case-insensitive; this is a heuristic matcher, not a router).
+ */
+export function routeMatchesUrl(routePath: string, url: string): boolean {
+  return segmentsMatch(splitSegments(routePath), splitSegments(url));
+}
+
+function splitSegments(path: string): string[] {
+  return path.split("/").filter(Boolean);
+}
+
+function segmentsMatch(routeSegs: string[], urlSegs: string[]): boolean {
+  for (let i = 0; i < routeSegs.length; i++) {
+    const rs = routeSegs[i];
+    // A catch-all segment (Next.js [...slug]/*slug, Gin *path, ASP.NET
+    // {**slug}) swallows all remaining URL segments (zero or more — optional
+    // catch-alls exist, and over-matching is the right bias for a heuristic).
+    if (isCatchAllSegment(rs)) return true;
+    const us = urlSegs[i];
+    if (us === undefined) return false;
+    if (!isParamSegment(rs) && !isParamSegment(us) && rs.toLowerCase() !== us.toLowerCase()) {
+      return false;
+    }
+  }
+  return routeSegs.length === urlSegs.length;
+}
+
+function isCatchAllSegment(seg: string): boolean {
+  return (
+    seg.startsWith("*") ||
+    seg.startsWith("[...") ||
+    seg.startsWith("[[...") ||
+    seg.startsWith("{**") ||
+    seg.includes("...")
+  );
+}
+
+function isParamSegment(seg: string): boolean {
+  return (
+    seg.startsWith(":") ||
+    seg.startsWith("*") ||
+    (seg.startsWith("{") && seg.endsWith("}")) ||
+    (seg.startsWith("<") && seg.endsWith(">")) ||
+    (seg.startsWith("[") && seg.endsWith("]"))
+  );
+}
 
 function normalizePath(codePath: string): string {
   // Remove trailing glob patterns: "src/lib/**" → "src/lib/", "src/lib/*" → "src/lib/"

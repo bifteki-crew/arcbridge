@@ -76,6 +76,60 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 5,
+    up: (db) => {
+      // Endpoint contracts: api_calls table (consumer half), plus
+      // 'contract_violation' drift kind and 'http-endpoint' contract kind.
+      // SQLite CHECK constraints can't be altered — recreate the tables.
+      // drift_log entries are transient detector output and contracts was
+      // never populated before v5, so neither needs a data copy beyond
+      // drift_log's (kept for history).
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS api_calls (
+          id TEXT PRIMARY KEY,
+          url TEXT NOT NULL,
+          method TEXT NOT NULL,
+          file_path TEXT NOT NULL,
+          line INTEGER NOT NULL,
+          service TEXT NOT NULL DEFAULT 'main'
+        );
+        CREATE INDEX IF NOT EXISTS idx_api_calls_service ON api_calls(service);
+
+        CREATE TABLE drift_log_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          detected_at TEXT NOT NULL,
+          kind TEXT NOT NULL CHECK(kind IN ('undocumented_module','missing_module','dependency_violation','unlinked_test','stale_adr','new_dependency','contract_violation')),
+          severity TEXT NOT NULL DEFAULT 'info' CHECK(severity IN ('info','warning','error')),
+          description TEXT NOT NULL,
+          affected_block TEXT,
+          affected_file TEXT,
+          resolution TEXT CHECK(resolution IN ('accepted','fixed','deferred') OR resolution IS NULL),
+          resolved_at TEXT
+        );
+        INSERT INTO drift_log_new (id, detected_at, kind, severity, description, affected_block, affected_file, resolution, resolved_at)
+          SELECT id, detected_at, kind, severity, description, affected_block, affected_file, resolution, resolved_at FROM drift_log;
+        DROP TABLE drift_log;
+        ALTER TABLE drift_log_new RENAME TO drift_log;
+
+        CREATE TABLE contracts_new (
+          id TEXT PRIMARY KEY,
+          kind TEXT NOT NULL CHECK(kind IN ('openapi','graphql','grpc','shared-types','event-schema','http-endpoint')),
+          source_path TEXT NOT NULL,
+          producer TEXT NOT NULL,
+          consumers TEXT NOT NULL DEFAULT '[]',
+          version TEXT,
+          building_block TEXT REFERENCES building_blocks(id),
+          content_hash TEXT,
+          last_verified TEXT
+        );
+        INSERT INTO contracts_new (id, kind, source_path, producer, consumers, version, building_block, content_hash, last_verified)
+          SELECT id, kind, source_path, producer, consumers, version, building_block, content_hash, last_verified FROM contracts;
+        DROP TABLE contracts;
+        ALTER TABLE contracts_new RENAME TO contracts;
+      `);
+    },
+  },
 ];
 
 export function migrate(db: Database): void {
