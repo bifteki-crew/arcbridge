@@ -313,6 +313,32 @@ namespace Api.Controllers
     ).toBe(0);
   });
 
+  it("prunes stale rows for a service still in config but skipped this run", async () => {
+    await indexBoth();
+    expect(
+      (db.prepare("SELECT COUNT(*) c FROM symbols WHERE service = 'frontend'").get() as { c: number }).c,
+    ).toBeGreaterThan(0);
+
+    // Break the frontend service (remove its tsconfig) so it's skipped, but
+    // keep it in config. Its previously-indexed rows must not linger.
+    rmSync(join(repoRoot, "web", "tsconfig.json"), { force: true });
+    const { services } = await indexConfiguredProject(db, repoRoot, {
+      services: [
+        { name: "frontend", path: "web", type: "nextjs" },
+        { name: "api", path: "api", type: "dotnet" },
+      ],
+    });
+
+    expect(services.find((s) => s.service === "frontend")?.skippedReason).toBeDefined();
+    expect(
+      (db.prepare("SELECT COUNT(*) c FROM symbols WHERE service = 'frontend'").get() as { c: number }).c,
+    ).toBe(0);
+    // api (successfully indexed) survives
+    expect(
+      (db.prepare("SELECT COUNT(*) c FROM routes WHERE service = 'api'").get() as { c: number }).c,
+    ).toBeGreaterThan(0);
+  });
+
   it("is silent for projects with no api-routes (frontend-only)", async () => {
     // Remove the backend service — calls now target an externally-deployed API
     rmSync(join(repoRoot, "api"), { recursive: true, force: true });

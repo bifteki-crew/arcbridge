@@ -39,9 +39,11 @@ export function populateHttpContracts(db: Database): number {
   transaction(db, () => {
     db.prepare("DELETE FROM contracts WHERE kind = 'http-endpoint'").run();
     for (const route of routes) {
-      // Analyzers emit one route row per HTTP method, so a consumer must match
-      // the method too — a GET-only caller is not a consumer of the POST route.
-      // An empty http_methods list (non-API kinds) matches any method.
+      // Match the call's method against the route's declared methods so a
+      // GET-only caller isn't counted as a consumer of a POST route. Route
+      // rows carry a method list (the C#/py/go analyzers emit one method per
+      // api-route row; the Next.js analyzer may list several on one row) — an
+      // empty list means "any/unknown method" and matches any call.
       const methods = new Set(safeParseJson<string[]>(route.http_methods, []));
       const consumers = [
         ...new Set(
