@@ -207,8 +207,17 @@ namespace Api.Controllers
     for (const row of rows) {
       expect(row.producer).toBe("api");
       expect(row.source_path).toBe("/api/users");
-      expect(JSON.parse(row.consumers)).toEqual(["frontend"]);
     }
+
+    // Consumers are method-aware: the frontend GETs /api/users (and attempts a
+    // DELETE, which matches nothing) but never POSTs — so it consumes the GET
+    // route only, not the POST route.
+    const getRoute = rows.find((r) => r.id.includes("GET"));
+    const postRoute = rows.find((r) => r.id.includes("POST"));
+    expect(getRoute).toBeDefined();
+    expect(postRoute).toBeDefined();
+    expect(JSON.parse(getRoute!.consumers)).toEqual(["frontend"]);
+    expect(JSON.parse(postRoute!.consumers)).toEqual([]);
   });
 
   it("is silent for projects with no api-routes (frontend-only)", async () => {

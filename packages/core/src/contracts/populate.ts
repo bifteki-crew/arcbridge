@@ -2,6 +2,15 @@ import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
 import { routeMatchesUrl } from "../drift/detector.js";
 
+function safeParseJson<T>(value: string | null, fallback: T): T {
+  if (value === null) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 /**
  * Derive endpoint-level contract rows from the indexed producer/consumer
  * halves: every api-route becomes an `http-endpoint` contract produced by its
@@ -17,8 +26,8 @@ export function populateHttpContracts(db: Database): number {
     .all() as { id: string; route_path: string; http_methods: string; service: string }[];
 
   const calls = db
-    .prepare("SELECT DISTINCT url, service FROM api_calls")
-    .all() as { url: string; service: string }[];
+    .prepare("SELECT DISTINCT url, method, service FROM api_calls")
+    .all() as { url: string; method: string; service: string }[];
 
   db.prepare("DELETE FROM contracts WHERE kind = 'http-endpoint'").run();
   if (routes.length === 0) return 0;
@@ -30,10 +39,18 @@ export function populateHttpContracts(db: Database): number {
 
   transaction(db, () => {
     for (const route of routes) {
+      // Analyzers emit one route row per HTTP method, so a consumer must match
+      // the method too — a GET-only caller is not a consumer of the POST route.
+      // An empty http_methods list (non-API kinds) matches any method.
+      const methods = new Set(safeParseJson<string[]>(route.http_methods, []));
       const consumers = [
         ...new Set(
           calls
-            .filter((c) => routeMatchesUrl(route.route_path, c.url.split("?")[0].split("#")[0]))
+            .filter(
+              (c) =>
+                (methods.size === 0 || methods.has(c.method)) &&
+                routeMatchesUrl(route.route_path, c.url.split("?")[0].split("#")[0]),
+            )
             .map((c) => c.service),
         ),
       ].sort();

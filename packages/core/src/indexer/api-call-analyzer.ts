@@ -84,8 +84,12 @@ export function extractApiCalls(sf: ts.SourceFile, relPath: string): ApiCall[] {
         record(node.arguments[0], method, node.getStart(sf));
       }
 
-      // axios.get/post/…(url) — matches any receiver named like an HTTP verb
-      // whose base is `axios` (or an axios instance created via axios.create)
+      // <receiver>.get/post/…(url) — heuristic: any receiver whose name looks
+      // like an HTTP client (`axios`, or instance names matching
+      // /api|client|http/i, e.g. `api.get(...)`, `apiClient.post(...)`).
+      // Wider than axios alone by design — axios.create() instances are
+      // conventionally named like this — at the cost of occasionally catching
+      // a non-HTTP object with a same-named verb method.
       if (
         ts.isPropertyAccessExpression(callee) &&
         AXIOS_METHODS.has(callee.name.text) &&
