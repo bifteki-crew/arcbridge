@@ -314,16 +314,20 @@ export async function indexConfiguredProject(
 /**
  * Delete index-derived rows whose `service` is not in the current config.
  * building_blocks are doc-derived (refreshFromDocs owns them) and are left
- * untouched. dependencies have no service column — they're pruned via their
- * (now-deleted) source symbols.
+ * untouched. Deletes in FK-safe order (PRAGMA foreign_keys = ON): rows
+ * referencing a pruned symbol — dependencies (source OR target, since a kept
+ * service's edge can point at a pruned service's symbol) and components — go
+ * before the symbols themselves.
  */
 function pruneStaleServices(db: Database, keep: string[]): void {
   const placeholders = keep.map(() => "?").join(", ");
   const notIn = `service NOT IN (${placeholders})`;
+  const prunedSymbols = `SELECT id FROM symbols WHERE ${notIn}`;
   transaction(db, () => {
     db.prepare(
-      `DELETE FROM dependencies WHERE source_symbol IN (SELECT id FROM symbols WHERE ${notIn})`,
-    ).run(...keep);
+      `DELETE FROM dependencies WHERE source_symbol IN (${prunedSymbols}) OR target_symbol IN (${prunedSymbols})`,
+    ).run(...keep, ...keep);
+    db.prepare(`DELETE FROM components WHERE symbol_id IN (${prunedSymbols})`).run(...keep);
     for (const table of ["symbols", "routes", "api_calls", "package_dependencies"]) {
       db.prepare(`DELETE FROM ${table} WHERE ${notIn}`).run(...keep);
     }

@@ -276,6 +276,43 @@ namespace Api.Controllers
     ).toBeGreaterThan(0);
   });
 
+  it("prunes without FK errors when a kept dependency/component references a pruned symbol", async () => {
+    await indexBoth();
+
+    // Fabricate a kept-service symbol depending on a pruned-service symbol,
+    // plus a component row on a pruned symbol — both reference symbols(id)
+    // under PRAGMA foreign_keys = ON.
+    const frontendSym = db
+      .prepare("SELECT id FROM symbols WHERE service = 'frontend' LIMIT 1")
+      .get() as { id: string } | undefined;
+    const apiSym = db
+      .prepare("SELECT id FROM symbols WHERE service = 'api' LIMIT 1")
+      .get() as { id: string } | undefined;
+    expect(frontendSym && apiSym).toBeTruthy();
+
+    // api (kept) → frontend (pruned): a target_symbol edge into the pruned set
+    db.prepare(
+      "INSERT INTO dependencies (source_symbol, target_symbol, kind) VALUES (?, ?, 'calls')",
+    ).run(apiSym!.id, frontendSym!.id);
+    db.prepare(
+      "INSERT OR REPLACE INTO components (symbol_id, is_client) VALUES (?, 1)",
+    ).run(frontendSym!.id);
+
+    // Removing the frontend service must not throw an FK constraint error
+    await expect(
+      indexConfiguredProject(db, repoRoot, {
+        services: [{ name: "api", path: "api", type: "dotnet" }],
+      }),
+    ).resolves.toBeDefined();
+
+    expect(
+      (db.prepare("SELECT COUNT(*) c FROM symbols WHERE service = 'frontend'").get() as { c: number }).c,
+    ).toBe(0);
+    expect(
+      (db.prepare("SELECT COUNT(*) c FROM components WHERE symbol_id = ?").get(frontendSym!.id) as { c: number }).c,
+    ).toBe(0);
+  });
+
   it("is silent for projects with no api-routes (frontend-only)", async () => {
     // Remove the backend service — calls now target an externally-deployed API
     rmSync(join(repoRoot, "api"), { recursive: true, force: true });
