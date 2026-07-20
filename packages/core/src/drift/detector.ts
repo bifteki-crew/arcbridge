@@ -545,15 +545,30 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
 export function routeMatchesUrl(routePath: string, url: string): boolean {
   const routeSegs = routePath.split("/").filter(Boolean);
   const urlSegs = url.split("/").filter(Boolean);
-  if (routeSegs.length !== urlSegs.length) return false;
-  return routeSegs.every((rs, i) => {
+
+  for (let i = 0; i < routeSegs.length; i++) {
+    const rs = routeSegs[i];
+    // A catch-all segment (Next.js [...slug]/*slug, Gin *path, ASP.NET
+    // {**slug}) swallows all remaining URL segments (zero or more — optional
+    // catch-alls exist, and over-matching is the right bias for a heuristic).
+    if (isCatchAllSegment(rs)) return true;
     const us = urlSegs[i];
-    return (
-      isParamSegment(rs) ||
-      isParamSegment(us) ||
-      rs.toLowerCase() === us.toLowerCase()
-    );
-  });
+    if (us === undefined) return false;
+    if (!isParamSegment(rs) && !isParamSegment(us) && rs.toLowerCase() !== us.toLowerCase()) {
+      return false;
+    }
+  }
+  return routeSegs.length === urlSegs.length;
+}
+
+function isCatchAllSegment(seg: string): boolean {
+  return (
+    seg.startsWith("*") ||
+    seg.startsWith("[...") ||
+    seg.startsWith("[[...") ||
+    seg.startsWith("{**") ||
+    seg.includes("...")
+  );
 }
 
 function isParamSegment(seg: string): boolean {

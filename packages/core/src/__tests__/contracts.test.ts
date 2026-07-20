@@ -85,8 +85,17 @@ describe("routeMatchesUrl", () => {
     expect(routeMatchesUrl("/api/users/{id}", "/api/users/:param")).toBe(true);
   });
 
-  it("requires equal segment counts", () => {
+  it("requires equal segment counts for non-catch-all routes", () => {
     expect(routeMatchesUrl("/api/users", "/api/users/42")).toBe(false);
+    expect(routeMatchesUrl("/api/users/:id", "/api/users")).toBe(false);
+  });
+
+  it("catch-all segments swallow the remaining URL", () => {
+    for (const route of ["/api/*path", "/api/[...slug]", "/api/{**slug}"]) {
+      expect(routeMatchesUrl(route, "/api/a/b/c")).toBe(true);
+      expect(routeMatchesUrl(route, "/api")).toBe(true); // optional catch-all bias
+    }
+    expect(routeMatchesUrl("/api/*path", "/other/a")).toBe(false);
   });
 });
 
