@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: bifteki-crew/arcbridge/action@v0.11.0
+      - uses: bifteki-crew/arcbridge/action@v0.12.0
 ```
 
 Also running on `push` (e.g. to `main`)? Add the trigger but keep
@@ -29,7 +29,7 @@ Also running on `push` (e.g. to `main`)? Add the trigger but keep
 posted on `pull_request` events, so push runs don't need the grant.
 
 > **Pin your ref.** `@main` can change without your review — prefer a release tag
-> like `@v0.11.0` (shown above) or, strictest, a full commit SHA:
+> like `@v0.12.0` (shown above) or, strictest, a full commit SHA:
 > `bifteki-crew/arcbridge/action@<sha>`.
 
 Requires a committed `.arcbridge/` directory (run `arcbridge init` /
@@ -44,7 +44,7 @@ committed — it is rebuilt from the YAML sources.
 | `severity-threshold` | `error` | Fail on drift at/above this severity: `error`, `warning`, `info` |
 | `comment` | `true` | Post/update the sticky PR comment (needs `pull-requests: write`) |
 | `base` | `""` | Only report drift on files changed since this ref (branch/tag/SHA, or `last-commit`/`last-sync`/`last-phase` — prefer an explicit ref in CI) — a PR-incremental check. Empty checks the whole model. Needs full git history (see below). |
-| `arcbridge-version` | `0.11.0` | `arcbridge` npm version to run |
+| `arcbridge-version` | `0.12.0` | `arcbridge` npm version to run |
 | `node-version` | `22.16.0` | Node.js to set up (arcbridge needs ≥ 22.16; default pins the tested minimum) |
 
 ### PR-incremental mode (`base`)
@@ -65,7 +65,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0   # --base needs history to diff against
-      - uses: bifteki-crew/arcbridge/action@v0.11.0
+      - uses: bifteki-crew/arcbridge/action@v0.12.0
         with:
           base: ${{ github.event.pull_request.base.sha }}
 ```

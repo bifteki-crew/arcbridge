@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.12.0 (2026-07-22)
+
+The cross-service **contract** release — ArcBridge now understands how a
+frontend and backend fit together, and catches when they drift apart.
+
+### New Features
+
+- **Cross-service endpoint contracts + `contract_violation` drift.** ArcBridge indexes the outbound HTTP call sites in your code (`fetch(...)` / `axios` — literal or template URLs, method from the options object) as the *consumer* half of a contract, and matches them against the API routes your services expose (the *producer* half). It flags a `contract_violation` when a call targets an endpoint no service serves, or a method an endpoint doesn't allow — surfaced in `drift`, the phase gate, and the GitHub Action's PR comment. The route matcher is param-style-agnostic (`:id`, `{id}`, `<id>`, `[id]`, catch-alls) so it works across Next.js, ASP.NET, FastAPI, Flask, Gin, Chi, and net/http. Zero-noise by design: if a project exposes no API routes (a pure frontend calling an externally-deployed backend), contract checks stay silent. The `contracts` table is now populated with one `http-endpoint` row per route (producer service + consumer services).
+- **Multi-service indexing for C#, Python, and Go.** `indexConfiguredProject` no longer skips non-TypeScript services — a `fullstack-nextjs-dotnet` monorepo now indexes both its Next.js frontend and its .NET backend (and Python/Go services, via new `python`/`go` service types). Each non-TS service is scanned in its own directory while stored file paths — and the symbol IDs derived from them — stay repo-root-relative, so services with identical layouts no longer collide and drift's building-block matching covers backend code too. Removing or renaming a service prunes its stale rows.
+
+### Bug Fixes
+
+- **Cross-service symbol-ID collisions (silent data loss).** Two services sharing a directory layout previously produced identical symbol IDs; because the symbols primary key is the ID alone with `INSERT OR REPLACE`, one service silently overwrote the other. Path-basis normalization (above) makes IDs unique.
+- **Drift no longer misses backend code in monorepos.** The Roslyn indexer emitted `.sln`-relative paths that never matched repo-relative building-block `code_paths`, silently exempting .NET code from block assignment and dependency checks. Paths are now repo-relative on every indexer.
+
+### Internal
+
+- New `api_calls` table + `api-call-analyzer`; `contracts` populated via `populateHttpContracts`; schema v5 migration (adds `api_calls`, extends `drift_log`/`contracts` CHECK constraints). New core exports: `populateHttpContracts`, `extractApiCalls`, `analyzeApiCalls`, `routeMatchesUrl`. Indexers gain a `scanRoot` option (containment-guarded).
+
+### Stats
+
+- 25 MCP tools, 633 tests passing, 0 lint errors, 0 type errors
+
 ## 0.11.0 (2026-07-18)
 
 ### New Features
