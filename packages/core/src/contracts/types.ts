@@ -42,9 +42,15 @@ export function unwrapToTypeName(raw: string | null | undefined): string | null 
   if (!raw) return null;
   let t = raw.trim();
 
-  // Peel array/nullable/generic wrappers repeatedly.
+  // Peel array/nullable/generic/union wrappers repeatedly. Unions are stripped
+  // inside the loop too, since unwrapping a generic can expose one
+  // (`Promise<UserDto | null>` → `UserDto | null` → `UserDto`).
   for (let guard = 0; guard < 12; guard++) {
-    t = t.trim().replace(/\?+$/, ""); // trailing nullable
+    // Drop null/undefined union members (top-level only, so a union nested in a
+    // generic stays intact until that generic is unwrapped).
+    const members = unionMembers(t.trim());
+    if (members.length !== 1) return null; // empty, or a genuine multi-type union
+    t = members[0].trim().replace(/\?+$/, ""); // trailing nullable
     if (t.endsWith("[]")) { t = t.slice(0, -2); continue; } // array suffix
 
     const generic = /^([A-Za-z_][\w.]*)\s*<(.+)>$/s.exec(t);
@@ -66,16 +72,29 @@ export function unwrapToTypeName(raw: string | null | undefined): string | null 
 
 /** Split `K, List<V>` on top-level commas only (respecting nested <>). */
 function splitTopLevelArgs(s: string): string[] {
+  return splitTopLevel(s, ",");
+}
+
+/**
+ * Split on a separator at nesting depth 0 only, so a union inside a generic
+ * (`Promise<UserDto | null>`) isn't torn apart.
+ */
+function splitTopLevel(s: string, sep: string): string[] {
   const out: string[] = [];
   let depth = 0, start = 0;
   for (let i = 0; i < s.length; i++) {
     const c = s[i];
-    if (c === "<") depth++;
-    else if (c === ">") depth--;
-    else if (c === "," && depth === 0) { out.push(s.slice(start, i)); start = i + 1; }
+    if (c === "<" || c === "(" || c === "[") depth++;
+    else if (c === ">" || c === ")" || c === "]") depth--;
+    else if (c === sep && depth === 0) { out.push(s.slice(start, i)); start = i + 1; }
   }
   out.push(s.slice(start));
   return out.map((x) => x.trim()).filter(Boolean);
+}
+
+/** Top-level union members with null/undefined removed. */
+function unionMembers(s: string): string[] {
+  return splitTopLevel(s, "|").filter((p) => p !== "null" && p !== "undefined");
 }
 
 /**
@@ -88,14 +107,12 @@ export function fieldTypeCategory(raw: string | null | undefined): string | null
   if (!raw) return null;
   // Drop null/undefined union members wherever they appear (`string | null`,
   // `null | string`, `string | null | undefined`) plus a trailing `?`, so the
-  // remaining type categorizes consistently.
-  const t = raw
-    .split("|")
-    .map((part) => part.trim())
-    .filter((part) => part !== "" && part !== "null" && part !== "undefined")
-    .join(" | ")
-    .trim()
-    .replace(/\?+$/, "");
+  // remaining type categorizes consistently. Top-level split only, so a union
+  // nested in a generic (`List<string | null>`) isn't torn apart.
+  const members = unionMembers(raw.trim());
+  if (members.length === 0) return null;
+  if (members.length > 1) return null; // genuine multi-type union → uncomparable
+  const t = members[0].replace(/\?+$/, "");
   if (!t) return null;
 
   // Array forms: X[], List<X>, IEnumerable<X>, Array<X>
@@ -108,10 +125,6 @@ export function fieldTypeCategory(raw: string | null | undefined): string | null
     const inner = fieldTypeCategory(splitTopLevelArgs(arr[2]).pop() ?? "");
     return inner ? `array<${inner}>` : "array<?>";
   }
-
-  // A genuine union of distinct types (`string | number`) has no single
-  // category — stay uncomparable rather than picking one arbitrarily.
-  if (t.includes("|")) return null;
 
   const name = simpleName(t);
   const cat = PRIMITIVE_CATEGORY[name] ?? PRIMITIVE_CATEGORY[name.toLowerCase()];

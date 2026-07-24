@@ -22,6 +22,16 @@ describe("unwrapToTypeName", () => {
   it("keeps an unknown custom generic's outer name", () => {
     expect(unwrapToTypeName("Paged<UserDto>")).toBe("Paged");
   });
+
+  it("resolves nullable response types to the DTO", () => {
+    expect(unwrapToTypeName("UserDto | null")).toBe("UserDto");
+    expect(unwrapToTypeName("null | UserDto")).toBe("UserDto");
+    expect(unwrapToTypeName("UserDto | undefined")).toBe("UserDto");
+    // A union nested inside a generic must not be split at the top level
+    expect(unwrapToTypeName("Promise<UserDto | null>")).toBe("UserDto");
+    // A genuine multi-type union has no single payload type
+    expect(unwrapToTypeName("UserDto | ErrorDto")).toBeNull();
+  });
 });
 
 describe("fieldTypeCategory", () => {
@@ -59,6 +69,10 @@ describe("fieldTypeCategory", () => {
   it("returns null for a genuine multi-type union", () => {
     expect(fieldTypeCategory("string | number")).toBeNull();
     expect(typesConflict("string | number", "string")).toBe(false); // lenient
+  });
+
+  it("does not split a union nested inside a generic", () => {
+    expect(fieldTypeCategory("List<string | null>")).toBe("array<string>");
   });
 });
 

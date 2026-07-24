@@ -633,7 +633,9 @@ function loadTypeFields(db: Database, typeName: string, service: string): TypeFi
   const simple = typeName.split(".").pop() ?? typeName;
   const rows = db
     .prepare(
-      "SELECT name, qualified_name, return_type, signature FROM symbols WHERE kind = 'variable' AND service = ? AND (qualified_name LIKE ? ESCAPE '\\' OR qualified_name LIKE ? ESCAPE '\\')",
+      // ORDER BY makes map construction deterministic — SQLite row order isn't
+      // guaranteed, and several symbols can match the LIKE patterns.
+      "SELECT name, qualified_name, return_type, signature FROM symbols WHERE kind = 'variable' AND service = ? AND (qualified_name LIKE ? ESCAPE '\\' OR qualified_name LIKE ? ESCAPE '\\') ORDER BY qualified_name, name",
     )
     .all(service, `${escapeLike(simple)}.%`, `%.${escapeLike(simple)}.%`) as {
     name: string;
@@ -655,7 +657,10 @@ function loadTypeFields(db: Database, typeName: string, service: string): TypeFi
       optional: row.signature === "optional",
     };
     byName.set(row.name, entry);
-    byLower.set(row.name.toLowerCase(), entry);
+    // Don't overwrite: when fields differ only by case, keep the first in the
+    // deterministic order rather than letting a later row silently win.
+    const lower = row.name.toLowerCase();
+    if (!byLower.has(lower)) byLower.set(lower, entry);
   }
   return { fields: [...byName.values()], byName, byLower };
 }

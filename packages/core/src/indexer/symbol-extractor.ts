@@ -274,7 +274,16 @@ export function extractSymbols(
       // returnType = field type) so field-level contract comparison has a shape
       // to match against a backend DTO.
       for (const member of node.members) {
-        if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
+        // Identifier, string-literal (`"user-name": string`) and numeric-literal
+        // keys are all real JSON fields — a literal-keyed member must not be
+        // silently dropped, or field-level contracts would miss it.
+        if (
+          ts.isPropertySignature(member) &&
+          member.name &&
+          (ts.isIdentifier(member.name) ||
+            ts.isStringLiteral(member.name) ||
+            ts.isNumericLiteral(member.name))
+        ) {
           const fieldName = member.name.text;
           const typeText = member.type ? member.type.getText() : null;
           // Mark optional members (`foo?: string`) so contract diffing doesn't
