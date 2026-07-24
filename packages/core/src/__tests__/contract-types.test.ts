@@ -74,6 +74,16 @@ describe("fieldTypeCategory", () => {
   it("does not split a union nested inside a generic", () => {
     expect(fieldTypeCategory("List<string | null>")).toBe("array<string>");
   });
+
+  it("categorizes TS Date alongside C# date types", () => {
+    expect(fieldTypeCategory("Date")).toBe("date");
+    expect(fieldTypeCategory("DateOnly")).toBe("date");
+    expect(typesConflict("Date", "DateTime")).toBe(false); // equivalent across languages
+    expect(typesConflict("Date", "string")).toBe(true); // real mismatch now detected
+    // TimeSpan is a duration, not a date — deliberately uncategorized so it
+    // can't be silently equated with Date
+    expect(fieldTypeCategory("TimeSpan")).toBeNull();
+  });
 });
 
 describe("typesConflict", () => {

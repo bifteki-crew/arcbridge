@@ -23,7 +23,10 @@ const PRIMITIVE_CATEGORY: Record<string, string> = {
   number: "number", int: "number", integer: "number", long: "number", short: "number",
   byte: "number", double: "number", float: "number", decimal: "number", bigint: "number",
   boolean: "boolean", bool: "boolean",
+  // Note: C# TimeSpan is deliberately absent — it's a duration, not a date, so
+  // mapping it here would mask a genuine Date↔TimeSpan mismatch.
   date: "date", datetime: "date", DateTime: "date", DateTimeOffset: "date",
+  Date: "date", DateOnly: "date",
 };
 
 function simpleName(t: string): string {

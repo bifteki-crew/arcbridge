@@ -511,6 +511,10 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
     .all() as { route_path: string; http_methods: string; service: string; response_type: string | null }[];
   if (routeRows.length === 0) return;
 
+  // Memo for per-(service,type) field sets — avoids re-querying symbols for
+  // every call site that shares a DTO.
+  const fieldCache = new Map<string, TypeFields>();
+
   // Precompile once — segments + allowed methods per route — instead of
   // re-splitting/re-parsing inside the calls × routes comparison loop.
   const routes = routeRows.map((r) => ({
@@ -570,8 +574,8 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
     const methodRoute = candidates[0];
     if (!methodRoute.responseType) continue;
 
-    const expected = loadTypeFields(db, call.expected_type, call.service);
-    const actual = loadTypeFields(db, methodRoute.responseType, methodRoute.service);
+    const expected = loadTypeFields(db, call.expected_type, call.service, fieldCache);
+    const actual = loadTypeFields(db, methodRoute.responseType, methodRoute.service, fieldCache);
     if (expected.fields.length === 0 || actual.fields.length === 0) continue; // shape unknown on a side
 
     for (const field of expected.fields) {
@@ -629,8 +633,18 @@ interface TypeFields {
  * Returns the unique field list plus exact/lowercased lookups (kept separate so
  * iterating one side never double-counts a mixed-case field name).
  */
-function loadTypeFields(db: Database, typeName: string, service: string): TypeFields {
+function loadTypeFields(
+  db: Database,
+  typeName: string,
+  service: string,
+  cache?: Map<string, TypeFields>,
+): TypeFields {
   const simple = typeName.split(".").pop() ?? typeName;
+  // Many call sites share the same (service, type) pair — load each once per
+  // detection run instead of re-querying symbols for every call.
+  const cacheKey = `${service} ${simple}`;
+  const cached = cache?.get(cacheKey);
+  if (cached) return cached;
   const rows = db
     .prepare(
       // ORDER BY makes map construction deterministic — SQLite row order isn't
@@ -662,7 +676,9 @@ function loadTypeFields(db: Database, typeName: string, service: string): TypeFi
     const lower = row.name.toLowerCase();
     if (!byLower.has(lower)) byLower.set(lower, entry);
   }
-  return { fields: [...byName.values()], byName, byLower };
+  const result: TypeFields = { fields: [...byName.values()], byName, byLower };
+  cache?.set(cacheKey, result);
+  return result;
 }
 
 /**
