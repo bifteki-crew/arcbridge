@@ -130,7 +130,25 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 6,
+    up: (db) => {
+      // Field-level contracts: the DTO an endpoint returns and the type a fetch
+      // call expects. Plain nullable columns; guarded so re-running against a
+      // schema that already has them (e.g. current-schema-then-downgrade) is safe.
+      addColumnIfMissing(db, "routes", "response_type", "TEXT");
+      addColumnIfMissing(db, "api_calls", "expected_type", "TEXT");
+    },
+  },
 ];
+
+/** Add a column only if it isn't already present (idempotent ALTER). */
+function addColumnIfMissing(db: Database, table: string, column: string, decl: string): void {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
+  }
+}
 
 export function migrate(db: Database): void {
   const row = db

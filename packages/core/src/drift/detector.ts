@@ -1,5 +1,6 @@
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
+import { typesConflict } from "../contracts/types.js";
 
 export type DriftKind =
   | "undocumented_module"
@@ -495,13 +496,19 @@ function detectNewDependencies(
  */
 function detectContractViolations(db: Database, entries: DriftEntry[]): void {
   const calls = db
-    .prepare("SELECT DISTINCT url, method, file_path FROM api_calls")
-    .all() as { url: string; method: string; file_path: string }[];
+    .prepare("SELECT DISTINCT url, method, file_path, service, expected_type FROM api_calls")
+    .all() as {
+    url: string;
+    method: string;
+    file_path: string;
+    service: string;
+    expected_type: string | null;
+  }[];
   if (calls.length === 0) return;
 
   const routeRows = db
-    .prepare("SELECT route_path, http_methods FROM routes WHERE kind = 'api-route'")
-    .all() as { route_path: string; http_methods: string }[];
+    .prepare("SELECT route_path, http_methods, service, response_type FROM routes WHERE kind = 'api-route'")
+    .all() as { route_path: string; http_methods: string; service: string; response_type: string | null }[];
   if (routeRows.length === 0) return;
 
   // Precompile once — segments + allowed methods per route — instead of
@@ -509,6 +516,8 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
   const routes = routeRows.map((r) => ({
     segs: splitSegments(r.route_path),
     methods: safeParseJson<string[]>(r.http_methods, []),
+    service: r.service,
+    responseType: r.response_type,
   }));
 
   for (const call of calls) {
@@ -540,8 +549,95 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
         affectedBlock: null,
         affectedFile: call.file_path,
       });
+      continue;
+    }
+
+    // Field-level: when the call annotates its expected response type AND the
+    // method-matching route knows the DTO it returns, diff the two field sets.
+    if (!call.expected_type) continue;
+    const methodRoute =
+      matching.find((r) => r.responseType && (r.methods.length === 0 || r.methods.includes(call.method)));
+    if (!methodRoute?.responseType) continue;
+
+    const expected = loadTypeFields(db, call.expected_type, call.service);
+    const actual = loadTypeFields(db, methodRoute.responseType, methodRoute.service);
+    if (expected.fields.length === 0 || actual.fields.length === 0) continue; // shape unknown on a side
+
+    for (const field of expected.fields) {
+      const exactMatch = actual.byName.get(field.name);
+      if (exactMatch) {
+        if (typesConflict(field.type, exactMatch.type)) {
+          entries.push(contractEntry(
+            `\`${call.file_path}\` expects \`${field.name}: ${field.type}\` from \`${call.method} ${url}\` but the endpoint returns \`${exactMatch.type}\` for that field.`,
+            call.file_path,
+          ));
+        }
+        continue;
+      }
+      const ciMatch = actual.byLower.get(field.name.toLowerCase());
+      if (ciMatch) {
+        entries.push(contractEntry(
+          `\`${call.file_path}\` expects field \`${field.name}\` from \`${call.method} ${url}\` but the endpoint returns \`${ciMatch.name}\` (casing differs).`,
+          call.file_path,
+        ));
+      } else {
+        entries.push(contractEntry(
+          `\`${call.file_path}\` expects field \`${field.name}\` from \`${call.method} ${url}\` but the endpoint's response type \`${methodRoute.responseType}\` has no such field.`,
+          call.file_path,
+        ));
+      }
     }
   }
+}
+
+function contractEntry(description: string, file: string): DriftEntry {
+  return { kind: "contract_violation", severity: "warning", description, affectedBlock: null, affectedFile: file };
+}
+
+interface TypeField {
+  name: string;
+  type: string | null;
+}
+interface TypeFields {
+  /** Unique fields (deduped by exact name) — iterate this side. */
+  fields: TypeField[];
+  /** Exact-name lookup. */
+  byName: Map<string, TypeField>;
+  /** Lowercased-name lookup, for case-insensitive matching. */
+  byLower: Map<string, TypeField>;
+}
+
+/**
+ * Load a type's fields. Members are the `variable` symbol rows whose qualified
+ * name's second-to-last segment is the type's simple name — `UserDto.email` (TS
+ * interface) or `Api.Models.UserDto.email` (C# DTO). Scoped to the service.
+ * Returns the unique field list plus exact/lowercased lookups (kept separate so
+ * iterating one side never double-counts a mixed-case field name).
+ */
+function loadTypeFields(db: Database, typeName: string, service: string): TypeFields {
+  const simple = typeName.split(".").pop() ?? typeName;
+  const rows = db
+    .prepare(
+      "SELECT name, qualified_name, return_type FROM symbols WHERE kind = 'variable' AND service = ? AND (qualified_name LIKE ? ESCAPE '\\' OR qualified_name LIKE ? ESCAPE '\\')",
+    )
+    .all(service, `${escapeLike(simple)}.%`, `%.${escapeLike(simple)}.%`) as {
+    name: string;
+    qualified_name: string;
+    return_type: string | null;
+  }[];
+
+  const byName = new Map<string, TypeField>();
+  const byLower = new Map<string, TypeField>();
+  for (const row of rows) {
+    const parts = row.qualified_name.split(".");
+    // The owning type is the segment before the field name
+    if (parts[parts.length - 2] !== simple) continue;
+    if (byName.has(row.name)) continue;
+    const entry: TypeField = { name: row.name, type: row.return_type };
+    byName.set(row.name, entry);
+    byLower.set(row.name.toLowerCase(), entry);
+  }
+  return { fields: [...byName.values()], byName, byLower };
 }
 
 /**

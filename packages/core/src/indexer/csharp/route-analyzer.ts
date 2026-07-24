@@ -1,3 +1,4 @@
+import { unwrapToTypeName } from "../../contracts/types.js";
 interface TreeSitterNode {
   type: string;
   text: string;
@@ -14,6 +15,33 @@ export interface CSharpRoute {
   httpMethods: string[];
   hasAuth: boolean;
   handlerSymbolId?: string;
+  /** Unwrapped DTO name the handler returns (e.g. UserDto), for field-level contracts. */
+  responseType?: string | null;
+}
+
+/**
+ * Read a controller action's declared return type. Mirrors the symbol
+ * extractor's extractReturnType: the "type" field when present, else the first
+ * type-shaped child before the parameter list (this grammar exposes the return
+ * type as a sibling `generic_name`/`identifier`, not always a named field).
+ */
+function readReturnType(method: TreeSitterNode): string | null {
+  const typeNode = method.childForFieldName("type");
+  if (typeNode) return typeNode.text;
+  for (const child of method.namedChildren) {
+    if (
+      child.type === "predefined_type" ||
+      child.type === "generic_name" ||
+      child.type === "identifier" ||
+      child.type === "nullable_type" ||
+      child.type === "array_type" ||
+      child.type === "qualified_name"
+    ) {
+      return child.text;
+    }
+    if (child.type === "parameter_list") break;
+  }
+  return null;
 }
 
 const HTTP_ATTRIBUTE_MAP: Record<string, string> = {
@@ -96,6 +124,7 @@ function extractControllerRoutes(
         kind: "api-route",
         httpMethods: [httpInfo.method],
         hasAuth: classHasAuth || methodHasAuth,
+        responseType: unwrapToTypeName(readReturnType(method)),
       });
     }
   }

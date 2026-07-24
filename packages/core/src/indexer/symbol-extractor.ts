@@ -270,6 +270,28 @@ export function extractSymbols(
         isAsync: false,
         contentHash,
       });
+      // Emit each property as a member symbol (Interface.field, kind=variable,
+      // returnType = field type) so field-level contract comparison has a shape
+      // to match against a backend DTO.
+      for (const member of node.members) {
+        if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
+          const fieldName = member.name.text;
+          symbols.push({
+            id: makeId(fieldName, "variable", name),
+            name: fieldName,
+            qualifiedName: `${name}.${fieldName}`,
+            kind: "variable",
+            filePath: relativePath,
+            ...getLocation(member),
+            signature: null,
+            returnType: member.type ? member.type.getText() : null,
+            docComment: getDocComment(member),
+            isExported: isExported(node),
+            isAsync: false,
+            contentHash,
+          });
+        }
+      }
       return;
     }
 

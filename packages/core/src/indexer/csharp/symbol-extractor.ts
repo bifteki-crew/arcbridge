@@ -193,6 +193,9 @@ function walkNode(
         contentHash,
         modifiers: getModifiers(node),
         docComment: extractDocComment(node),
+        // Capture the declared type (childForFieldName("type")) so DTO fields
+        // carry a type for field-level contract comparison.
+        returnType: extractReturnType(node),
       }));
       return;
     }
