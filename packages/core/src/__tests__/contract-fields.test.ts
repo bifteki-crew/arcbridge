@@ -158,6 +158,30 @@ namespace Api.Controllers
     expect(v).toHaveLength(3);
   });
 
+  it("does not flag an optional field the backend omits", async () => {
+    // `avatarUrl?` is optional and absent on the C# DTO → legitimate, no violation.
+    writeFileSync(
+      join(repoRoot, "web", "src", "types.ts"),
+      "export interface UserDto {\n  Email: string;\n  avatarUrl?: string;\n}\n",
+      "utf-8",
+    );
+    await indexBoth();
+    const v = detectDrift(db).filter((e) => e.kind === "contract_violation");
+    expect(v).toHaveLength(0);
+  });
+
+  it("skips field diffing when two services expose the same endpoint with different DTOs", async () => {
+    await indexBoth();
+    // A second service serving the same path with a different response type —
+    // ambiguous producer, so field-level comparison must not guess.
+    db.prepare(
+      "INSERT INTO routes (id, route_path, kind, http_methods, has_auth, service, response_type) VALUES ('other::r', '/api/users', 'api-route', '[\"GET\"]', 0, 'other', 'OtherDto')",
+    ).run();
+
+    const v = detectDrift(db).filter((e) => e.kind === "contract_violation");
+    expect(v).toHaveLength(0);
+  });
+
   it("stays silent for an untyped call (no expected_type)", async () => {
     // Replace the typed client call with a bare fetch (no type argument)
     writeFileSync(

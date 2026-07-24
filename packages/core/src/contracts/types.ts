@@ -86,7 +86,17 @@ function splitTopLevelArgs(s: string): string[] {
  */
 export function fieldTypeCategory(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  const t = raw.trim().replace(/\s*\|\s*(null|undefined)\s*$/g, "").replace(/\?+$/, "");
+  // Drop null/undefined union members wherever they appear (`string | null`,
+  // `null | string`, `string | null | undefined`) plus a trailing `?`, so the
+  // remaining type categorizes consistently.
+  const t = raw
+    .split("|")
+    .map((part) => part.trim())
+    .filter((part) => part !== "" && part !== "null" && part !== "undefined")
+    .join(" | ")
+    .trim()
+    .replace(/\?+$/, "");
+  if (!t) return null;
 
   // Array forms: X[], List<X>, IEnumerable<X>, Array<X>
   if (t.endsWith("[]")) {
@@ -98,6 +108,10 @@ export function fieldTypeCategory(raw: string | null | undefined): string | null
     const inner = fieldTypeCategory(splitTopLevelArgs(arr[2]).pop() ?? "");
     return inner ? `array<${inner}>` : "array<?>";
   }
+
+  // A genuine union of distinct types (`string | number`) has no single
+  // category — stay uncomparable rather than picking one arbitrarily.
+  if (t.includes("|")) return null;
 
   const name = simpleName(t);
   const cat = PRIMITIVE_CATEGORY[name] ?? PRIMITIVE_CATEGORY[name.toLowerCase()];

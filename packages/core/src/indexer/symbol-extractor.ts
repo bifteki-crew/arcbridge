@@ -276,6 +276,10 @@ export function extractSymbols(
       for (const member of node.members) {
         if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
           const fieldName = member.name.text;
+          const typeText = member.type ? member.type.getText() : null;
+          // Mark optional members (`foo?: string`) so contract diffing doesn't
+          // treat a backend DTO that omits them as a missing-field violation.
+          const optional = member.questionToken !== undefined;
           symbols.push({
             id: makeId(fieldName, "variable", name),
             name: fieldName,
@@ -283,8 +287,8 @@ export function extractSymbols(
             kind: "variable",
             filePath: relativePath,
             ...getLocation(member),
-            signature: null,
-            returnType: member.type ? member.type.getText() : null,
+            signature: optional ? "optional" : null,
+            returnType: optional && typeText ? `${typeText} | undefined` : typeText,
             docComment: getDocComment(member),
             isExported: isExported(node),
             isAsync: false,

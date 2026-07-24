@@ -48,6 +48,18 @@ describe("fieldTypeCategory", () => {
     expect(fieldTypeCategory("UserDto")).toBeNull();
     expect(fieldTypeCategory(null)).toBeNull();
   });
+
+  it("strips null/undefined union members in any position", () => {
+    expect(fieldTypeCategory("null | string")).toBe("string");
+    expect(fieldTypeCategory("string | null | undefined")).toBe("string");
+    expect(fieldTypeCategory("undefined | int")).toBe("number");
+    expect(fieldTypeCategory("null")).toBeNull();
+  });
+
+  it("returns null for a genuine multi-type union", () => {
+    expect(fieldTypeCategory("string | number")).toBeNull();
+    expect(typesConflict("string | number", "string")).toBe(false); // lenient
+  });
 });
 
 describe("typesConflict", () => {
