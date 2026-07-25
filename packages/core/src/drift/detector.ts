@@ -642,7 +642,7 @@ function loadTypeFields(
   const simple = typeName.split(".").pop() ?? typeName;
   // Many call sites share the same (service, type) pair — load each once per
   // detection run instead of re-querying symbols for every call.
-  const cacheKey = `${service} ${simple}`;
+  const cacheKey = `${service}::${simple}`;
   const cached = cache?.get(cacheKey);
   if (cached) return cached;
   const rows = db
