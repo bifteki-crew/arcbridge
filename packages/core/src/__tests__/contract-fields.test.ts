@@ -182,6 +182,29 @@ namespace Api.Controllers
     expect(v).toHaveLength(0);
   });
 
+  it("handles string-literal field keys, including dotted ones", async () => {
+    writeFileSync(
+      join(repoRoot, "web", "src", "types.ts"),
+      // Quoted keys are real JSON fields; a dotted one must not confuse the
+      // owner-detection that strips the field name off the qualified name.
+      'export interface UserDto {\n  "user-name": string;\n  "a.b": string;\n}\n',
+      "utf-8",
+    );
+    await indexBoth();
+
+    const fields = db
+      .prepare("SELECT name FROM symbols WHERE service = 'frontend' AND qualified_name LIKE 'UserDto.%' ORDER BY name")
+      .all() as { name: string }[];
+    expect(fields.map((f) => f.name)).toEqual(["a.b", "user-name"]);
+
+    // Both are absent on the C# DTO → reported as missing, not silently dropped
+    const v = detectDrift(db)
+      .filter((e) => e.kind === "contract_violation")
+      .map((e) => e.description);
+    expect(v.some((d) => d.includes("`user-name`") && d.includes("no such field"))).toBe(true);
+    expect(v.some((d) => d.includes("`a.b`") && d.includes("no such field"))).toBe(true);
+  });
+
   it("stays silent for an untyped call (no expected_type)", async () => {
     // Replace the typed client call with a bare fetch (no type argument)
     writeFileSync(

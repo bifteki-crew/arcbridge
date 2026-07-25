@@ -661,9 +661,13 @@ function loadTypeFields(
   const byName = new Map<string, TypeField>();
   const byLower = new Map<string, TypeField>();
   for (const row of rows) {
-    const parts = row.qualified_name.split(".");
-    // The owning type is the segment before the field name
-    if (parts[parts.length - 2] !== simple) continue;
+    // Derive the owner by stripping the field name off the end, rather than
+    // assuming the field is a single dotted segment — a string-literal key can
+    // legally contain dots (`"a.b": string` → qualified name `UserDto.a.b`).
+    const suffix = `.${row.name}`;
+    if (!row.qualified_name.endsWith(suffix)) continue;
+    const owner = row.qualified_name.slice(0, -suffix.length);
+    if ((owner.split(".").pop() ?? owner) !== simple) continue;
     if (byName.has(row.name)) continue;
     const entry: TypeField = {
       name: row.name,
