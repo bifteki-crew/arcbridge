@@ -379,6 +379,27 @@ public class Dog : Animal { }
       expect(getById).toBeDefined();
     });
 
+    it("extracts a response type from minimal API handlers where recoverable", async () => {
+      const tree = parseCSharp(`var app = WebApplication.Create();
+app.MapGet("/api/a", () => new UserDto());
+app.MapGet("/api/b", UserDto () => new UserDto());
+app.MapGet("/api/c", () => Results.Ok(new OrderDto()));
+app.MapGet("/api/d", GetUsers);
+app.MapGet("/api/e", () => "hello");`);
+      const byPath = new Map(
+        extractCSharpRoutes(tree, "Program.cs").map((r) => [r.routePath, r.responseType]),
+      );
+      // Inferred from the constructed value, an explicit lambda return type,
+      // and a nested Results.Ok(...) payload
+      expect(byPath.get("/api/a")).toBe("UserDto");
+      expect(byPath.get("/api/b")).toBe("UserDto");
+      expect(byPath.get("/api/c")).toBe("OrderDto");
+      // Method-group handlers need cross-symbol resolution; primitives have no
+      // shape — both correctly yield no response type (endpoint-level only)
+      expect(byPath.get("/api/d")).toBeNull();
+      expect(byPath.get("/api/e")).toBeNull();
+    });
+
     it("extracts minimal API routes", async () => {
       const content = readFileSync(
         join(FIXTURE_DIR, "Endpoints/ProductEndpoints.cs"),

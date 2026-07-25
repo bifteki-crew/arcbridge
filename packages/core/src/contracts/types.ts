@@ -72,6 +72,10 @@ export function unwrapToTypeName(raw: string | null | undefined): string | null 
 
   const name = simpleName(t);
   if (!name) return null;
+  // Only a plain named type can be looked up in the symbols table. Inline
+  // object/tuple/function types (`{ id: string }`, `[a, b]`, `() => void`) have
+  // no name to match, so they'd persist junk and trigger pointless lookups.
+  if (!/^[A-Za-z_$][\w$]*$/.test(name)) return null;
   if (OPAQUE_TYPES.has(name)) return null;
   if (name.toLowerCase() in PRIMITIVE_CATEGORY) return null; // primitive, no shape
   return name;

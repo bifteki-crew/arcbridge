@@ -11,6 +11,12 @@ describe("unwrapToTypeName", () => {
     expect(unwrapToTypeName("UserDto?")).toBe("UserDto");
   });
 
+  it("returns null for inline object/tuple/function types (no name to look up)", () => {
+    expect(unwrapToTypeName("{ id: string }")).toBeNull();
+    expect(unwrapToTypeName("Promise<{ id: string }>")).toBeNull();
+    expect(unwrapToTypeName("() => void")).toBeNull();
+  });
+
   it("returns null for primitives and opaque results", () => {
     for (const t of ["string", "Task<int>", "Promise<boolean>", "IActionResult", "void", "Promise<Response>"]) {
       expect(unwrapToTypeName(t)).toBeNull();
