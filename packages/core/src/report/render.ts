@@ -14,8 +14,16 @@ function num(n: number): string {
   return n.toLocaleString("en-US");
 }
 
-/** Horizontal bar row — inline SVG keeps the report dependency-free. */
-function bars(rows: { label: string; value: number; tone?: string }[]): string {
+interface BarRow {
+  label: string;
+  value: number;
+  tone?: string;
+  /** Overrides the numeric readout (e.g. "never" for unsynced blocks). */
+  display?: string;
+}
+
+/** Horizontal bars — plain CSS widths keep the report dependency-free. */
+function bars(rows: BarRow[]): string {
   if (rows.length === 0) return `<p class="empty">None.</p>`;
   const max = Math.max(...rows.map((r) => r.value), 1);
   return `<div class="bars">${rows
@@ -23,7 +31,7 @@ function bars(rows: { label: string; value: number; tone?: string }[]): string {
       const pct = Math.round((r.value / max) * 100);
       return `<div class="bar-row"><span class="bar-label">${esc(r.label)}</span>` +
         `<span class="bar-track"><span class="bar-fill ${r.tone ?? ""}" style="width:${pct}%"></span></span>` +
-        `<span class="bar-value">${num(r.value)}</span></div>`;
+        `<span class="bar-value">${esc(r.display ?? num(r.value))}</span></div>`;
     })
     .join("")}</div>`;
 }
@@ -59,10 +67,17 @@ function architectureSection(a: ArchitectureHealth): string {
     ),
   ].join("");
 
+  // Never-synced blocks are the MOST urgent, but have no age to plot — give
+  // them a full-width bar (the max age, or at least 1) so they read as the
+  // priority they are instead of rendering as an empty sliver.
+  const knownAges = blocks.stale.map((b) => b.ageDays).filter((d): d is number => d !== null);
+  const maxAge = Math.max(1, ...knownAges);
   const staleRows = blocks.stale.slice(0, 12).map((b) => ({
     label: `${b.name}${b.lastSynced ? "" : " (never synced)"}`,
-    value: b.ageDays ?? 0,
-    tone: (b.ageDays ?? 999) > 7 || b.lastSynced === null ? "warn" : "good",
+    value: b.ageDays ?? maxAge,
+    tone: b.lastSynced === null ? "bad" : b.ageDays! > 7 ? "warn" : "good",
+    // Never-synced blocks show "never" rather than a misleading day count
+    display: b.lastSynced === null ? "never" : undefined,
   }));
 
   const failingMust =

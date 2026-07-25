@@ -141,6 +141,20 @@ describe("renderReportHtml", () => {
     expect(html).toContain("auto_record: true");
   });
 
+  it("renders never-synced blocks as the highest-priority staleness bar", () => {
+    addBlock("fresh", "Fresh", NOW); // 0 days
+    addBlock("old", "Old", "2026-07-15T12:00:00.000Z"); // 10 days
+    addBlock("never", "Never", null);
+    const html = renderReportHtml(collectReportData(db, NOW));
+
+    // "never" is shown instead of a misleading day count...
+    expect(html).toContain("Never (never synced)");
+    expect(html).toMatch(/bar-value">never</);
+    // ...and it gets a full-width bar (not an empty 0-width sliver)
+    const neverRow = html.slice(html.indexOf("Never (never synced)"));
+    expect(neverRow).toMatch(/bar-fill bad" style="width:100%"/);
+  });
+
   it("escapes values that would otherwise inject markup", () => {
     addBlock("x", '<img src=x onerror="alert(1)">', null);
     const html = renderReportHtml(collectReportData(db, NOW));

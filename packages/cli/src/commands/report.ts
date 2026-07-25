@@ -1,6 +1,7 @@
-import { writeFileSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import {
+  atomicWriteFileSync,
   collectReportData,
   renderReportHtml,
   resolveWithin,
@@ -41,7 +42,9 @@ export async function report(
     }
 
     mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, renderReportHtml(data), "utf-8");
+    // Atomic (temp + rename) like the project's other writers — a crash
+    // mid-write can't leave a truncated report behind for a CI artifact.
+    atomicWriteFileSync(target, renderReportHtml(data));
 
     const { architecture: arch, activity } = data;
     const shown = relative(resolve(dir), target) || target;
