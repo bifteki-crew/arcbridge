@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.13.0 (2026-07-26)
+
+Deeper contract checking, plus a way to *see* how the architecture is holding up.
+
+### New Features
+
+- **Field-level contract violations.** Endpoint checks (0.12.0) now go a level deeper: when a call site annotates its expected response type (`apiClient.get<UserDto>(url)`) and the matching endpoint declares the DTO it returns, ArcBridge compares the two field sets and reports **casing mismatches** (`userName` vs `UserName` — the classic PascalCase↔camelCase serialization bug), **fields the consumer expects that the producer doesn't return**, and **type disagreements** (`id: number` vs `string`) using a cross-language type model (string/number/bigint/boolean/date/array; 64-bit integers are deliberately distinct from `number`, since C# `long` exceeds JS precision). Optional members (`foo?`) aren't reported as missing, unions and nullable types are normalized, and the check stays silent whenever either side's shape is unknown — so it adds signal without noise. Response DTOs are recognized on ASP.NET controller actions and minimal-API handlers; TS interface members (including quoted and dotted keys) and C# properties *and* fields now carry their declared types.
+- **`arcbridge report`** — a self-contained HTML dashboard (default `.arcbridge/reports/report.html`, no external assets or scripts, so it opens from disk and attaches cleanly to a CI run; `--out` to relocate, `--json` for the raw data). Two halves: **architecture health** — building blocks, open drift by severity/kind/block, quality-scenario pass rate with failing must-haves called out, phase/task progress, and **documentation staleness** (days since each block last synced, making the convention's "docs within one coding session" target visible) — and **agent activity** — tokens, cost, duration, per-model/role/day breakdowns and drift-over-time from recorded quality snapshots. The architecture half needs no telemetry; the activity half explains how to enable capture when `agent_activity` is empty.
+
+### Internal
+
+- Schema v6 adds `routes.response_type` and `api_calls.expected_type` (idempotent `ADD COLUMN`; DDL identifiers allowlisted). New core exports: `collectReportData`, `renderReportHtml`, and the contract type helpers (`unwrapToTypeName`, `fieldTypeCategory`, `typesConflict`). Field-set lookups are memoized per drift run, and ambiguous producers (several services serving the same endpoint with different DTOs) are skipped rather than compared arbitrarily.
+
+### Stats
+
+- 25 MCP tools, 669 tests passing, 0 lint errors, 0 type errors
+
 ## 0.12.0 (2026-07-22)
 
 The cross-service **contract** release — ArcBridge now understands how a
