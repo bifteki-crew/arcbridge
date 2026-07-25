@@ -20,8 +20,12 @@ const OPAQUE_TYPES = new Set([
 
 const PRIMITIVE_CATEGORY: Record<string, string> = {
   string: "string", String: "string", guid: "string", Guid: "string", uuid: "string",
-  number: "number", int: "number", integer: "number", long: "number", short: "number",
-  byte: "number", double: "number", float: "number", decimal: "number", bigint: "number",
+  number: "number", int: "number", integer: "number", short: "number",
+  byte: "number", double: "number", float: "number", decimal: "number",
+  // 64-bit integers are their own category: TS `bigint` is not assignable to
+  // `number`, and C# `long` exceeds JS number precision — so `long` vs `number`
+  // is a real mismatch worth surfacing, not an equivalence.
+  bigint: "bigint", long: "bigint", int64: "bigint", ulong: "bigint",
   boolean: "boolean", bool: "boolean",
   // Note: C# TimeSpan is deliberately absent — it's a duration, not a date, so
   // mapping it here would mask a genuine Date↔TimeSpan mismatch.

@@ -75,6 +75,15 @@ describe("fieldTypeCategory", () => {
     expect(fieldTypeCategory("List<string | null>")).toBe("array<string>");
   });
 
+  it("treats 64-bit integers as distinct from number", () => {
+    expect(fieldTypeCategory("bigint")).toBe("bigint");
+    expect(fieldTypeCategory("long")).toBe("bigint");
+    // C# long vs TS number exceeds JS precision → a real mismatch, not equivalent
+    expect(typesConflict("long", "number")).toBe(true);
+    expect(typesConflict("bigint", "long")).toBe(false);
+    expect(typesConflict("int", "number")).toBe(false);
+  });
+
   it("categorizes TS Date alongside C# date types", () => {
     expect(fieldTypeCategory("Date")).toBe("date");
     expect(fieldTypeCategory("DateOnly")).toBe("date");
