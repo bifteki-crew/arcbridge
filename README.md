@@ -299,10 +299,14 @@ arcbridge status                # Show project status
 arcbridge drift                 # Check for architecture drift
 arcbridge drift --reindex       # Self-contained drift check for CI (reindex first)
 arcbridge drift --base main     # Only report drift on files changed since <ref> (PR-incremental)
+arcbridge report                # Generate a self-contained HTML health + activity report
 
 arcbridge sync --json           # JSON output for CI pipelines
+arcbridge report --json         # Report data as JSON instead of HTML
 arcbridge status --dir /path/to/project
 ```
+
+`report` writes a single self-contained HTML file (default `.arcbridge/reports/report.html`, no external assets — open it directly or attach it to a CI run). It has two halves: **architecture health** — building blocks, open drift by kind and block, quality-scenario pass rate, phase/task progress, and documentation staleness (days since each block last synced, the convention's "docs within one coding session" signal) — and **agent activity** — tokens, cost, duration and drift-over-time from recorded telemetry. The architecture half always works from the committed model; the activity half needs `metrics.auto_record: true` (or agents calling `arcbridge_record_activity`) and tells you so when empty.
 
 The `sync` command runs the full sync loop: reindex symbols, detect drift, infer task statuses, and store a git sync point. The generated GitHub Action workflow (`.github/workflows/arcbridge-sync.yml`) uses this command automatically.
 

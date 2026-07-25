@@ -8,6 +8,7 @@ import { status } from "./commands/status.js";
 import { drift } from "./commands/drift.js";
 import { init } from "./commands/init.js";
 import { generateConfigs } from "./commands/generate-configs.js";
+import { report } from "./commands/report.js";
 import { updateTask } from "./commands/update-task.js";
 import { refresh } from "./commands/refresh.js";
 import { adopt } from "./commands/adopt.js";
@@ -28,6 +29,7 @@ Commands:
   refresh           Rebuild the database from YAML/markdown sources
   update-task       Update a task's status (e.g. arcbridge update-task task-1.1 done)
   generate-configs  Regenerate platform agent configs from .arcbridge/agents/
+  report            Generate an HTML health + activity report
 
 Options:
   --dir <path>       Project directory (default: current directory)
@@ -50,6 +52,9 @@ Drift options:
   --reindex          Refresh from docs and reindex before checking (use in CI, where index.db is not committed)
   --base <ref>       Only report drift on files changed since <ref> (branch, tag, SHA, or last-commit/last-sync/last-phase) — for PR-incremental checks
 
+Report options:
+  --out <path>       Where to write the HTML report (default: .arcbridge/reports/report.html)
+
 Generate-configs options:
   --force            Force-regenerate files that would normally be preserved (e.g. skills)
 `;
@@ -69,6 +74,7 @@ interface ParsedArgs {
   service?: string;
   maxBlocks?: number;
   base?: string;
+  out?: string;
 }
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -86,6 +92,7 @@ function parseArgs(args: string[]): ParsedArgs {
   let service: string | undefined;
   let maxBlocks: number | undefined;
   let base: string | undefined;
+  let out: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
@@ -109,6 +116,12 @@ function parseArgs(args: string[]): ParsedArgs {
       apply = true;
     } else if (arg === "--service" && i + 1 < args.length) {
       service = args[++i]!;
+    } else if (arg === "--out") {
+      if (i + 1 >= args.length) {
+        console.error("Error: --out requires a file path");
+        process.exit(1);
+      }
+      out = args[++i]!;
     } else if (arg === "--base") {
       // A missing value must not silently degrade to an unscoped drift check —
       // that would masquerade as a diff-scoped run.
@@ -153,6 +166,7 @@ function parseArgs(args: string[]): ParsedArgs {
     service,
     maxBlocks,
     base,
+    out,
   };
 }
 
@@ -200,6 +214,10 @@ async function main(): Promise<void> {
         await updateTask(dir, taskId, taskStatus, json);
         break;
       }
+      case "report":
+        await report(dir, json, parsed.out);
+        break;
+
       case "generate-configs":
         await generateConfigs(dir, json, parsed.force);
         break;
