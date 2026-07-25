@@ -401,7 +401,7 @@ Use the [ArcBridge Drift Check action](action/README.md):
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: bifteki-crew/arcbridge/action@v0.12.0   # pin to a release tag or commit SHA in real workflows
+- uses: bifteki-crew/arcbridge/action@v0.13.0   # pin to a release tag or commit SHA in real workflows
 ```
 
 It runs `arcbridge drift --reindex` (self-contained — rebuilds the index from the committed `.arcbridge/` YAML on a fresh checkout), writes a job summary, keeps a sticky PR comment updated, and fails on drift at/above a configurable severity threshold. Prefer pinning the action to a release tag or full commit SHA over `@main` (see the [action README](action/README.md)). Or call `arcbridge drift --reindex` directly — it exits non-zero on error-severity drift.
