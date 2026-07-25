@@ -270,6 +270,41 @@ export function extractSymbols(
         isAsync: false,
         contentHash,
       });
+      // Emit each property as a member symbol (Interface.field, kind=variable,
+      // returnType = field type) so field-level contract comparison has a shape
+      // to match against a backend DTO.
+      for (const member of node.members) {
+        // Identifier, string-literal (`"user-name": string`) and numeric-literal
+        // keys are all real JSON fields — a literal-keyed member must not be
+        // silently dropped, or field-level contracts would miss it.
+        if (
+          ts.isPropertySignature(member) &&
+          member.name &&
+          (ts.isIdentifier(member.name) ||
+            ts.isStringLiteral(member.name) ||
+            ts.isNumericLiteral(member.name))
+        ) {
+          const fieldName = member.name.text;
+          const typeText = member.type ? member.type.getText() : null;
+          // Mark optional members (`foo?: string`) so contract diffing doesn't
+          // treat a backend DTO that omits them as a missing-field violation.
+          const optional = member.questionToken !== undefined;
+          symbols.push({
+            id: makeId(fieldName, "variable", name),
+            name: fieldName,
+            qualifiedName: `${name}.${fieldName}`,
+            kind: "variable",
+            filePath: relativePath,
+            ...getLocation(member),
+            signature: optional ? "optional" : null,
+            returnType: optional && typeText ? `${typeText} | undefined` : typeText,
+            docComment: getDocComment(member),
+            isExported: isExported(node),
+            isAsync: false,
+            contentHash,
+          });
+        }
+      }
       return;
     }
 

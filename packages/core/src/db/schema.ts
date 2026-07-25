@@ -1,6 +1,6 @@
 import type { Database } from "./connection.js";
 
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 6;
 
 const SCHEMA_SQL = `
 -- Metadata
@@ -64,7 +64,8 @@ CREATE TABLE IF NOT EXISTS routes (
   http_methods TEXT NOT NULL DEFAULT '[]',
   has_auth INTEGER NOT NULL DEFAULT 0,
   parent_layout TEXT,
-  service TEXT NOT NULL DEFAULT 'main'
+  service TEXT NOT NULL DEFAULT 'main',
+  response_type TEXT
 );
 
 -- Architecture
@@ -130,7 +131,8 @@ CREATE TABLE IF NOT EXISTS api_calls (
   method TEXT NOT NULL,
   file_path TEXT NOT NULL,
   line INTEGER NOT NULL,
-  service TEXT NOT NULL DEFAULT 'main'
+  service TEXT NOT NULL DEFAULT 'main',
+  expected_type TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_api_calls_service ON api_calls(service);
 

@@ -130,7 +130,38 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 6,
+    up: (db) => {
+      // Field-level contracts: the DTO an endpoint returns and the type a fetch
+      // call expects. Plain nullable columns; guarded so re-running against a
+      // schema that already has them (e.g. current-schema-then-downgrade) is safe.
+      addColumnIfMissing(db, "routes", "response_type", "TEXT");
+      addColumnIfMissing(db, "api_calls", "expected_type", "TEXT");
+    },
+  },
 ];
+
+/** Identifiers/type declarations may only be simple SQL-safe tokens. */
+const SAFE_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const SAFE_COLUMN_DECL = /^[A-Za-z0-9_ ()]+$/;
+
+/**
+ * Add a column only if it isn't already present (idempotent ALTER).
+ * Identifiers can't be bound as parameters in DDL, so they're validated
+ * against a strict allowlist — current callers pass constants, and this keeps
+ * a future caller from accidentally interpolating something unsafe.
+ */
+function addColumnIfMissing(db: Database, table: string, column: string, decl: string): void {
+  if (!SAFE_IDENTIFIER.test(table)) throw new Error(`Unsafe table identifier: ${table}`);
+  if (!SAFE_IDENTIFIER.test(column)) throw new Error(`Unsafe column identifier: ${column}`);
+  if (!SAFE_COLUMN_DECL.test(decl)) throw new Error(`Unsafe column declaration: ${decl}`);
+
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
+  }
+}
 
 export function migrate(db: Database): void {
   const row = db

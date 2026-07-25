@@ -1,3 +1,4 @@
+import { unwrapToTypeName } from "../../contracts/types.js";
 interface TreeSitterNode {
   type: string;
   text: string;
@@ -14,6 +15,85 @@ export interface CSharpRoute {
   httpMethods: string[];
   hasAuth: boolean;
   handlerSymbolId?: string;
+  /** Unwrapped DTO name the handler returns (e.g. UserDto), for field-level contracts. */
+  responseType?: string | null;
+}
+
+/**
+ * Read a minimal-API handler's response type from its lambda, best-effort:
+ *  - an explicit lambda return type (`UserDto () => …`), else
+ *  - the type constructed in the body (`() => new UserDto()`, and nested forms
+ *    like `() => Results.Ok(new UserDto())`).
+ * Method-group handlers (`MapGet("/x", GetUsers)`) aren't resolved — that needs
+ * cross-symbol resolution the tree-sitter pass doesn't do — so those routes get
+ * endpoint-level checks only.
+ */
+function readMinimalApiResponseType(invocation: TreeSitterNode): string | null {
+  const lambda = findFirstNode(invocation, "lambda_expression");
+  if (!lambda) return null;
+
+  // Explicit return type: a type-shaped child appearing before the parameters
+  for (const child of lambda.namedChildren) {
+    if (child.type === "parameter_list") break;
+    if (
+      child.type === "identifier" ||
+      child.type === "generic_name" ||
+      child.type === "qualified_name" ||
+      child.type === "predefined_type"
+    ) {
+      return child.text;
+    }
+  }
+
+  // Otherwise infer from a constructed value in the body
+  const created = findFirstNode(lambda, "object_creation_expression");
+  if (created) {
+    for (const child of created.namedChildren) {
+      if (
+        child.type === "identifier" ||
+        child.type === "generic_name" ||
+        child.type === "qualified_name"
+      ) {
+        return child.text;
+      }
+    }
+  }
+  return null;
+}
+
+/** Depth-first search for the first node of a given type. */
+function findFirstNode(node: TreeSitterNode, type: string): TreeSitterNode | null {
+  if (node.type === type) return node;
+  for (const child of node.namedChildren) {
+    const found = findFirstNode(child, type);
+    if (found) return found;
+  }
+  return null;
+}
+
+/**
+ * Read a controller action's declared return type. Mirrors the symbol
+ * extractor's extractReturnType: the "type" field when present, else the first
+ * type-shaped child before the parameter list (this grammar exposes the return
+ * type as a sibling `generic_name`/`identifier`, not always a named field).
+ */
+function readReturnType(method: TreeSitterNode): string | null {
+  const typeNode = method.childForFieldName("type");
+  if (typeNode) return typeNode.text;
+  for (const child of method.namedChildren) {
+    if (
+      child.type === "predefined_type" ||
+      child.type === "generic_name" ||
+      child.type === "identifier" ||
+      child.type === "nullable_type" ||
+      child.type === "array_type" ||
+      child.type === "qualified_name"
+    ) {
+      return child.text;
+    }
+    if (child.type === "parameter_list") break;
+  }
+  return null;
 }
 
 const HTTP_ATTRIBUTE_MAP: Record<string, string> = {
@@ -96,6 +176,7 @@ function extractControllerRoutes(
         kind: "api-route",
         httpMethods: [httpInfo.method],
         hasAuth: classHasAuth || methodHasAuth,
+        responseType: unwrapToTypeName(readReturnType(method)),
       });
     }
   }
@@ -194,6 +275,7 @@ function extractMinimalApiRoutes(
       kind: "api-route",
       httpMethods: [httpMethod],
       hasAuth,
+      responseType: unwrapToTypeName(readMinimalApiResponseType(invocation)),
     });
   }
 }

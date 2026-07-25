@@ -159,8 +159,8 @@ export async function indexCSharpTreeSitter(
 
   if (allRoutes.length > 0) {
     const insertRoute = db.prepare(`
-      INSERT OR REPLACE INTO routes (id, route_path, kind, http_methods, has_auth, service)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO routes (id, route_path, kind, http_methods, has_auth, service, response_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
     transaction(db, () => {
@@ -174,6 +174,7 @@ export async function indexCSharpTreeSitter(
           JSON.stringify(route.httpMethods),
           route.hasAuth ? 1 : 0,
           service,
+          route.responseType ?? null,
         );
       }
     });

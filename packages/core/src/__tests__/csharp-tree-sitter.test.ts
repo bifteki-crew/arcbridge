@@ -128,6 +128,29 @@ describe("C# tree-sitter indexer", () => {
       expect(names).toContain("CustomerName");
       expect(names).toContain("Total");
       expect(names).toContain("Status");
+      // Properties carry their declared type (needed for field-level contracts)
+      expect(props.every((p) => p.returnType !== null)).toBe(true);
+    });
+
+    it("captures declared types for fields as well as properties", async () => {
+      const content = `namespace Api.Models {
+  public class FieldDto {
+    public string Name;
+    public int Count;
+    public string A, B;
+  }
+}`;
+      const tree = parseCSharp(content);
+      const byName = new Map(
+        extractCSharpSymbols(tree, "Models/FieldDto.cs", content)
+          .filter((s) => s.kind === "variable")
+          .map((s) => [s.name, s.returnType]),
+      );
+      expect(byName.get("Name")).toBe("string");
+      expect(byName.get("Count")).toBe("int");
+      // Multi-declarator fields share the declared type
+      expect(byName.get("A")).toBe("string");
+      expect(byName.get("B")).toBe("string");
     });
 
     it("extracts constructors", async () => {
@@ -377,6 +400,27 @@ public class Dog : Animal { }
           r.httpMethods.includes("GET"),
       );
       expect(getById).toBeDefined();
+    });
+
+    it("extracts a response type from minimal API handlers where recoverable", async () => {
+      const tree = parseCSharp(`var app = WebApplication.Create();
+app.MapGet("/api/a", () => new UserDto());
+app.MapGet("/api/b", UserDto () => new UserDto());
+app.MapGet("/api/c", () => Results.Ok(new OrderDto()));
+app.MapGet("/api/d", GetUsers);
+app.MapGet("/api/e", () => "hello");`);
+      const byPath = new Map(
+        extractCSharpRoutes(tree, "Program.cs").map((r) => [r.routePath, r.responseType]),
+      );
+      // Inferred from the constructed value, an explicit lambda return type,
+      // and a nested Results.Ok(...) payload
+      expect(byPath.get("/api/a")).toBe("UserDto");
+      expect(byPath.get("/api/b")).toBe("UserDto");
+      expect(byPath.get("/api/c")).toBe("OrderDto");
+      // Method-group handlers need cross-symbol resolution; primitives have no
+      // shape — both correctly yield no response type (endpoint-level only)
+      expect(byPath.get("/api/d")).toBeNull();
+      expect(byPath.get("/api/e")).toBeNull();
     });
 
     it("extracts minimal API routes", async () => {

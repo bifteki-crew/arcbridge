@@ -1,5 +1,6 @@
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
+import { typesConflict } from "../contracts/types.js";
 
 export type DriftKind =
   | "undocumented_module"
@@ -495,20 +496,32 @@ function detectNewDependencies(
  */
 function detectContractViolations(db: Database, entries: DriftEntry[]): void {
   const calls = db
-    .prepare("SELECT DISTINCT url, method, file_path FROM api_calls")
-    .all() as { url: string; method: string; file_path: string }[];
+    .prepare("SELECT DISTINCT url, method, file_path, service, expected_type FROM api_calls")
+    .all() as {
+    url: string;
+    method: string;
+    file_path: string;
+    service: string;
+    expected_type: string | null;
+  }[];
   if (calls.length === 0) return;
 
   const routeRows = db
-    .prepare("SELECT route_path, http_methods FROM routes WHERE kind = 'api-route'")
-    .all() as { route_path: string; http_methods: string }[];
+    .prepare("SELECT route_path, http_methods, service, response_type FROM routes WHERE kind = 'api-route'")
+    .all() as { route_path: string; http_methods: string; service: string; response_type: string | null }[];
   if (routeRows.length === 0) return;
+
+  // Memo for per-(service,type) field sets — avoids re-querying symbols for
+  // every call site that shares a DTO.
+  const fieldCache = new Map<string, TypeFields>();
 
   // Precompile once — segments + allowed methods per route — instead of
   // re-splitting/re-parsing inside the calls × routes comparison loop.
   const routes = routeRows.map((r) => ({
     segs: splitSegments(r.route_path),
     methods: safeParseJson<string[]>(r.http_methods, []),
+    service: r.service,
+    responseType: r.response_type,
   }));
 
   for (const call of calls) {
@@ -540,8 +553,144 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
         affectedBlock: null,
         affectedFile: call.file_path,
       });
+      continue;
+    }
+
+    // Field-level: when the call annotates its expected response type AND the
+    // method-matching route knows the DTO it returns, diff the two field sets.
+    if (!call.expected_type) continue;
+    // Pick the DTO-bearing route deterministically: SQLite row order isn't
+    // guaranteed, so when several services expose the same path+method, sort by
+    // (service, responseType) rather than comparing against an arbitrary one.
+    const candidates = matching
+      .filter((r) => r.responseType && (r.methods.length === 0 || r.methods.includes(call.method)))
+      .sort((a, b) =>
+        a.service.localeCompare(b.service) || (a.responseType ?? "").localeCompare(b.responseType ?? ""),
+      );
+    // Ambiguous producers (different services returning different DTOs for the
+    // same endpoint) can't be diffed meaningfully — skip rather than guess.
+    const distinctDtos = new Set(candidates.map((r) => `${r.service}:${r.responseType}`));
+    if (candidates.length === 0 || distinctDtos.size > 1) continue;
+    const methodRoute = candidates[0];
+    if (!methodRoute.responseType) continue;
+
+    const expected = loadTypeFields(db, call.expected_type, call.service, fieldCache);
+    const actual = loadTypeFields(db, methodRoute.responseType, methodRoute.service, fieldCache);
+    if (expected.fields.length === 0 || actual.fields.length === 0) continue; // shape unknown on a side
+
+    for (const field of expected.fields) {
+      const exactMatch = actual.byName.get(field.name);
+      if (exactMatch) {
+        if (typesConflict(field.type, exactMatch.type)) {
+          entries.push(contractEntry(
+            `\`${call.file_path}\` expects \`${field.name}: ${field.type}\` from \`${call.method} ${url}\` but the endpoint returns \`${exactMatch.type}\` for that field.`,
+            call.file_path,
+          ));
+        }
+        continue;
+      }
+      const ciMatch = actual.byLower.get(field.name.toLowerCase());
+      if (ciMatch) {
+        entries.push(contractEntry(
+          `\`${call.file_path}\` expects field \`${field.name}\` from \`${call.method} ${url}\` but the endpoint returns \`${ciMatch.name}\` (casing differs).`,
+          call.file_path,
+        ));
+        // A case-mismatched field can ALSO disagree on type — report both, or
+        // fixing the casing would surface a second, previously hidden break.
+        if (typesConflict(field.type, ciMatch.type)) {
+          entries.push(contractEntry(
+            `\`${call.file_path}\` expects \`${field.name}: ${field.type}\` from \`${call.method} ${url}\` but the endpoint returns \`${ciMatch.type}\` for \`${ciMatch.name}\`.`,
+            call.file_path,
+          ));
+        }
+      } else if (!field.optional) {
+        // An optional field (`foo?: string`) the backend doesn't return is
+        // legitimate — only required fields are contract obligations.
+        entries.push(contractEntry(
+          `\`${call.file_path}\` expects field \`${field.name}\` from \`${call.method} ${url}\` but the endpoint's response type \`${methodRoute.responseType}\` has no such field.`,
+          call.file_path,
+        ));
+      }
     }
   }
+}
+
+function contractEntry(description: string, file: string): DriftEntry {
+  return { kind: "contract_violation", severity: "warning", description, affectedBlock: null, affectedFile: file };
+}
+
+interface TypeField {
+  name: string;
+  type: string | null;
+  /** TS interface members declared `foo?:` — absence on the producer is legal. */
+  optional: boolean;
+}
+interface TypeFields {
+  /** Unique fields (deduped by exact name) — iterate this side. */
+  fields: TypeField[];
+  /** Exact-name lookup. */
+  byName: Map<string, TypeField>;
+  /** Lowercased-name lookup, for case-insensitive matching. */
+  byLower: Map<string, TypeField>;
+}
+
+/**
+ * Load a type's fields. Members are the `variable` symbol rows whose qualified
+ * name's second-to-last segment is the type's simple name — `UserDto.email` (TS
+ * interface) or `Api.Models.UserDto.email` (C# DTO). Scoped to the service.
+ * Returns the unique field list plus exact/lowercased lookups (kept separate so
+ * iterating one side never double-counts a mixed-case field name).
+ */
+function loadTypeFields(
+  db: Database,
+  typeName: string,
+  service: string,
+  cache?: Map<string, TypeFields>,
+): TypeFields {
+  const simple = typeName.split(".").pop() ?? typeName;
+  // Many call sites share the same (service, type) pair — load each once per
+  // detection run instead of re-querying symbols for every call.
+  const cacheKey = `${service}::${simple}`;
+  const cached = cache?.get(cacheKey);
+  if (cached) return cached;
+  const rows = db
+    .prepare(
+      // ORDER BY makes map construction deterministic — SQLite row order isn't
+      // guaranteed, and several symbols can match the LIKE patterns.
+      "SELECT name, qualified_name, return_type, signature FROM symbols WHERE kind = 'variable' AND service = ? AND (qualified_name LIKE ? ESCAPE '\\' OR qualified_name LIKE ? ESCAPE '\\') ORDER BY qualified_name, name",
+    )
+    .all(service, `${escapeLike(simple)}.%`, `%.${escapeLike(simple)}.%`) as {
+    name: string;
+    qualified_name: string;
+    return_type: string | null;
+    signature: string | null;
+  }[];
+
+  const byName = new Map<string, TypeField>();
+  const byLower = new Map<string, TypeField>();
+  for (const row of rows) {
+    // Derive the owner by stripping the field name off the end, rather than
+    // assuming the field is a single dotted segment — a string-literal key can
+    // legally contain dots (`"a.b": string` → qualified name `UserDto.a.b`).
+    const suffix = `.${row.name}`;
+    if (!row.qualified_name.endsWith(suffix)) continue;
+    const owner = row.qualified_name.slice(0, -suffix.length);
+    if ((owner.split(".").pop() ?? owner) !== simple) continue;
+    if (byName.has(row.name)) continue;
+    const entry: TypeField = {
+      name: row.name,
+      type: row.return_type,
+      optional: row.signature === "optional",
+    };
+    byName.set(row.name, entry);
+    // Don't overwrite: when fields differ only by case, keep the first in the
+    // deterministic order rather than letting a later row silently win.
+    const lower = row.name.toLowerCase();
+    if (!byLower.has(lower)) byLower.set(lower, entry);
+  }
+  const result: TypeFields = { fields: [...byName.values()], byName, byLower };
+  cache?.set(cacheKey, result);
+  return result;
 }
 
 /**

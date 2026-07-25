@@ -2,6 +2,7 @@ import ts from "typescript";
 import { relative, sep } from "node:path";
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
+import { unwrapToTypeName } from "../contracts/types.js";
 
 /**
  * Outbound HTTP call site detected in frontend/TS code — the consumer half of
@@ -12,6 +13,12 @@ export interface ApiCall {
   method: string;
   filePath: string;
   line: number;
+  /**
+   * The response type the call expects, when annotated at the site via a type
+   * argument (e.g. `apiClient.get<UserDto>(url)`). null for untyped calls —
+   * those get endpoint-level checks only, not field-level.
+   */
+  expectedType?: string | null;
 }
 
 const AXIOS_METHODS = new Set(["get", "post", "put", "delete", "patch", "head", "options"]);
@@ -65,11 +72,20 @@ function methodFromOptions(node: ts.Expression | undefined): string | null {
 export function extractApiCalls(sf: ts.SourceFile, relPath: string): ApiCall[] {
   const calls: ApiCall[] = [];
 
-  const record = (urlNode: ts.Expression, method: string, pos: number): void => {
+  const record = (
+    urlNode: ts.Expression,
+    method: string,
+    call: ts.CallExpression,
+  ): void => {
     const url = literalUrl(urlNode);
     if (!url || !url.startsWith("/")) return;
-    const { line } = sf.getLineAndCharacterOfPosition(pos);
-    calls.push({ url, method, filePath: relPath, line: line + 1 });
+    const { line } = sf.getLineAndCharacterOfPosition(call.getStart(sf));
+    // A type argument on the call (`apiClient.get<UserDto>(url)`) is the
+    // expected response type — unwrap Promise<...>/arrays to the DTO name.
+    const expectedType = call.typeArguments?.[0]
+      ? unwrapToTypeName(call.typeArguments[0].getText())
+      : null;
+    calls.push({ url, method, filePath: relPath, line: line + 1, expectedType });
   };
 
   const visit = (node: ts.Node): void => {
@@ -87,7 +103,7 @@ export function extractApiCalls(sf: ts.SourceFile, relPath: string): ApiCall[] {
           FETCH_GLOBALS.has(callee.expression.text));
       if (isFetch) {
         const method = methodFromOptions(node.arguments[1]) ?? "GET";
-        record(node.arguments[0], method, node.getStart(sf));
+        record(node.arguments[0], method, node);
       }
 
       // <receiver>.get/post/…(url) — heuristic: any receiver whose name looks
@@ -102,13 +118,13 @@ export function extractApiCalls(sf: ts.SourceFile, relPath: string): ApiCall[] {
         ts.isIdentifier(callee.expression) &&
         /axios|api|client|http/i.test(callee.expression.text)
       ) {
-        record(node.arguments[0], callee.name.text.toUpperCase(), node.getStart(sf));
+        record(node.arguments[0], callee.name.text.toUpperCase(), node);
       }
 
       // axios(url, { method }) direct call form
       if (ts.isIdentifier(callee) && callee.text === "axios") {
         const method = methodFromOptions(node.arguments[1]) ?? "GET";
-        record(node.arguments[0], method, node.getStart(sf));
+        record(node.arguments[0], method, node);
       }
     }
     ts.forEachChild(node, visit);
@@ -139,7 +155,7 @@ export function analyzeApiCalls(
   db.prepare("DELETE FROM api_calls WHERE service = ?").run(service);
   if (allCalls.length > 0) {
     const insert = db.prepare(
-      "INSERT OR REPLACE INTO api_calls (id, url, method, file_path, line, service) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT OR REPLACE INTO api_calls (id, url, method, file_path, line, service, expected_type) VALUES (?, ?, ?, ?, ?, ?, ?)",
     );
     transaction(db, () => {
       for (const call of allCalls) {
@@ -150,6 +166,7 @@ export function analyzeApiCalls(
           call.filePath,
           call.line,
           service,
+          call.expectedType ?? null,
         );
       }
     });
