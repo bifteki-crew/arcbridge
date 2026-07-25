@@ -595,6 +595,14 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
           `\`${call.file_path}\` expects field \`${field.name}\` from \`${call.method} ${url}\` but the endpoint returns \`${ciMatch.name}\` (casing differs).`,
           call.file_path,
         ));
+        // A case-mismatched field can ALSO disagree on type — report both, or
+        // fixing the casing would surface a second, previously hidden break.
+        if (typesConflict(field.type, ciMatch.type)) {
+          entries.push(contractEntry(
+            `\`${call.file_path}\` expects \`${field.name}: ${field.type}\` from \`${call.method} ${url}\` but the endpoint returns \`${ciMatch.type}\` for \`${ciMatch.name}\`.`,
+            call.file_path,
+          ));
+        }
       } else if (!field.optional) {
         // An optional field (`foo?: string`) the backend doesn't return is
         // legitimate — only required fields are contract obligations.

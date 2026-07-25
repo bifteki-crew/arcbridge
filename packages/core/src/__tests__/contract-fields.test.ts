@@ -182,6 +182,24 @@ namespace Api.Controllers
     expect(v).toHaveLength(0);
   });
 
+  it("reports both casing AND type conflict when a field differs in both", async () => {
+    // `userName` vs C# `UserName` (casing) where the types also disagree
+    // (number vs string) — fixing only the casing would leave a hidden break.
+    writeFileSync(
+      join(repoRoot, "web", "src", "types.ts"),
+      "export interface UserDto {\n  userName: number;\n}\n",
+      "utf-8",
+    );
+    await indexBoth();
+    const v = detectDrift(db)
+      .filter((e) => e.kind === "contract_violation")
+      .map((e) => e.description);
+
+    expect(v.some((d) => d.includes("casing differs"))).toBe(true);
+    expect(v.some((d) => d.includes("`userName: number`") && d.includes("returns `string`"))).toBe(true);
+    expect(v).toHaveLength(2);
+  });
+
   it("handles string-literal field keys, including dotted ones", async () => {
     writeFileSync(
       join(repoRoot, "web", "src", "types.ts"),
