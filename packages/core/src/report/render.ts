@@ -72,13 +72,18 @@ function architectureSection(a: ArchitectureHealth): string {
   // priority they are instead of rendering as an empty sliver.
   const knownAges = blocks.stale.map((b) => b.ageDays).filter((d): d is number => d !== null);
   const maxAge = Math.max(1, ...knownAges);
-  const staleRows = blocks.stale.slice(0, 12).map((b) => ({
-    label: `${b.name}${b.lastSynced ? "" : " (never synced)"}`,
-    value: b.ageDays ?? maxAge,
-    tone: b.lastSynced === null ? "bad" : b.ageDays! > 7 ? "warn" : "good",
-    // Never-synced blocks show "never" rather than a misleading day count
-    display: b.lastSynced === null ? "never" : undefined,
-  }));
+  const staleRows = blocks.stale.slice(0, 12).map((b) => {
+    // Three cases: never synced (most urgent), a synced-but-unparseable
+    // timestamp (unknown — must not read as fresh), and a known age.
+    const neverSynced = b.lastSynced === null;
+    const unknownAge = !neverSynced && b.ageDays === null;
+    return {
+      label: `${b.name}${neverSynced ? " (never synced)" : unknownAge ? " (unreadable sync time)" : ""}`,
+      value: b.ageDays ?? maxAge,
+      tone: neverSynced || unknownAge ? "bad" : b.ageDays! > 7 ? "warn" : "good",
+      display: neverSynced ? "never" : unknownAge ? "unknown" : undefined,
+    };
+  });
 
   const failingMust =
     scenarios.failingMust.length === 0
@@ -173,7 +178,15 @@ function activitySection(act: ActivitySummary): string {
     <div class="panel">
       <h3>Drift over time <span class="hint">from recorded quality snapshots</span></h3>
       ${bars(trendRows)}
-      ${trendRows.length === 0 ? `<p class="note">No quality snapshots recorded yet.</p>` : ""}
+      ${
+        trendRows.length === 0
+          ? `<p class="note">No drift counts recorded yet${
+              act.qualityTrend.length > 0
+                ? ` — ${act.qualityTrend.length} snapshot(s) exist but carry only test results.`
+                : "."
+            }</p>`
+          : ""
+      }
     </div>
   </div>
 </section>`;

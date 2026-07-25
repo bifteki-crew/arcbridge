@@ -155,6 +155,26 @@ describe("renderReportHtml", () => {
     expect(neverRow).toMatch(/bar-fill bad" style="width:100%"/);
   });
 
+  it("does not render an unreadable sync timestamp as fresh", () => {
+    addBlock("broken", "Broken", "not-a-timestamp");
+    const html = renderReportHtml(collectReportData(db, NOW));
+    expect(html).toContain("Broken (unreadable sync time)");
+    expect(html).toMatch(/bar-value">unknown</);
+    // Must not be styled as up-to-date
+    const row = html.slice(html.indexOf("Broken (unreadable"));
+    expect(row).toMatch(/bar-fill bad"/);
+  });
+
+  it("distinguishes 'no drift snapshots' from 'no snapshots at all'", () => {
+    // A snapshot carrying only test results — drift trend is empty, but
+    // snapshots do exist, so the note must not claim otherwise.
+    db.prepare(
+      "INSERT INTO agent_activity (tool_name, test_pass_count, recorded_at) VALUES ('t', 5, ?)",
+    ).run(NOW);
+    const html = renderReportHtml(collectReportData(db, NOW));
+    expect(html).toContain("carry only test results");
+  });
+
   it("escapes values that would otherwise inject markup", () => {
     addBlock("x", '<img src=x onerror="alert(1)">', null);
     const html = renderReportHtml(collectReportData(db, NOW));

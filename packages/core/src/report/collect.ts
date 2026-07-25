@@ -40,7 +40,11 @@ export interface BlockStaleness {
   id: string;
   name: string;
   lastSynced: string | null;
-  /** Whole days since last sync; null when never synced. */
+  /**
+   * Whole days since last sync. Null when the age is unknown — either the block
+   * was never synced (`lastSynced === null`) or its stored timestamp couldn't be
+   * parsed. Check `lastSynced` to tell those apart.
+   */
   ageDays: number | null;
 }
 
