@@ -5,7 +5,8 @@ import type { Database } from "../db/connection.js";
  * `architecture` is derived from the committed model + the latest drift run
  * (always populated), while `activity` comes from the agent_activity telemetry
  * table, which is EMPTY unless `metrics.auto_record` is enabled or an agent
- * calls record_activity — so the renderer must handle an empty activity half.
+ * calls arcbridge_record_activity — so the renderer must handle an empty
+ * activity half.
  */
 export interface ReportData {
   projectName: string | null;
@@ -194,7 +195,12 @@ function collectActivity(db: Database): ActivitySummary {
     };
   }
 
-  const grouped = (column: string): { key: string; activities: number; tokens: number; costUsd: number }[] =>
+  // Column is a closed union, not an arbitrary string — identifiers can't be
+  // bound as SQL parameters, so restricting the type keeps a future caller from
+  // interpolating anything unsafe here.
+  const grouped = (
+    column: "model" | "agent_role" | "tool_name",
+  ): { key: string; activities: number; tokens: number; costUsd: number }[] =>
     db
       .prepare(
         `SELECT COALESCE(${column}, '(unknown)') AS key,

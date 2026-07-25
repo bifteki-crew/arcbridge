@@ -57,7 +57,7 @@ export async function report(
     console.log(
       activity.hasData
         ? `  Activity: ${activity.totals.activities} recorded, ${activity.totals.tokens.toLocaleString("en-US")} tokens, $${activity.totals.costUsd.toFixed(4)}`
-        : "  Activity: none recorded (enable metrics.auto_record, or have agents call record_activity)",
+        : "  Activity: none recorded (enable metrics.auto_record, or have agents call arcbridge_record_activity)",
     );
   } finally {
     db.close();
