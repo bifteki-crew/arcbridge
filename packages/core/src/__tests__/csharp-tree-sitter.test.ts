@@ -128,6 +128,29 @@ describe("C# tree-sitter indexer", () => {
       expect(names).toContain("CustomerName");
       expect(names).toContain("Total");
       expect(names).toContain("Status");
+      // Properties carry their declared type (needed for field-level contracts)
+      expect(props.every((p) => p.returnType !== null)).toBe(true);
+    });
+
+    it("captures declared types for fields as well as properties", async () => {
+      const content = `namespace Api.Models {
+  public class FieldDto {
+    public string Name;
+    public int Count;
+    public string A, B;
+  }
+}`;
+      const tree = parseCSharp(content);
+      const byName = new Map(
+        extractCSharpSymbols(tree, "Models/FieldDto.cs", content)
+          .filter((s) => s.kind === "variable")
+          .map((s) => [s.name, s.returnType]),
+      );
+      expect(byName.get("Name")).toBe("string");
+      expect(byName.get("Count")).toBe("int");
+      // Multi-declarator fields share the declared type
+      expect(byName.get("A")).toBe("string");
+      expect(byName.get("B")).toBe("string");
     });
 
     it("extracts constructors", async () => {

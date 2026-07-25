@@ -208,6 +208,10 @@ function walkNode(
       );
       const modifiers = getModifiers(node);
       const isConst = modifiers.has("const");
+      // The declared type lives on the variable_declaration (shared by all
+      // declarators in `public string A, B;`) — capture it so DTOs that use
+      // fields instead of properties also carry types for contract comparison.
+      const declaredType = extractReturnType(varDeclarator);
 
       for (const decl of declarators) {
         const name = getIdentifierName(decl);
@@ -222,6 +226,7 @@ function walkNode(
           contentHash,
           modifiers,
           docComment: extractDocComment(node),
+          returnType: declaredType,
         }));
       }
       return;
