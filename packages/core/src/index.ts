@@ -92,6 +92,8 @@ export {
   type ScopedDrift,
 } from "./drift/scope.js";
 export { populateHttpContracts } from "./contracts/populate.js";
+export { collectReportData, type ReportData, type ArchitectureHealth, type ActivitySummary } from "./report/collect.js";
+export { renderReportHtml } from "./report/render.js";
 export { extractApiCalls, analyzeApiCalls, type ApiCall } from "./indexer/api-call-analyzer.js";
 
 // Sync
