@@ -38,18 +38,32 @@ interface SourceFile {
 /**
  * The baseline file set: exactly the files ArcBridge indexed, read from the
  * project's own index.db. This is the honest comparison set — it's the code an
- * agent would have to read to answer the same question — and it works for any
- * project shape (a monorepo's per-package src trees, a Next.js app dir, a .NET
- * unlike a hardcoded src/ walk.
+ * agent would have to read to answer the same question — and, unlike a
+ * hardcoded src/ walk, it works for any project shape: a monorepo's per-package
+ * source trees, a Next.js app dir, a .NET project tree.
  */
 function listSourceFiles(projectRoot: string): SourceFile[] {
   const dbPath = join(projectRoot, ".arcbridge", "index.db");
-  if (!existsSync(dbPath)) return [];
+  // Fail loudly. An empty baseline is indistinguishable from "no saving to
+  // measure" once it reaches the report (baselineTokens=0 renders as n/a), so a
+  // broken prep step would quietly look like a legitimate result.
+  if (!existsSync(dbPath)) {
+    throw new Error(
+      `No index at ${dbPath} — prep did not produce an index. ` +
+        `Check the drift --reindex step for this member.`,
+    );
+  }
   const db = openDatabase(dbPath);
   try {
     const rows = db
       .prepare("SELECT DISTINCT file_path FROM symbols ORDER BY file_path")
       .all() as { file_path: string }[];
+    if (rows.length === 0) {
+      throw new Error(
+        `Index at ${dbPath} contains no symbols — nothing was indexed, so any ` +
+          `"saving" would be measured against an empty baseline.`,
+      );
+    }
     const out: SourceFile[] = [];
     for (const { file_path } of rows) {
       // Stored paths are project-relative with forward slashes
