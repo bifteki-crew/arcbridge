@@ -1,6 +1,7 @@
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { readFileSync, statSync, existsSync } from "node:fs";
+import { join } from "node:path";
 import { parse } from "yaml";
+import { openDatabase } from "@arcbridge/core";
 import { countTokens, sumTokens } from "./tokenizer.js";
 import { createDriver } from "./mcp-driver.js";
 import { prepFixture, type CliStep } from "./prep.js";
@@ -8,6 +9,8 @@ import { CORPUS, type CorpusMember, type Question } from "./corpus.js";
 
 export interface QuestionResult {
   fixture: string;
+  /** "live" = a real repo; "fixture" = a small pinned fixture (scale caveat). */
+  memberKind: "fixture" | "live";
   questionId: string;
   label: string;
   kind: Question["kind"];
@@ -22,6 +25,7 @@ export interface QuestionResult {
 
 export interface FixtureResult {
   fixture: string;
+  memberKind: "fixture" | "live";
   steps: CliStep[];
   questions: QuestionResult[];
 }
@@ -31,25 +35,32 @@ interface SourceFile {
   content: string;
 }
 
-/** All indexable source files under the fixture's src/ tree. */
+/**
+ * The baseline file set: exactly the files ArcBridge indexed, read from the
+ * project's own index.db. This is the honest comparison set — it's the code an
+ * agent would have to read to answer the same question — and it works for any
+ * project shape (a monorepo's per-package src trees, a Next.js app dir, a .NET
+ * unlike a hardcoded src/ walk.
+ */
 function listSourceFiles(projectRoot: string): SourceFile[] {
-  const srcRoot = join(projectRoot, "src");
-  const out: SourceFile[] = [];
-  const walk = (dir: string): void => {
-    for (const entry of readdirSync(dir)) {
-      const full = join(dir, entry);
-      if (statSync(full).isDirectory()) {
-        walk(full);
-      } else if (/\.(ts|tsx)$/.test(entry)) {
-        // Normalize to forward slashes so baseline matching lines up with the
-        // YAML code_paths (which always use `/`), including on Windows.
-        const rel = relative(projectRoot, full).split(sep).join("/");
-        out.push({ rel, content: readFileSync(full, "utf-8") });
-      }
+  const dbPath = join(projectRoot, ".arcbridge", "index.db");
+  if (!existsSync(dbPath)) return [];
+  const db = openDatabase(dbPath);
+  try {
+    const rows = db
+      .prepare("SELECT DISTINCT file_path FROM symbols ORDER BY file_path")
+      .all() as { file_path: string }[];
+    const out: SourceFile[] = [];
+    for (const { file_path } of rows) {
+      // Stored paths are project-relative with forward slashes
+      const full = join(projectRoot, ...file_path.split("/"));
+      if (!existsSync(full) || statSync(full).isDirectory()) continue;
+      out.push({ rel: file_path, content: readFileSync(full, "utf-8") });
     }
-  };
-  if (existsSync(srcRoot)) walk(srcRoot);
-  return out;
+    return out;
+  } finally {
+    db.close();
+  }
 }
 
 interface YamlBlock {
@@ -98,6 +109,7 @@ async function runQuestion(
 ): Promise<QuestionResult> {
   const base = {
     fixture: member.name,
+    memberKind: member.kind,
     questionId: q.id,
     label: q.label,
     kind: q.kind,
@@ -191,7 +203,7 @@ export async function runTokenProxy(): Promise<FixtureResult[]> {
       for (const q of member.questions) {
         questions.push(await runQuestion(member, q, prepped.projectRoot, files, driver.call));
       }
-      results.push({ fixture: member.name, steps: prepped.steps, questions });
+      results.push({ fixture: member.name, memberKind: member.kind, steps: prepped.steps, questions });
     } finally {
       await driver.close();
       prepped.cleanup();

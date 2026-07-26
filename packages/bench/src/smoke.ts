@@ -83,7 +83,11 @@ async function main(): Promise<void> {
   }
 
   const all: Finding[] = [];
-  for (const member of CORPUS) {
+  // Fixtures only: smoke validates the init → adopt → drift pipeline, which is
+  // deliberately NOT run against live repositories (adopt would overwrite a
+  // hand-maintained model). ArcBridge's own drift is gated by CI's `check` job,
+  // and live members participate in the token proxy instead.
+  for (const member of CORPUS.filter((m) => m.kind === "fixture")) {
     all.push(...(await checkFixture(member.name)));
   }
 
