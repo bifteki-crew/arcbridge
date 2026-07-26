@@ -12,6 +12,21 @@ import { dirname, basename, join, resolve, relative, isAbsolute, sep } from "nod
 let tmpCounter = 0;
 
 /**
+ * Convert a native relative path to forward-slash form.
+ *
+ * Every path stored in the index — symbol IDs, route IDs, file_path columns — is
+ * compared against forward-slashed values that come from elsewhere: building-block
+ * `code_paths` authored in YAML, api_call URLs, and IDs written by a previous run
+ * on another machine. `path.relative()` yields backslashes on Windows, so without
+ * this the same file indexes as `src\a.ts` there and `src/a.ts` everywhere else,
+ * and drift reports every file as undocumented. The C#/Python/Go indexers already
+ * normalize; this is the shared version so the TypeScript pipeline matches.
+ */
+export function toPosixPath(p: string): string {
+  return p.split(sep).join("/");
+}
+
+/**
  * Resolve path segments against a root directory, guaranteeing the result
  * stays inside it. Throws when traversal segments (`..`) or absolute paths
  * would escape — use for any path built from external input (tool params,

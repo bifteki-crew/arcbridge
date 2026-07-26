@@ -19,8 +19,10 @@ export interface IndexerOptions {
    * Defaults to projectRoot. Used by the C#/Python/Go indexers: sources are
    * discovered under scanRoot but stored paths (and thus symbol IDs) remain
    * projectRoot-relative, keeping IDs unique across services and matching
-   * repo-relative building-block code_paths. The TypeScript indexer scopes via
-   * tsconfigPath instead and ignores this.
+   * repo-relative building-block code_paths. The TypeScript indexer takes its
+   * *source* set from tsconfigPath, but still needs scanRoot for analysis driven
+   * by directory convention rather than by the program — Next.js `app/` routes
+   * and `middleware.ts` — which are otherwise invisible in a monorepo.
    */
   scanRoot?: string;
 }

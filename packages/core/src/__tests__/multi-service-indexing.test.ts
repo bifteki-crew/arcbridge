@@ -12,6 +12,7 @@ import { initializeSchema } from "../db/schema.js";
 import { indexCSharpTreeSitter } from "../indexer/csharp/indexer.js";
 import { indexConfiguredProject } from "../indexer/index.js";
 import { detectDrift } from "../drift/detector.js";
+import { analyzeRoutes } from "../indexer/route-analyzer.js";
 
 let db: Database;
 let repoRoot: string;
@@ -202,5 +203,99 @@ describe("indexConfiguredProject indexes non-TypeScript services", () => {
     // and never matched the repo-relative code_path "api/" — every file was
     // flagged undocumented. Now they match.
     expect(undocumented).toHaveLength(0);
+  });
+});
+
+// Next.js routes are discovered by directory convention, not from tsconfig, so
+// they need the service's own scan root. Before this, analyzeRoutes only looked
+// at <repoRoot>/app and <repoRoot>/src/app, so a Next app nested under
+// frontend/ — exactly what the fullstack-nextjs-dotnet template declares —
+// produced ZERO routes, silently disabling the route map and making the
+// frontend half of endpoint contracts invisible.
+describe("Next.js route analysis in a monorepo service", () => {
+  const TSCONFIG = JSON.stringify({
+    compilerOptions: { target: "ES2022", module: "ESNext", moduleResolution: "bundler", strict: true },
+    include: ["app/**/*", "src/**/*"],
+  });
+
+  function nextService(dir: string): void {
+    const root = join(repoRoot, dir);
+    mkdirSync(join(root, "app", "api", "users"), { recursive: true });
+    writeFileSync(join(root, "tsconfig.json"), TSCONFIG, "utf-8");
+    writeFileSync(join(root, "package.json"), JSON.stringify({ name: dir }), "utf-8");
+    writeFileSync(
+      join(root, "app", "page.tsx"),
+      "export default function Page() { return null; }\n",
+      "utf-8",
+    );
+    writeFileSync(
+      join(root, "app", "api", "users", "route.ts"),
+      "export async function GET() { return new Response('[]'); }\n" +
+        "export async function POST() { return new Response('{}'); }\n",
+      "utf-8",
+    );
+  }
+
+  it("finds routes under a nested service root and stores repo-relative IDs", async () => {
+    nextService("frontend");
+
+    await indexConfiguredProject(db, repoRoot, {
+      services: [{ name: "frontend", path: "frontend", type: "nextjs", tsconfig: "tsconfig.json" }],
+    });
+
+    const routes = db
+      .prepare("SELECT id, route_path, kind, http_methods, service FROM routes ORDER BY route_path")
+      .all() as { id: string; route_path: string; kind: string; http_methods: string; service: string }[];
+
+    const apiRoute = routes.find((r) => r.kind === "api-route");
+    expect(apiRoute, "the nested app/api/users/route.ts must be found").toBeDefined();
+    expect(apiRoute!.route_path).toBe("/api/users");
+    expect(JSON.parse(apiRoute!.http_methods).sort()).toEqual(["GET", "POST"]);
+    expect(apiRoute!.service).toBe("frontend");
+    // IDs stay repo-relative (service-prefixed by writeRoutes) so two services
+    // with the same internal layout can't collide.
+    expect(apiRoute!.id).toBe("frontend::route::frontend/app/api/users/route");
+
+    // The page route is found too — proving the whole app/ tree is walked.
+    expect(routes.some((r) => r.kind === "page" && r.route_path === "/")).toBe(true);
+  });
+
+  it("keeps two Next services' routes distinct instead of overwriting", async () => {
+    nextService("web");
+    nextService("admin");
+
+    await indexConfiguredProject(db, repoRoot, {
+      services: [
+        { name: "web", path: "web", type: "nextjs", tsconfig: "tsconfig.json" },
+        { name: "admin", path: "admin", type: "nextjs", tsconfig: "tsconfig.json" },
+      ],
+    });
+
+    const apiRoutes = db
+      .prepare("SELECT id, service FROM routes WHERE kind = 'api-route' ORDER BY service")
+      .all() as { id: string; service: string }[];
+
+    expect(apiRoutes.map((r) => r.service)).toEqual(["admin", "web"]);
+    expect(new Set(apiRoutes.map((r) => r.id)).size).toBe(2);
+  });
+});
+
+describe("analyzeRoutes containment", () => {
+  it("rejects a scanRoot outside the path root", () => {
+    // Route IDs are stored relative to pathRoot; a scanRoot outside it would
+    // produce ".." IDs and walk files outside the project.
+    expect(() => analyzeRoutes(join(repoRoot, "..", "elsewhere"), db, "svc", repoRoot)).toThrow(
+      /escapes containment root/,
+    );
+  });
+
+  it("allows a scanRoot nested inside the path root", () => {
+    mkdirSync(join(repoRoot, "frontend", "app"), { recursive: true });
+    writeFileSync(
+      join(repoRoot, "frontend", "app", "page.tsx"),
+      "export default function P() { return null; }\n",
+      "utf-8",
+    );
+    expect(analyzeRoutes(join(repoRoot, "frontend"), db, "svc", repoRoot)).toBe(1);
   });
 });

@@ -314,3 +314,60 @@ describe("writeDriftLog", () => {
     expect(count).toBe(2);
   });
 });
+
+// FRAMEWORK_IGNORES is matched with startsWith, so a fullstack project can't
+// reuse the single-service lists — "src/app/layout." never matches
+// "frontend/src/app/layout.tsx". Before the fullstack-nextjs-dotnet entry
+// existed, every framework file in the flagship template's own layout was
+// reported as undocumented_module noise.
+describe("fullstack-nextjs-dotnet framework ignores", () => {
+  const FRAMEWORK_FILES = [
+    "frontend/next.config.mjs",
+    "frontend/app/layout.tsx",
+    "frontend/app/page.tsx",
+    "frontend/middleware.ts",
+    "api/Program.cs",
+    "api/obj/Debug/gen.cs",
+    "api/Migrations/0001_init.cs",
+  ];
+  const REAL_FILES = ["frontend/src/components/UserList.tsx", "api/Controllers/UsersController.cs"];
+
+  function seed(db: Database, files: string[]): void {
+    let i = 0;
+    for (const f of files) {
+      db.prepare(
+        "INSERT INTO symbols (id, name, qualified_name, kind, file_path, start_line, end_line, service, language, indexed_at) VALUES (?, ?, ?, 'function', ?, 1, 2, 'main', 'typescript', '2026-01-01T00:00:00Z')",
+      ).run(`${f}::sym${i}#function`, `sym${i}`, `sym${i}`, f);
+      i++;
+    }
+  }
+
+  it("ignores framework files under service subdirectories", () => {
+    seed(db, [...FRAMEWORK_FILES, ...REAL_FILES]);
+    // A block that covers neither — so anything not ignored shows up.
+    db.prepare(
+      "INSERT INTO building_blocks (id, name, level, responsibility, code_paths, interfaces) VALUES (?, ?, 1, ?, ?, '[]')",
+    ).run("unrelated", "Unrelated", "Covers nothing relevant", JSON.stringify(["docs/"]));
+
+    const undocumented = detectDrift(db, { projectType: "fullstack-nextjs-dotnet" })
+      .filter((e) => e.kind === "undocumented_module")
+      .map((e) => e.affectedFile);
+
+    // Framework files are silent; genuine unmapped source still reported.
+    for (const f of FRAMEWORK_FILES) expect(undocumented).not.toContain(f);
+    expect(undocumented.sort()).toEqual([...REAL_FILES].sort());
+  });
+
+  it("does not ignore those paths for a single-service Next.js project", () => {
+    seed(db, ["frontend/app/layout.tsx"]);
+    db.prepare(
+      "INSERT INTO building_blocks (id, name, level, responsibility, code_paths, interfaces) VALUES (?, ?, 1, ?, ?, '[]')",
+    ).run("unrelated", "Unrelated", "Covers nothing relevant", JSON.stringify(["docs/"]));
+
+    // Guards against over-broad patterns leaking across project types.
+    const undocumented = detectDrift(db, { projectType: "nextjs-app-router" })
+      .filter((e) => e.kind === "undocumented_module")
+      .map((e) => e.affectedFile);
+    expect(undocumented).toContain("frontend/app/layout.tsx");
+  });
+});

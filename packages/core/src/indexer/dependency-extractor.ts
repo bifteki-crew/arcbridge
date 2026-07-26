@@ -1,5 +1,6 @@
 import ts from "typescript";
 import { relative } from "node:path";
+import { toPosixPath } from "../utils/fs.js";
 
 export type DependencyKind =
   | "imports"
@@ -74,7 +75,7 @@ export function extractDependencies(
     const declFile = decl.getSourceFile();
     if (declFile.isDeclarationFile) return null;
 
-    const declRelPath = relative(projectRoot, declFile.fileName);
+    const declRelPath = toPosixPath(relative(projectRoot, declFile.fileName));
     const name = tsSymbol.getName();
 
     // Direct lookup: file::name

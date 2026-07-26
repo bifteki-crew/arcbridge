@@ -1,8 +1,9 @@
 import ts from "typescript";
-import { relative, sep } from "node:path";
+import { relative } from "node:path";
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
 import { unwrapToTypeName } from "../contracts/types.js";
+import { toPosixPath } from "../utils/fs.js";
 
 /**
  * Outbound HTTP call site detected in frontend/TS code — the consumer half of
@@ -148,7 +149,7 @@ export function analyzeApiCalls(
   const allCalls: ApiCall[] = [];
   for (const sf of sourceFiles) {
     if (sf.isDeclarationFile) continue;
-    const relPath = relative(projectRoot, sf.fileName).split(sep).join("/");
+    const relPath = toPosixPath(relative(projectRoot, sf.fileName));
     allCalls.push(...extractApiCalls(sf, relPath));
   }
 

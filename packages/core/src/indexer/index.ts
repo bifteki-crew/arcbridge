@@ -27,7 +27,7 @@ import { indexPythonTreeSitter } from "./python/indexer.js";
 import { indexGoTreeSitter } from "./go/indexer.js";
 import { indexPackageDependencies } from "./package-deps.js";
 import { loadConfig } from "../config/loader.js";
-import { resolveWithin } from "../utils/fs.js";
+import { resolveWithin, toPosixPath } from "../utils/fs.js";
 
 export type ProjectLanguage = "typescript" | "csharp" | "python" | "go" | "auto";
 export type CSharpBackend = "roslyn" | "tree-sitter";
@@ -273,6 +273,9 @@ export async function indexConfiguredProject(
         language: "typescript",
         // Scan this package's own manifest, not the repo root's
         manifestDir: serviceDir,
+        // Sources come from tsconfig, but convention-based analysis (Next.js
+        // app/ routes, middleware) has to look inside the service directory.
+        scanRoot: serviceDir,
       });
       results.push({ ...result, service: svc.name });
       continue;
@@ -417,7 +420,7 @@ function indexTypeScriptProject(
   let filesSkipped = 0;
 
   for (const sf of sourceFiles) {
-    const relPath = relative(projectRoot, sf.fileName);
+    const relPath = toPosixPath(relative(projectRoot, sf.fileName));
     currentPaths.add(relPath);
 
     const hash = hashContent(sf.getFullText());
@@ -464,7 +467,7 @@ function indexTypeScriptProject(
   // Clear existing dependencies for changed files (already done in removeScopedSymbolsForFiles)
   // Now extract fresh dependencies from all source files
   const allDeps = sourceFiles.flatMap((sf) => {
-    const relPath = relative(projectRoot, sf.fileName);
+    const relPath = toPosixPath(relative(projectRoot, sf.fileName));
     return extractDependencies(sf, checker, relPath, projectRoot, lookup);
   });
 
@@ -481,8 +484,17 @@ function indexTypeScriptProject(
   const allClient = projectType ? CLIENT_ONLY_TEMPLATES.has(projectType) : false;
   const componentsAnalyzed = analyzeComponents(sourceFiles, checker, projectRoot, db, allClient, service);
 
-  // 9. Analyze Next.js routes (populates routes table)
-  const routesAnalyzed = analyzeRoutes(projectRoot, db, service);
+  // 9. Analyze Next.js routes (populates routes table). Routes are discovered by
+  // directory convention rather than from tsconfig, so this needs the service's
+  // OWN root: a Next app at frontend/app/ is invisible when scanning the repo
+  // root. Stored route IDs stay projectRoot-relative for cross-service
+  // uniqueness, matching how symbol IDs work.
+  const routesAnalyzed = analyzeRoutes(
+    options.scanRoot ?? projectRoot,
+    db,
+    service,
+    projectRoot,
+  );
 
   // 10. Detect outbound fetch/axios call sites — the consumer half of
   // endpoint contracts (compared against `routes` by drift detection)
