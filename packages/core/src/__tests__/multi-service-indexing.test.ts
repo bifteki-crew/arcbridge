@@ -12,6 +12,7 @@ import { initializeSchema } from "../db/schema.js";
 import { indexCSharpTreeSitter } from "../indexer/csharp/indexer.js";
 import { indexConfiguredProject } from "../indexer/index.js";
 import { detectDrift } from "../drift/detector.js";
+import { analyzeRoutes } from "../indexer/route-analyzer.js";
 
 let db: Database;
 let repoRoot: string;
@@ -276,5 +277,25 @@ describe("Next.js route analysis in a monorepo service", () => {
 
     expect(apiRoutes.map((r) => r.service)).toEqual(["admin", "web"]);
     expect(new Set(apiRoutes.map((r) => r.id)).size).toBe(2);
+  });
+});
+
+describe("analyzeRoutes containment", () => {
+  it("rejects a scanRoot outside the path root", () => {
+    // Route IDs are stored relative to pathRoot; a scanRoot outside it would
+    // produce ".." IDs and walk files outside the project.
+    expect(() => analyzeRoutes(join(repoRoot, "..", "elsewhere"), db, "svc", repoRoot)).toThrow(
+      /escapes containment root/,
+    );
+  });
+
+  it("allows a scanRoot nested inside the path root", () => {
+    mkdirSync(join(repoRoot, "frontend", "app"), { recursive: true });
+    writeFileSync(
+      join(repoRoot, "frontend", "app", "page.tsx"),
+      "export default function P() { return null; }\n",
+      "utf-8",
+    );
+    expect(analyzeRoutes(join(repoRoot, "frontend"), db, "svc", repoRoot)).toBe(1);
   });
 });

@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
+import { resolveWithin } from "../utils/fs.js";
 
 export interface ExtractedRoute {
   id: string;
@@ -41,6 +42,12 @@ export function analyzeRoutes(
   service: string = "main",
   pathRoot: string = scanRoot,
 ): number {
+  // A scanRoot outside pathRoot would emit route IDs containing ".." segments,
+  // breaking the repo-relative uniqueness invariant, and would walk files
+  // outside the project. Callers pass service dirs that resolveWithin already
+  // validated; this keeps a future caller honest. Throws on escape.
+  resolveWithin(pathRoot, relative(pathRoot, scanRoot));
+
   // Check app/ first, then src/app/ (common Next.js convention)
   let appDir = join(scanRoot, "app");
   try {
