@@ -4,50 +4,17 @@
  * MCP tools use, against a fully indexed .NET project.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
-import { existsSync } from "node:fs";
 import type { Database } from "../db/connection.js";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import { indexProject } from "../indexer/index.js";
 import { detectDrift } from "../drift/detector.js";
+import { dotnetReady } from "./helpers/dotnet-ready.js";
 
 const FIXTURE_DIR = resolve(__dirname, "fixtures/dotnet-project");
 
-const indexerProject = resolve(
-  __dirname,
-  "../../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj",
-);
-
-const hasDotnet = (() => {
-  try {
-    execFileSync("dotnet", ["--version"], { encoding: "utf-8" });
-    return true;
-  } catch {
-    return false;
-  }
-})();
-
-const isReady = (() => {
-  if (!hasDotnet || !existsSync(indexerProject)) return false;
-  try {
-    execFileSync("dotnet", ["build", indexerProject], {
-      encoding: "utf-8",
-      timeout: 120_000,
-    });
-    execFileSync("dotnet", ["build"], {
-      encoding: "utf-8",
-      cwd: FIXTURE_DIR,
-      timeout: 120_000,
-    });
-    return true;
-  } catch {
-    return false;
-  }
-})();
-
-const describeIfDotnet = isReady ? describe : describe.skip;
+const describeIfDotnet = dotnetReady(__dirname) ? describe : describe.skip;
 
 describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => {
   let db: Database;

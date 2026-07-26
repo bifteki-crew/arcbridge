@@ -27,17 +27,25 @@ const TS_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js"];
 
 /**
  * Analyze the Next.js app/ directory and populate the routes table.
+ *
+ * Next.js routes are discovered by *directory convention*, not from tsconfig, so
+ * a monorepo service needs its own scan root: with `services: [{path: frontend,
+ * type: nextjs}]`, the app lives at `frontend/app/` and scanning the repo root
+ * finds nothing. `scanRoot` is where app/ is looked for; `pathRoot` is what
+ * stored route IDs stay relative to (the repo root), keeping IDs unique across
+ * services the same way symbol IDs do. They coincide for a single-package repo.
  */
 export function analyzeRoutes(
-  projectRoot: string,
+  scanRoot: string,
   db: Database,
   service: string = "main",
+  pathRoot: string = scanRoot,
 ): number {
   // Check app/ first, then src/app/ (common Next.js convention)
-  let appDir = join(projectRoot, "app");
+  let appDir = join(scanRoot, "app");
   try {
     if (!existsSync(appDir) || !statSync(appDir).isDirectory()) {
-      appDir = join(projectRoot, "src", "app");
+      appDir = join(scanRoot, "src", "app");
       if (!existsSync(appDir) || !statSync(appDir).isDirectory()) {
         return 0;
       }
@@ -49,9 +57,10 @@ export function analyzeRoutes(
   const routes: ExtractedRoute[] = [];
   const layoutStack: string[] = [];
 
-  // Check for root middleware
+  // Check for root middleware — middleware.ts sits beside app/, i.e. at the
+  // service root, not the repo root.
   for (const ext of TS_EXTENSIONS) {
-    const middlewarePath = join(projectRoot, `middleware${ext}`);
+    const middlewarePath = join(scanRoot, `middleware${ext}`);
     if (existsSync(middlewarePath)) {
       routes.push({
         id: `route::middleware`,
@@ -66,7 +75,7 @@ export function analyzeRoutes(
     }
   }
 
-  walkAppDir(appDir, "/", routes, layoutStack, service, projectRoot);
+  walkAppDir(appDir, "/", routes, layoutStack, service, pathRoot);
 
   // Write to database
   writeRoutes(db, routes, service);
@@ -79,7 +88,7 @@ function walkAppDir(
   routes: ExtractedRoute[],
   layoutStack: string[],
   service: string,
-  projectRoot: string,
+  pathRoot: string,
 ): void {
   let entries: string[];
   try {
@@ -97,7 +106,7 @@ function walkAppDir(
     for (const ext of TS_EXTENSIONS) {
       const filePath = join(dir, `${convention}${ext}`);
       if (existsSync(filePath)) {
-        const relPath = relative(projectRoot, dir);
+        const relPath = relative(pathRoot, dir);
         const routeId = `route::${relPath}/${convention}`;
 
         const route: ExtractedRoute = {
@@ -139,7 +148,7 @@ function walkAppDir(
     if (entry.startsWith(".") || entry.startsWith("@") || entry === "node_modules") continue;
 
     const childPath = buildRoutePath(routePath, entry);
-    walkAppDir(fullPath, childPath, routes, [...layoutStack], service, projectRoot);
+    walkAppDir(fullPath, childPath, routes, [...layoutStack], service, pathRoot);
   }
 }
 

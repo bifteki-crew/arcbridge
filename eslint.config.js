@@ -27,6 +27,9 @@ export default tseslint.config(
       "**/node_modules/",
       "**/*.config.ts",
       "**/*.config.js",
+      // Test-harness setup, same category as the configs above: referenced by
+      // vitest.config.ts rather than by any package's tsconfig project.
+      "**/vitest.global-setup.ts",
       "packages/bench/corpus/",
     ],
   },

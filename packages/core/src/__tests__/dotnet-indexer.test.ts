@@ -1,56 +1,22 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { execFileSync } from "node:child_process";
 import { resolve, join } from "node:path";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import type { Database } from "../db/connection.js";
 import { openMemoryDatabase } from "../db/connection.js";
 import { initializeSchema } from "../db/schema.js";
 import { indexProject, detectProjectLanguage, discoverDotnetServices } from "../indexer/index.js";
 import { parseSolutionProjects } from "../indexer/dotnet-indexer.js";
 import { hashContent } from "../indexer/content-hash.js";
+import { dotnetReady } from "./helpers/dotnet-ready.js";
 
 const FIXTURE_DIR = resolve(
   __dirname,
   "fixtures/dotnet-project",
 );
 
-// Skip all tests if .NET SDK is not available
-const hasDotnet = (() => {
-  try {
-    execFileSync("dotnet", ["--version"], { encoding: "utf-8" });
-    return true;
-  } catch {
-    return false;
-  }
-})();
-
-// Pre-build the indexer so tests don't timeout waiting for compilation
-const indexerProject = resolve(
-  __dirname,
-  "../../../dotnet-indexer/ArcBridge.DotnetIndexer.csproj",
-);
-const hasIndexer = existsSync(indexerProject);
-
-// Pre-build both projects before running tests
-const isReady = (() => {
-  if (!hasDotnet || !hasIndexer) return false;
-  try {
-    execFileSync("dotnet", ["build", indexerProject], {
-      encoding: "utf-8",
-      timeout: 120_000,
-    });
-    execFileSync("dotnet", ["build"], {
-      encoding: "utf-8",
-      cwd: FIXTURE_DIR,
-      timeout: 120_000,
-    });
-    return true;
-  } catch {
-    return false;
-  }
-})();
-
-const describeIfDotnet = isReady ? describe : describe.skip;
+// The .NET indexer and this fixture are built once by vitest.global-setup.ts;
+// this only checks readiness, and says so out loud when it isn't ready.
+const describeIfDotnet = dotnetReady(__dirname) ? describe : describe.skip;
 
 describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
   let db: Database;

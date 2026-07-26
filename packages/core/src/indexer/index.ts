@@ -273,6 +273,9 @@ export async function indexConfiguredProject(
         language: "typescript",
         // Scan this package's own manifest, not the repo root's
         manifestDir: serviceDir,
+        // Sources come from tsconfig, but convention-based analysis (Next.js
+        // app/ routes, middleware) has to look inside the service directory.
+        scanRoot: serviceDir,
       });
       results.push({ ...result, service: svc.name });
       continue;
@@ -481,8 +484,17 @@ function indexTypeScriptProject(
   const allClient = projectType ? CLIENT_ONLY_TEMPLATES.has(projectType) : false;
   const componentsAnalyzed = analyzeComponents(sourceFiles, checker, projectRoot, db, allClient, service);
 
-  // 9. Analyze Next.js routes (populates routes table)
-  const routesAnalyzed = analyzeRoutes(projectRoot, db, service);
+  // 9. Analyze Next.js routes (populates routes table). Routes are discovered by
+  // directory convention rather than from tsconfig, so this needs the service's
+  // OWN root: a Next app at frontend/app/ is invisible when scanning the repo
+  // root. Stored route IDs stay projectRoot-relative for cross-service
+  // uniqueness, matching how symbol IDs work.
+  const routesAnalyzed = analyzeRoutes(
+    options.scanRoot ?? projectRoot,
+    db,
+    service,
+    projectRoot,
+  );
 
   // 10. Detect outbound fetch/axios call sites — the consumer half of
   // endpoint contracts (compared against `routes` by drift detection)
