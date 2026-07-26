@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
-import { resolveWithin } from "../utils/fs.js";
+import { resolveWithin, toPosixPath } from "../utils/fs.js";
 
 export interface ExtractedRoute {
   id: string;
@@ -113,7 +113,7 @@ function walkAppDir(
     for (const ext of TS_EXTENSIONS) {
       const filePath = join(dir, `${convention}${ext}`);
       if (existsSync(filePath)) {
-        const relPath = relative(pathRoot, dir);
+        const relPath = toPosixPath(relative(pathRoot, dir));
         const routeId = `route::${relPath}/${convention}`;
 
         const route: ExtractedRoute = {

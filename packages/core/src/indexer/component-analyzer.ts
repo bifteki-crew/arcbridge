@@ -3,6 +3,7 @@ import { relative } from "node:path";
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
 import { containsJsx } from "./react-utils.js";
+import { toPosixPath } from "../utils/fs.js";
 
 export interface ComponentInfo {
   symbolId: string;
@@ -149,7 +150,7 @@ export function analyzeComponents(
   const components: ComponentInfo[] = [];
 
   for (const sf of sourceFiles) {
-    const relPath = relative(projectRoot, sf.fileName);
+    const relPath = toPosixPath(relative(projectRoot, sf.fileName));
     const directive = getFileDirective(sf);
     // In client-only frameworks (react-vite), all components are client
     const isClient = allClient || directive === "use client";

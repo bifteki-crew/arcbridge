@@ -27,7 +27,7 @@ import { indexPythonTreeSitter } from "./python/indexer.js";
 import { indexGoTreeSitter } from "./go/indexer.js";
 import { indexPackageDependencies } from "./package-deps.js";
 import { loadConfig } from "../config/loader.js";
-import { resolveWithin } from "../utils/fs.js";
+import { resolveWithin, toPosixPath } from "../utils/fs.js";
 
 export type ProjectLanguage = "typescript" | "csharp" | "python" | "go" | "auto";
 export type CSharpBackend = "roslyn" | "tree-sitter";
@@ -420,7 +420,7 @@ function indexTypeScriptProject(
   let filesSkipped = 0;
 
   for (const sf of sourceFiles) {
-    const relPath = relative(projectRoot, sf.fileName);
+    const relPath = toPosixPath(relative(projectRoot, sf.fileName));
     currentPaths.add(relPath);
 
     const hash = hashContent(sf.getFullText());
@@ -467,7 +467,7 @@ function indexTypeScriptProject(
   // Clear existing dependencies for changed files (already done in removeScopedSymbolsForFiles)
   // Now extract fresh dependencies from all source files
   const allDeps = sourceFiles.flatMap((sf) => {
-    const relPath = relative(projectRoot, sf.fileName);
+    const relPath = toPosixPath(relative(projectRoot, sf.fileName));
     return extractDependencies(sf, checker, relPath, projectRoot, lookup);
   });
 

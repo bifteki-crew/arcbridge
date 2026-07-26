@@ -39,9 +39,15 @@ export default async function setup(): Promise<void> {
       execFileSync("dotnet", args, { encoding: "utf-8", cwd, timeout: 180_000 });
     } catch (err) {
       // Loud on purpose: a skipped Roslyn suite must never look like a pass.
+      // execFileSync's message is just "Command failed" — the compiler output is
+      // on stdout/stderr, so include it or the skip is undiagnosable in CI.
+      const e = err as { message?: string; stdout?: string | Buffer; stderr?: string | Buffer };
+      const detail = [e.message, e.stdout?.toString(), e.stderr?.toString()]
+        .filter((part) => part && part.trim().length > 0)
+        .join("\n");
       console.warn(
         `[dotnet] building the ${label} failed — Roslyn-backed suites will be SKIPPED.\n` +
-          (err instanceof Error ? err.message : String(err)),
+          (detail || String(err)),
       );
       return;
     }
