@@ -52,6 +52,20 @@ export interface PreppedFixture {
  * design), so the caller inspects the step rather than assuming ok === success.
  */
 export function prepFixture(member: CorpusMember): PreppedFixture {
+  if (member.kind === "live") {
+    // Measured in place: no copy, and NO `init`/`adopt` — the model is
+    // hand-maintained and adopt would overwrite it. Only `drift --reindex`
+    // runs, refreshing the gitignored derived index.db.
+    return {
+      member,
+      projectRoot: member.root,
+      steps: [runCli(["drift", "--reindex", "--json"], member.root)],
+      cleanup() {
+        // Deliberately empty — this is a real working tree, never delete it.
+      },
+    };
+  }
+
   const projectRoot = mkdtempSync(join(tmpdir(), `arcbridge-bench-${member.name}-`));
   cpSync(member.sourceDir, projectRoot, { recursive: true });
 

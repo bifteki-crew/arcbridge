@@ -1,6 +1,7 @@
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { readFileSync, statSync, existsSync } from "node:fs";
+import { join } from "node:path";
 import { parse } from "yaml";
+import { openDatabase } from "@arcbridge/core";
 import { countTokens, sumTokens } from "./tokenizer.js";
 import { createDriver } from "./mcp-driver.js";
 import { prepFixture, type CliStep } from "./prep.js";
@@ -8,6 +9,8 @@ import { CORPUS, type CorpusMember, type Question } from "./corpus.js";
 
 export interface QuestionResult {
   fixture: string;
+  /** "live" = a real repo; "fixture" = a small pinned fixture (scale caveat). */
+  memberKind: "fixture" | "live";
   questionId: string;
   label: string;
   kind: Question["kind"];
@@ -22,6 +25,7 @@ export interface QuestionResult {
 
 export interface FixtureResult {
   fixture: string;
+  memberKind: "fixture" | "live";
   steps: CliStep[];
   questions: QuestionResult[];
 }
@@ -31,25 +35,46 @@ interface SourceFile {
   content: string;
 }
 
-/** All indexable source files under the fixture's src/ tree. */
+/**
+ * The baseline file set: exactly the files ArcBridge indexed, read from the
+ * project's own index.db. This is the honest comparison set — it's the code an
+ * agent would have to read to answer the same question — and, unlike a
+ * hardcoded src/ walk, it works for any project shape: a monorepo's per-package
+ * source trees, a Next.js app dir, a .NET project tree.
+ */
 function listSourceFiles(projectRoot: string): SourceFile[] {
-  const srcRoot = join(projectRoot, "src");
-  const out: SourceFile[] = [];
-  const walk = (dir: string): void => {
-    for (const entry of readdirSync(dir)) {
-      const full = join(dir, entry);
-      if (statSync(full).isDirectory()) {
-        walk(full);
-      } else if (/\.(ts|tsx)$/.test(entry)) {
-        // Normalize to forward slashes so baseline matching lines up with the
-        // YAML code_paths (which always use `/`), including on Windows.
-        const rel = relative(projectRoot, full).split(sep).join("/");
-        out.push({ rel, content: readFileSync(full, "utf-8") });
-      }
+  const dbPath = join(projectRoot, ".arcbridge", "index.db");
+  // Fail loudly. An empty baseline is indistinguishable from "no saving to
+  // measure" once it reaches the report (baselineTokens=0 renders as n/a), so a
+  // broken prep step would quietly look like a legitimate result.
+  if (!existsSync(dbPath)) {
+    throw new Error(
+      `No index at ${dbPath} — prep did not produce an index. ` +
+        `Check the drift --reindex step for this member.`,
+    );
+  }
+  const db = openDatabase(dbPath);
+  try {
+    const rows = db
+      .prepare("SELECT DISTINCT file_path FROM symbols ORDER BY file_path")
+      .all() as { file_path: string }[];
+    if (rows.length === 0) {
+      throw new Error(
+        `Index at ${dbPath} contains no symbols — nothing was indexed, so any ` +
+          `"saving" would be measured against an empty baseline.`,
+      );
     }
-  };
-  if (existsSync(srcRoot)) walk(srcRoot);
-  return out;
+    const out: SourceFile[] = [];
+    for (const { file_path } of rows) {
+      // Stored paths are project-relative with forward slashes
+      const full = join(projectRoot, ...file_path.split("/"));
+      if (!existsSync(full) || statSync(full).isDirectory()) continue;
+      out.push({ rel: file_path, content: readFileSync(full, "utf-8") });
+    }
+    return out;
+  } finally {
+    db.close();
+  }
 }
 
 interface YamlBlock {
@@ -98,6 +123,7 @@ async function runQuestion(
 ): Promise<QuestionResult> {
   const base = {
     fixture: member.name,
+    memberKind: member.kind,
     questionId: q.id,
     label: q.label,
     kind: q.kind,
@@ -191,7 +217,7 @@ export async function runTokenProxy(): Promise<FixtureResult[]> {
       for (const q of member.questions) {
         questions.push(await runQuestion(member, q, prepped.projectRoot, files, driver.call));
       }
-      results.push({ fixture: member.name, steps: prepped.steps, questions });
+      results.push({ fixture: member.name, memberKind: member.kind, steps: prepped.steps, questions });
     } finally {
       await driver.close();
       prepped.cleanup();

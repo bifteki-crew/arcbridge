@@ -36,14 +36,27 @@ Committed fixtures under `corpus/`, spanning shapes that exercise different code
 paths. Each is copied to a temp dir and prepped fresh per run (nothing mutates the
 committed tree):
 
-| Fixture | Template | Shape |
+| Member | Kind | Shape |
 |---|---|---|
-| `ts-api` | `api-service` | TS backend — lib / routes / middleware |
-| `ts-frontend` | `react-vite` | TS frontend — components / hooks / lib |
+| `ts-api` | fixture | TS backend — lib / routes / middleware |
+| `ts-frontend` | fixture | TS frontend — components / hooks / lib |
+| `arcbridge-self` | **live** | This repo — a real TS monorepo with realistic file sizes |
 
-Follow-ups (see the roadmap): add a fullstack/monorepo fixture (needed for the
-0.12.0 contract work anyway) and at least one **real, larger repo** — the current
-fixtures are small, which understates the symbol-lookup case (below).
+**Fixtures** are copied to a temp dir and put through `init` → `adopt --apply` →
+`drift --reindex`. **Live** members are measured *in place* against their existing
+committed model: nothing is copied, `adopt` is never run (it would overwrite a
+hand-maintained model), and cleanup is a deliberate no-op. Live members are
+token-proxy only — the smoke layer exercises the adoption pipeline, which live
+repos don't run, and this repo's own drift is already gated by CI's `check` job.
+
+Why a live member matters: the fixtures' baselines are under 1k tokens, so their
+absolute numbers aren't credible and the single-symbol case measures *negative*
+(a rich tool response exceeds reading a 2-line file). Adding this repo fixed
+both — the same symbol question measures **+97.8%** against ~48k tokens of real
+code. Known blind spot: this repo is library/CLI code, so it validates
+*magnitude* but not *shape* — it never exercises routes, components, or
+cross-service DTOs. A purpose-built fullstack example is the next corpus
+addition.
 
 ## Methodology (token proxy)
 
@@ -58,15 +71,14 @@ fixtures are small, which understates the symbol-lookup case (below).
 
 ## Reading the numbers (honest caveats)
 
-- **Structure/navigation (~90%+) is the load-bearing result** — understanding a
-  codebase's layout otherwise means reading everything; ArcBridge answers it with a
-  compact building-block map.
-- **Single-symbol lookup is negative on the current tiny fixtures**, and that's an
-  artifact, not a regression: `query_symbols` returns the symbol's source *plus* its
-  signature, caller/callee graph, and owning block — richer than reading a 2-line
-  file with one caller. On realistically-sized files with callers spread across many
-  files (where an agent greps-and-reads several candidates), the same response wins.
-  A larger real repo in the corpus is the fix.
-- `adopt` yields one coarse block on these small single-service trees, so the
-  "module detail" number is closer to "whole-project detail" here; it separates out
-  on larger, multi-module projects.
+- **Quote the real-repository numbers.** The report separates live repos from
+  fixtures precisely so the fixture artifacts aren't averaged into a headline.
+- **Structure/navigation is an upper bound.** Its baseline is "read every indexed
+  file" — the worst case, not typical agent behaviour (a real agent would skim a
+  README or list directories first). The ratio is real; don't read 99% as a
+  typical session saving.
+- **Targeted questions are the defensible claim.** One module or one symbol costs
+  ~1k tokens through ArcBridge versus tens or hundreds of thousands to read the
+  relevant code.
+- **The fixtures' negative symbol number is a scale artifact, not a regression** —
+  the identical question inverts to ~+98% on a real repo.
