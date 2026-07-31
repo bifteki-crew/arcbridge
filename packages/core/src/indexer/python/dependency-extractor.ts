@@ -1,4 +1,5 @@
 import type { ExtractedDependency, DependencyKind } from "../dependency-extractor.js";
+import { resolveTargets } from "../name-resolution.js";
 
 /** Minimum fields needed from symbols for dependency extraction */
 export interface SymbolForDeps {
@@ -115,8 +116,7 @@ function extractInheritanceDeps(
     const baseName = extractSimpleTypeName(child);
     if (!baseName || baseName === className) continue;
 
-    const targetIds = lookup.get(baseName);
-    if (!targetIds) continue;
+    const targetIds = resolveTargets(baseName, lookup, sourceSymbol);
 
     for (const targetId of targetIds) {
       if (targetId === sourceSymbol.id) continue;
@@ -141,8 +141,7 @@ function extractCallDeps(
   const enclosing = findEnclosingFunctionForNode(node, fileSymbols);
   if (!enclosing) return;
 
-  const targetIds = lookup.get(calledName);
-  if (!targetIds) return;
+  const targetIds = resolveTargets(calledName, lookup, enclosing);
 
   for (const targetId of targetIds) {
     if (targetId === enclosing.id) continue;
@@ -167,8 +166,7 @@ function extractTypeAnnotationDeps(
   if (!enclosing) return;
 
   for (const typeName of typeNames) {
-    const targetIds = lookup.get(typeName);
-    if (!targetIds) continue;
+    const targetIds = resolveTargets(typeName, lookup, enclosing);
 
     for (const targetId of targetIds) {
       if (targetId === enclosing.id) continue;
