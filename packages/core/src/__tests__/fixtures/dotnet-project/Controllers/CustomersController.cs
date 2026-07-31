@@ -43,6 +43,21 @@ public class CustomersController : ControllerBase
     /// No DTO anywhere — must stay null instead of inventing a framework type.
     [HttpDelete("{id}")]
     public IActionResult Delete(int id) => NoContent();
+
+    /// Two DTOs inside ONE return expression. The returns disagree just as much
+    /// as separate branches would, so this must yield nothing.
+    [HttpGet("either")]
+    public IActionResult GetEither(bool flag)
+        => flag ? Ok(new CustomerDto { Id = 1, FullName = "Ada" }) : Ok(new CustomerSummaryDto { Id = 1 });
+
+    /// The everyday ASP.NET create: an anonymous route-value object appears
+    /// BEFORE the payload in source order, so it must not be mistaken for it.
+    [HttpPost]
+    public IActionResult Create()
+    {
+        var created = new CustomerDto { Id = 7, FullName = "Edsger" };
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+    }
 }
 
 public class CustomerDto

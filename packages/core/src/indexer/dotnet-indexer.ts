@@ -365,7 +365,8 @@ export function indexDotnetProjectRoslyn(
 
   // The .NET tool versions independently of this npm package, so an outdated
   // global tool would emit routes with no response types and field-level
-  // contract checks would just go quiet. Say so once, with the fix.
+  // contract checks would just go quiet. Warn per indexed .NET service (so a
+  // multi-service repo repeats it once per service, not once per route).
   if (output.routes.length > 0 && !output.capabilities?.includes("responseType")) {
     logWarn(
       "The installed arcbridge-dotnet-indexer predates response-type extraction, " +

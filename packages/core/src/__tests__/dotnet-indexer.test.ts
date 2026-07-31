@@ -379,6 +379,19 @@ describeIfDotnet("Roslyn response_type extraction", { timeout: 60_000 }, () => {
   it("resolves an inline lambda handler", () => {
     expect(responseTypeFor("/api/invoices", "POST")).toBe("InvoiceDto");
   });
+
+  it("ignores an anonymous route-value object in CreatedAtAction", () => {
+    // `CreatedAtAction(nameof(GetById), new { id }, created)` — the standard
+    // ASP.NET create. The anonymous object precedes the payload in source order,
+    // and was previously reported as the response type.
+    expect(responseTypeFor("/api/customers", "POST")).toBe("CustomerDto");
+  });
+
+  it("stays silent when ONE return expression holds two different DTOs", () => {
+    // `flag ? Ok(new CustomerDto()) : Ok(new CustomerSummaryDto())` disagrees with
+    // itself exactly as much as two separate return statements would.
+    expect(responseTypeFor("/api/customers/either", "GET")).toBeNull();
+  });
 });
 
 // The .NET tool is distributed separately from the npm packages, so a user can

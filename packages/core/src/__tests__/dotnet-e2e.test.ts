@@ -342,9 +342,11 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
       expect(route).toBeDefined();
       expect(route!.has_auth).toBe(1); // Agent sees it requires auth
 
-      // Step 2: Agent searches for the handler symbol
+      // Step 2: Agent searches for the handler symbol. Qualified by controller —
+      // several controllers declare Create, so a bare name match returned
+      // whichever row happened to be inserted first.
       const handler = db
-        .prepare("SELECT * FROM symbols WHERE name = 'Create' AND file_path LIKE 'Controllers/%'")
+        .prepare("SELECT * FROM symbols WHERE qualified_name LIKE '%OrdersController.Create'")
         .get() as { id: string; file_path: string; start_line: number; signature: string } | undefined;
 
       expect(handler).toBeDefined();

@@ -83,11 +83,11 @@ public static class ResponseTypeResolver
     {
         if (body is null) return null;
 
-        var candidates = new List<ITypeSymbol>();
+        var returned = new List<ExpressionSyntax>();
 
         if (body is ExpressionSyntax expressionBody)
         {
-            AddCandidate(expressionBody, model, candidates);
+            returned.Add(expressionBody);
         }
         else
         {
@@ -96,8 +96,18 @@ public static class ResponseTypeResolver
                 // Skip returns inside nested lambdas/local functions — those belong
                 // to the inner callable, not to this endpoint.
                 if (BelongsToNestedFunction(statement, body)) continue;
-                if (statement.Expression is not null) AddCandidate(statement.Expression, model, candidates);
+                if (statement.Expression is not null) returned.Add(statement.Expression);
             }
+        }
+
+        var candidates = new List<ITypeSymbol>();
+        foreach (var expression in returned)
+        {
+            var dto = ResolveDto(expression, model, out var ambiguous);
+            // A single return can disagree with itself — `flag ? Ok(a) : Ok(b)` —
+            // which is no less ambiguous than two separate return statements.
+            if (ambiguous) return null;
+            if (dto is not null) candidates.Add(dto);
         }
 
         if (candidates.Count == 0) return null;
@@ -111,30 +121,62 @@ public static class ResponseTypeResolver
     }
 
     /// <summary>
-    /// Record the DTO a single returned expression yields. The expression's own
-    /// type is preferred; failing that — `Ok(dto)`, `Results.Ok(dto)`,
+    /// The DTO a single returned expression yields. The expression's own type is
+    /// preferred; failing that — `Ok(dto)`, `Results.Ok(dto)` and
     /// `CreatedAtAction(nameof(Get), new { id }, dto)` all have a framework type —
-    /// the first DTO-shaped type inside it is used. Anonymous route-value objects
-    /// aren't DTO-shaped, so they're skipped rather than mistaken for the payload.
+    /// the search widens one nesting level at a time.
+    ///
+    /// Level order matters, and taking the first match in document order does not
+    /// work. In `Ok(order.Customer)` both `order.Customer` and `order` are DTOs,
+    /// but the shallower one is the payload; whereas in
+    /// `flag ? Ok(a) : Ok(b)` the two DTOs sit at the SAME level and genuinely
+    /// disagree. Searching level by level distinguishes those: one distinct type
+    /// at the shallowest level that has any is the answer, more than one is
+    /// ambiguous.
     /// </summary>
-    private static void AddCandidate(ExpressionSyntax expression, SemanticModel model, List<ITypeSymbol> into)
+    private static ITypeSymbol? ResolveDto(ExpressionSyntax expression, SemanticModel model, out bool ambiguous)
     {
-        var type = model.GetTypeInfo(expression).Type;
-        if (type is not null && DescribesDto(type))
+        ambiguous = false;
+
+        var ownType = model.GetTypeInfo(expression).Type;
+        if (ownType is not null && DescribesDto(ownType)) return ownType;
+
+        var level = new List<SyntaxNode> { expression };
+        while (level.Count > 0)
         {
-            into.Add(type);
-            return;
+            var next = new List<SyntaxNode>();
+            var found = new List<ITypeSymbol>();
+
+            foreach (var node in level)
+            {
+                foreach (var child in node.ChildNodes())
+                {
+                    if (child is ExpressionSyntax childExpression)
+                    {
+                        var type = model.GetTypeInfo(childExpression).Type;
+                        if (type is not null && DescribesDto(type))
+                        {
+                            if (!found.Any(f => SymbolEqualityComparer.Default.Equals(f, type)))
+                                found.Add(type);
+                            // Don't descend past a match: nested types belong to it.
+                            continue;
+                        }
+                    }
+                    next.Add(child);
+                }
+            }
+
+            if (found.Count == 1) return found[0];
+            if (found.Count > 1)
+            {
+                ambiguous = true;
+                return null;
+            }
+
+            level = next;
         }
 
-        foreach (var inner in expression.DescendantNodes().OfType<ExpressionSyntax>())
-        {
-            var innerType = model.GetTypeInfo(inner).Type;
-            if (innerType is not null && DescribesDto(innerType))
-            {
-                into.Add(innerType);
-                return;
-            }
-        }
+        return null;
     }
 
     private static bool BelongsToNestedFunction(SyntaxNode statement, SyntaxNode body)
@@ -181,6 +223,15 @@ public static class ResponseTypeResolver
         // string/int/bool/object/void and friends carry no shape.
         if (type.SpecialType != SpecialType.None) return false;
         if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum))
+            return false;
+
+        // Anonymous types and tuples are Roslyn classes/structs in NO namespace, so
+        // the namespace filter below lets them through. `CreatedAtAction(nameof(Get),
+        // new { id }, dto)` — the standard ASP.NET create — puts an anonymous
+        // route-value object ahead of the payload, and it was being reported as the
+        // response type ("<anonymous type: int id>"). They are call-site plumbing,
+        // never a named contract a frontend can be checked against.
+        if (type is INamedTypeSymbol { IsAnonymousType: true } or INamedTypeSymbol { IsTupleType: true })
             return false;
 
         // Namespace-based rather than source-based on purpose: a DTO shared through
