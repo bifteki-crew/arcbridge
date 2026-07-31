@@ -13,7 +13,7 @@
  * The rule here is to narrow when there is local evidence and only fan out when
  * there is none:
  *
- *   1. Candidates declared by the SAME type as the caller win outright — a
+ *   1. Candidates in the caller's own declaring scope win outright — a
  *      self-call resolves to itself, never to a namesake elsewhere.
  *   2. Otherwise candidates in the SAME FILE win.
  *   3. Otherwise all candidates are kept. This is deliberate: a call to
@@ -41,9 +41,17 @@ function parseSymbolId(id: string): SymbolIdParts {
 }
 
 /**
- * The declaring type of a qualified name: `Acme.Orders.OrderService.GetById`
- * yields `Acme.Orders.OrderService`. Returns "" for a bare name, which then
- * matches nothing rather than matching every other bare name.
+ * Whatever a qualified name is declared *inside* — one segment up.
+ *
+ * What that means depends on the symbol, and both readings are wanted here:
+ *   - a member  `Acme.Orders.OrderService.GetById` -> `Acme.Orders.OrderService`
+ *     (its declaring type, so a self-call outranks a namesake elsewhere)
+ *   - a type    `Acme.Orders.OrderService`         -> `Acme.Orders`
+ *     (its namespace, which is the useful grouping when resolving a base type
+ *     during inheritance extraction)
+ *
+ * Returns "" for a bare name, which then matches nothing rather than matching
+ * every other bare name.
  */
 function declaringScope(qualifiedName: string): string {
   const lastDot = qualifiedName.lastIndexOf(".");
@@ -68,16 +76,19 @@ export function resolveTargets(
   const candidates = lookup.get(name);
   if (!candidates || candidates.length <= 1) return candidates ?? [];
 
+  // Parse each candidate once. This runs on the hot path for exactly the common
+  // names it exists to disambiguate, so re-parsing per filter pass would add
+  // cost precisely where the list is longest.
+  const parsed = candidates.map((id) => ({ id, ...parseSymbolId(id) }));
+
   const scope = declaringScope(parseSymbolId(from.id).qualifiedName);
   if (scope) {
-    const sameType = candidates.filter(
-      (id) => declaringScope(parseSymbolId(id).qualifiedName) === scope,
-    );
-    if (sameType.length > 0) return sameType;
+    const sameScope = parsed.filter((c) => declaringScope(c.qualifiedName) === scope);
+    if (sameScope.length > 0) return sameScope.map((c) => c.id);
   }
 
-  const sameFile = candidates.filter((id) => parseSymbolId(id).filePath === from.filePath);
-  if (sameFile.length > 0) return sameFile;
+  const sameFile = parsed.filter((c) => c.filePath === from.filePath);
+  if (sameFile.length > 0) return sameFile.map((c) => c.id);
 
   // No local evidence — an unqualified cross-file name genuinely is ambiguous.
   return candidates;
