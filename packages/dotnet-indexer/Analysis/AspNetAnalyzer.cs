@@ -94,6 +94,7 @@ public static class AspNetAnalyzer
 
                 var qualifiedName = $"{GetQualifiedName((INamedTypeSymbol)classSymbol)}.{methodSymbol.Name}";
                 var handlerSymbolId = SymbolIdGenerator.Generate(relativePath, qualifiedName, "function");
+                var responseType = ResponseTypeResolver.ForMethod(methodSymbol, model.Compilation);
 
                 foreach (var httpMethod in httpMethods)
                 {
@@ -106,6 +107,7 @@ public static class AspNetAnalyzer
                         HttpMethods = [httpMethod],
                         HasAuth = hasAuth,
                         HandlerSymbolId = handlerSymbolId,
+                        ResponseType = responseType,
                     });
                 }
             }
@@ -161,15 +163,27 @@ public static class AspNetAnalyzer
 
             // Try to resolve handler symbol from second argument
             string? handlerSymbolId = null;
+            string? responseType = null;
             var handlerArg = args[1].Expression;
-            var handlerSymbol = model.GetSymbolInfo(handlerArg).Symbol;
-            if (handlerSymbol is IMethodSymbol handlerMethod)
+
+            // Lambdas must be checked FIRST: GetSymbolInfo on a lambda also yields
+            // an IMethodSymbol, so the method branch below would claim it and then
+            // find no MethodDeclarationSyntax to read.
+            if (handlerArg is AnonymousFunctionExpressionSyntax lambda)
+            {
+                responseType = ResponseTypeResolver.ForLambda(lambda, model);
+            }
+            else if (ResolveHandlerMethod(handlerArg, model) is IMethodSymbol handlerMethod)
             {
                 var containingType = handlerMethod.ContainingType;
                 var qualifiedName = containingType is not null
                     ? $"{GetQualifiedName(containingType)}.{handlerMethod.Name}"
                     : handlerMethod.Name;
                 handlerSymbolId = SymbolIdGenerator.Generate(relativePath, qualifiedName, "function");
+                // Method-group handlers — MapGet("/users", GetUsers) — resolve here
+                // even when declared in another file. The tree-sitter backend can't
+                // do this, so those routes get endpoint-level checks only there.
+                responseType = ResponseTypeResolver.ForMethod(handlerMethod, model.Compilation);
             }
 
             var routeId = $"route::{fullRoute}::{httpVerb}";
@@ -181,6 +195,7 @@ public static class AspNetAnalyzer
                 HttpMethods = [httpVerb],
                 HasAuth = hasAuth,
                 HandlerSymbolId = handlerSymbolId,
+                ResponseType = responseType,
             });
         }
     }
@@ -343,6 +358,25 @@ public static class AspNetAnalyzer
     }
 
     #endregion
+
+    /// <summary>
+    /// Resolve a method-group handler argument — MapGet("/x", GetUsers) — to its
+    /// method symbol.
+    ///
+    /// A bare method-group reference has no single type, so GetSymbolInfo().Symbol
+    /// is null whenever more than one overload is in scope; the results land in
+    /// CandidateSymbols instead. Ignoring that is why method-group handlers looked
+    /// unresolvable. With several candidates the overloads may differ in return
+    /// type, so give up rather than pick one arbitrarily.
+    /// </summary>
+    private static IMethodSymbol? ResolveHandlerMethod(ExpressionSyntax handlerArg, SemanticModel model)
+    {
+        var info = model.GetSymbolInfo(handlerArg);
+        if (info.Symbol is IMethodSymbol resolved) return resolved;
+
+        var candidates = info.CandidateSymbols.OfType<IMethodSymbol>().ToList();
+        return candidates.Count == 1 ? candidates[0] : null;
+    }
 
     private static bool IsController(ClassDeclarationSyntax node, SemanticModel model)
     {

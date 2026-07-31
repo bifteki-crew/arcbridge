@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import type { Database } from "../db/connection.js";
 import { transaction } from "../db/connection.js";
 import { logWarn } from "../utils/log.js";
+import { unwrapToTypeName } from "../contracts/types.js";
 import type { IndexResult, ExtractedSymbol } from "./types.js";
 import type { ExtractedDependency } from "./dependency-extractor.js";
 import {
@@ -32,6 +33,13 @@ export interface DotnetIndexerOptions {
 
 /** JSON shape emitted by the .NET console app */
 interface DotnetIndexerOutput {
+  /**
+   * Extraction features this tool build supports. Absent on versions predating
+   * the field, which is exactly the signal we need: the .NET tool versions
+   * independently of this package, so "no response types" must be
+   * distinguishable from "tool too old to emit them".
+   */
+  capabilities?: string[];
   symbols: Array<{
     id: string;
     name: string;
@@ -62,6 +70,13 @@ interface DotnetIndexerOutput {
     httpMethods: string[];
     hasAuth: boolean;
     handlerSymbolId?: string;
+    /**
+     * Response DTO with simple names and generics intact, e.g.
+     * "Task<ActionResult<UserDto>>" — unwrapped here rather than in C# so both
+     * backends share one unwrap table. Absent from older tool versions, which
+     * simply leaves response_type null (field-level checks stay silent).
+     */
+    responseType?: string | null;
   }>;
   changedFiles: string[];
   removedFiles: string[];
@@ -348,6 +363,19 @@ export function indexDotnetProjectRoslyn(
     );
   }
 
+  // The .NET tool versions independently of this npm package, so an outdated
+  // global tool would emit routes with no response types and field-level
+  // contract checks would just go quiet. Warn per indexed .NET service (so a
+  // multi-service repo repeats it once per service, not once per route).
+  if (output.routes.length > 0 && !output.capabilities?.includes("responseType")) {
+    logWarn(
+      "The installed arcbridge-dotnet-indexer predates response-type extraction, " +
+        "so field-level contract checks will be skipped. Update it with " +
+        "`dotnet tool update -g arcbridge-dotnet-indexer`, or set " +
+        "`indexing.csharp_indexer: tree-sitter` in .arcbridge/config.yaml.",
+    );
+  }
+
   // Remove stale symbols for changed + removed files (scoped by service +
   // language). Tool output is solution-relative — re-base to stored paths.
   const filesToClean = [...output.changedFiles, ...output.removedFiles].map(addPrefix);
@@ -397,8 +425,8 @@ export function indexDotnetProjectRoslyn(
   // Write routes
   if (output.routes.length > 0) {
     const insertRoute = db.prepare(`
-      INSERT OR REPLACE INTO routes (id, route_path, kind, http_methods, has_auth, service)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO routes (id, route_path, kind, http_methods, has_auth, service, response_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
     transaction(db, () => {
@@ -412,6 +440,9 @@ export function indexDotnetProjectRoslyn(
           JSON.stringify(route.httpMethods),
           route.hasAuth ? 1 : 0,
           service,
+          // Unwrap here so both C# backends store the same shape: the resolver
+          // emits "Task<ActionResult<UserDto>>", the detector wants "UserDto".
+          route.responseType ? unwrapToTypeName(route.responseType) : null,
         );
       }
     });

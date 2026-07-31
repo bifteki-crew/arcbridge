@@ -21,4 +21,14 @@ public sealed class RouteInfo
 
     [JsonPropertyName("handlerSymbolId")]
     public string? HandlerSymbolId { get; set; }
+
+    /// <summary>
+    /// The response DTO, with simple names and generics intact
+    /// ("Task&lt;ActionResult&lt;UserDto&gt;&gt;"). The TypeScript side unwraps it — see
+    /// ResponseTypeResolver for why the shaping is left there. Null when no DTO
+    /// could be determined, which makes field-level contract checks stay silent
+    /// for that route rather than guess.
+    /// </summary>
+    [JsonPropertyName("responseType")]
+    public string? ResponseType { get; set; }
 }
