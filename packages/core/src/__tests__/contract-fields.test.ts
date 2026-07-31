@@ -10,6 +10,11 @@ import { extractApiCalls } from "../indexer/api-call-analyzer.js";
 import { indexConfiguredProject } from "../indexer/index.js";
 import { detectDrift } from "../drift/detector.js";
 import ts from "typescript";
+import { indexProject } from "../indexer/index.js";
+import { dotnetReady } from "./helpers/dotnet-ready.js";
+
+const FIXTURE_DIR = join(__dirname, "fixtures", "dotnet-project");
+const describeIfDotnet = dotnetReady(__dirname) ? describe : describe.skip;
 
 function parse(code: string): ts.SourceFile {
   return ts.createSourceFile("src/client.ts", code, ts.ScriptTarget.ES2022, true);
@@ -233,5 +238,86 @@ namespace Api.Controllers
     await indexBoth();
     const v = detectDrift(db).filter((e) => e.kind === "contract_violation");
     expect(v).toHaveLength(0);
+  });
+});
+
+// End-to-end proof of the claim this backend change makes: field-level contract
+// detection works through the ROSLYN backend, not only tree-sitter. Every test
+// above pins `csharp_indexer: tree-sitter`, which is precisely why the Roslyn
+// path could ship without response_type and stay green.
+//
+// The backend half indexes the real, restored .NET fixture (MSBuildWorkspace
+// needs a genuinely restorable project); the frontend half is a throwaway TS
+// project. They index under one database with distinct service names, which is
+// all the detector requires.
+describeIfDotnet("field-level contracts through the Roslyn backend", { timeout: 60_000 }, () => {
+  let db: Database;
+  let webRoot: string;
+
+  beforeEach(async () => {
+    db = openMemoryDatabase();
+    initializeSchema(db);
+    webRoot = mkdtempSync(join(tmpdir(), "arcbridge-roslyn-fe-"));
+
+    mkdirSync(join(webRoot, "src"), { recursive: true });
+    writeFileSync(
+      join(webRoot, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: { target: "ES2022", module: "ESNext", moduleResolution: "bundler", strict: true },
+        include: ["src/**/*"],
+      }),
+      "utf-8",
+    );
+    writeFileSync(join(webRoot, "package.json"), JSON.stringify({ name: "web" }), "utf-8");
+    // Against the fixture's `CustomerDto { int Id; string FullName; }`:
+    //   Id       — same name, number vs C# int is NOT a conflict → no violation
+    //   fullName — camelCase vs FullName                          → CASING
+    //   nickname — absent on the backend                          → MISSING
+    writeFileSync(
+      join(webRoot, "src", "types.ts"),
+      "export interface CustomerDto {\n  Id: number;\n  fullName: string;\n  nickname: string;\n}\n",
+      "utf-8",
+    );
+    writeFileSync(
+      join(webRoot, "src", "client.ts"),
+      [
+        'import type { CustomerDto } from "./types.js";',
+        "const apiClient = { get<T>(_u: string): Promise<T> { return null as unknown as Promise<T>; } };",
+        'export function loadCustomers() { return apiClient.get<CustomerDto>("/api/customers"); }',
+      ].join("\n"),
+      "utf-8",
+    );
+
+    // Backend through Roslyn — the response type here is INFERRED from the body
+    // (`IActionResult` + `return Ok(new CustomerDto(...))`), so this also proves
+    // inference feeds the detector, not just declared signatures.
+    await indexProject(db, { projectRoot: FIXTURE_DIR, language: "csharp", service: "api" });
+    await indexProject(db, { projectRoot: webRoot, language: "typescript", service: "frontend" });
+  });
+
+  afterEach(() => {
+    db.close();
+    rmSync(webRoot, { recursive: true, force: true });
+  });
+
+  it("resolves the endpoint's DTO via Roslyn body inference", () => {
+    const route = db
+      .prepare(
+        "SELECT response_type FROM routes WHERE service = 'api' AND route_path = '/api/customers'",
+      )
+      .get() as { response_type: string | null } | undefined;
+    expect(route?.response_type).toBe("CustomerDto");
+  });
+
+  it("reports casing and missing-field mismatches against the inferred DTO", () => {
+    const v = detectDrift(db)
+      .filter((e) => e.kind === "contract_violation")
+      .map((e) => e.description);
+
+    expect(v.some((d) => d.includes("`fullName`") && d.includes("casing differs"))).toBe(true);
+    expect(v.some((d) => d.includes("`nickname`") && d.includes("no such field"))).toBe(true);
+    // C# int and TS number are the same category — flagging it would be noise.
+    expect(v.some((d) => d.includes("`Id"))).toBe(false);
+    expect(v).toHaveLength(2);
   });
 });

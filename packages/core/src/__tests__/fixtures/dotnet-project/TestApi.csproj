@@ -7,7 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
+    <!-- Must track TargetFramework: a 9.0.x package cannot restore against net8.0,
+         which silently left this fixture's ASP.NET references unresolved. -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.10" />
   </ItemGroup>
 
 </Project>

@@ -301,3 +301,103 @@ describeIfDotnet("dotnet indexer", { timeout: 30_000 }, () => {
     expect(symbol!.content_hash).toBe(tsHash);
   });
 });
+
+// The Roslyn backend previously inserted routes WITHOUT response_type — its JSON
+// contract had no such field — so `csharp_indexer: "auto"` (which prefers Roslyn
+// whenever the .NET SDK is present) silently disabled every field-level contract
+// check. The existing contract tests only passed because they pin tree-sitter.
+describeIfDotnet("Roslyn response_type extraction", { timeout: 60_000 }, () => {
+  let db: Database;
+
+  beforeAll(async () => {
+    db = openMemoryDatabase();
+    initializeSchema(db);
+    await indexProject(db, { projectRoot: FIXTURE_DIR, language: "csharp" });
+  });
+
+  afterAll(() => db?.close());
+
+  function responseTypeFor(routePath: string, method: string): string | null | undefined {
+    const row = db
+      .prepare("SELECT response_type, http_methods FROM routes WHERE route_path = ?")
+      .all(routePath) as { response_type: string | null; http_methods: string }[];
+    return row.find((r) => (JSON.parse(r.http_methods) as string[]).includes(method))?.response_type;
+  }
+
+  it("stores a response type at all (the regression this fixes)", () => {
+    const withType = db
+      .prepare("SELECT COUNT(*) AS n FROM routes WHERE response_type IS NOT NULL")
+      .get() as { n: number };
+    expect(withType.n).toBeGreaterThan(0);
+  });
+
+  it("unwraps a declared controller return type to the DTO", () => {
+    // Task<ActionResult<Order>> -> Order, and the collection form likewise.
+    expect(responseTypeFor("/api/orders/{id}", "GET")).toBe("Order");
+    expect(responseTypeFor("/api/orders", "GET")).toBe("Order");
+  });
+
+  it("infers the DTO from the body when the signature is opaque", () => {
+    // `public IActionResult GetAll() => Ok(new CustomerDto())` — tree-sitter can
+    // only read the signature, so it records nothing here.
+    expect(responseTypeFor("/api/customers", "GET")).toBe("CustomerDto");
+  });
+
+  it("infers through an expression-bodied member", () => {
+    expect(responseTypeFor("/api/customers/featured", "GET")).toBe("CustomerDto");
+  });
+
+  it("ignores early returns that carry no DTO", () => {
+    // `if (id <= 0) return NotFound(); return Ok(new CustomerDto(...));`
+    expect(responseTypeFor("/api/customers/{id}", "GET")).toBe("CustomerDto");
+  });
+
+  it("stays silent when returns disagree rather than guessing", () => {
+    // Two different DTOs on different branches. A confidently wrong choice would
+    // produce wrong field mismatches — worse than reporting nothing.
+    expect(responseTypeFor("/api/customers/ambiguous", "GET")).toBeNull();
+  });
+
+  it("stays silent when no DTO is returned", () => {
+    expect(responseTypeFor("/api/customers/{id}", "DELETE")).toBeNull();
+    // Minimal API returning only strings — a framework type is not a payload.
+    expect(responseTypeFor("/api/products", "GET")).toBeNull();
+  });
+
+  it("resolves a minimal-API method-group handler", () => {
+    // MapGet("", GetAll) where GetAll returns InvoiceDto[] — needs cross-symbol
+    // resolution, which the tree-sitter backend explicitly cannot do.
+    expect(responseTypeFor("/api/invoices", "GET")).toBe("InvoiceDto");
+  });
+
+  it("resolves a method-group handler whose own signature is opaque", () => {
+    // MapGet("{id}", GetById) where GetById returns IResult but its body returns
+    // Results.Ok(new InvoiceDto(...)) — two levels of indirection.
+    expect(responseTypeFor("/api/invoices/{id}", "GET")).toBe("InvoiceDto");
+  });
+
+  it("resolves an inline lambda handler", () => {
+    expect(responseTypeFor("/api/invoices", "POST")).toBe("InvoiceDto");
+  });
+});
+
+// The .NET tool is distributed separately from the npm packages, so a user can
+// upgrade one and not the other. When that happens field-level contract checks
+// simply produce nothing — the exact silent degradation this warning exists to
+// prevent.
+describe("outdated .NET tool detection", () => {
+  it("treats a missing capabilities list as 'too old for response types'", () => {
+    // Mirrors the parse-site check without shelling out: older builds emit no
+    // `capabilities` key at all.
+    const legacy = { routes: [{ id: "r" }] } as { capabilities?: string[]; routes: unknown[] };
+    const current = { capabilities: ["responseType"], routes: [{ id: "r" }] };
+
+    const needsWarning = (o: { capabilities?: string[]; routes: unknown[] }) =>
+      o.routes.length > 0 && !o.capabilities?.includes("responseType");
+
+    expect(needsWarning(legacy)).toBe(true);
+    expect(needsWarning(current)).toBe(false);
+    // No routes at all — nothing to say.
+    expect(needsWarning({ routes: [] })).toBe(false);
+  });
+});

@@ -113,11 +113,16 @@ describeIfDotnet("MCP tool queries with C# symbols", { timeout: 30_000 }, () => 
     });
 
     it("returns signatures for methods", async () => {
+      // Qualified deliberately: several classes declare GetAll and only the
+      // controller's is async, so matching on the bare name asserted against
+      // whichever row happened to be inserted first.
       const methods = db
-        .prepare("SELECT name, signature, return_type, is_async FROM symbols WHERE kind = 'function' AND name = 'GetAll'")
+        .prepare(
+          "SELECT name, signature, return_type, is_async FROM symbols WHERE kind = 'function' AND qualified_name LIKE '%OrdersController.GetAll'",
+        )
         .all() as Array<{ name: string; signature: string; return_type: string; is_async: number }>;
 
-      expect(methods.length).toBeGreaterThan(0);
+      expect(methods.length).toBe(1);
       expect(methods[0].signature).toBeTruthy();
       expect(methods[0].is_async).toBe(1);
     });
