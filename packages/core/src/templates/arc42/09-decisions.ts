@@ -19,9 +19,56 @@ export function firstAdrTemplate(input: InitProjectInput): AdrResult {
       return unityAdr(input, now);
     case "angular-app":
       return angularAdr(input, now);
+    case "fullstack-nextjs-dotnet":
+      return fullstackAdr(input, now);
     default:
       return nextjsAdr(input, now);
   }
+}
+
+/**
+ * The fullstack layout nests the Next.js app under frontend/ and names its block
+ * `frontend-shell`. Falling through to nextjsAdr emitted `app-shell` and a bare
+ * `app/` path — a block id that does not exist in this template and a path no
+ * file matches, so the generated ADR arrived already broken and drift reported it
+ * as stale on the first run.
+ */
+function fullstackAdr(input: InitProjectInput, date: string): AdrResult {
+  return {
+    filename: "001-nextjs-app-router.md",
+    frontmatter: {
+      id: "001-nextjs-app-router",
+      title: "Use Next.js App Router for the frontend",
+      status: "accepted",
+      date,
+      affected_blocks: ["frontend-shell"],
+      affected_files: ["frontend/app/"],
+      quality_scenarios: [],
+    },
+    body: `# ADR-001: Use Next.js App Router for the frontend
+
+## Context
+
+${input.name} splits the browser-facing application from the service that owns its
+data: a Next.js frontend and a separate ASP.NET Core API. The frontend is
+read-heavy and benefits from server rendering.
+
+## Decision
+
+Use Next.js with the App Router for \`frontend/\`. Pages are Server Components by
+default; only components that need browser state are marked \`"use client"\`.
+
+## Consequences
+
+- **Positive:** Read-heavy pages render on the server and ship little JavaScript.
+- **Positive:** File-based routing provides layouts and nested routes directly.
+- **Negative:** The server/client component split is a common source of mistakes.
+- **Note:** Decide deliberately whether the frontend defines any \`app/api/\` route
+  handlers. Where two services expose the same path, cross-service contract
+  checking cannot tell which one a caller meant and skips the comparison — so a
+  second producer disables that check silently rather than failing it.
+`,
+  };
 }
 
 function nextjsAdr(input: InitProjectInput, date: string): AdrResult {
