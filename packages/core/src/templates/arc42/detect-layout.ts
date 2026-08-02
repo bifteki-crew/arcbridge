@@ -35,6 +35,71 @@ export function detectProjectLayout(
   return { srcPrefix, appPrefix, entrypoints };
 }
 
+/**
+ * Resolve the layout of a service that lives in a SUBDIRECTORY, returning paths
+ * relative to the repo root (which is what building-block `code_paths` are).
+ *
+ * `detectProjectLayout` probes the repo root, so for a monorepo service it looks
+ * in entirely the wrong place — `<root>/app` rather than `<root>/frontend/app`.
+ * That is why the fullstack template used to hedge and declare BOTH variants of
+ * every path. A hedge is permanently wrong: `missing_module` checks each
+ * code_path independently (correctly — a block owning two real directories
+ * should report when one disappears), so the unused variant produced a finding
+ * nobody could ever resolve.
+ *
+ * One path is chosen instead. When the directory does not exist yet — `init` on
+ * an empty repo genuinely cannot know — the framework's own default is used, and
+ * a later disagreement surfaces as a matched pair (`missing_module` on the
+ * declared path plus `undocumented_module` on the real one) that says exactly
+ * what to change. Wrong-and-actionable beats hedged-and-permanent.
+ */
+export function detectServiceLayout(
+  projectRoot: string | undefined,
+  servicePath: string,
+): { appDir: string; componentsDir: string } {
+  const prefix = normalizeServicePrefix(servicePath);
+  // A service rooted at the repo itself contributes no prefix — concatenating one
+  // would emit a leading "/" and match nothing.
+  const under = (rel: string): string => (prefix ? `${prefix}/${rel}` : rel);
+
+  if (!projectRoot) {
+    return { appDir: under("app/"), componentsDir: under("src/components/") };
+  }
+
+  const serviceRoot = join(projectRoot, prefix);
+  const appDir = existsSync(join(serviceRoot, "src", "app"))
+    ? under("src/app/")
+    : under("app/");
+  const componentsDir = existsSync(join(serviceRoot, "components"))
+    && !existsSync(join(serviceRoot, "src", "components"))
+    ? under("components/")
+    : under("src/components/");
+
+  return { appDir, componentsDir };
+}
+
+/**
+ * Normalize a configured service path into a forward-slashed prefix with no
+ * leading "./", trailing slash, or doubled separators.
+ *
+ * Backslashes are converted explicitly rather than via `toPosixPath`, which
+ * splits on the *running platform's* separator. That is correct for output of
+ * `path.relative()`, but wrong here: a service path is authored by hand in
+ * `.arcbridge/config.yaml`, so a Windows author can commit `frontend\admin` and
+ * a Linux CI runner will read it — where `sep` is "/" and nothing would be
+ * converted. Everything stored in the index is forward-slashed, so a stray
+ * backslash produces a code_path that silently matches no file.
+ */
+function normalizeServicePrefix(servicePath: string): string {
+  const normalized = servicePath
+    .replace(/\\/g, "/")
+    .replace(/\/+/g, "/")
+    .replace(/^\.\//, "")
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "");
+  return normalized === "." ? "" : normalized;
+}
+
 function detectSrcPrefix(projectRoot?: string): string {
   // No projectRoot (template preview) — default to src/ convention
   if (!projectRoot) return "src/";
