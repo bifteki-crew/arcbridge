@@ -25,7 +25,7 @@ the first CI run of a freshly generated repo.
 
 ### Stats
 
-- 25 MCP tools, 709 tests passing, 0 lint errors, 0 type errors
+- 25 MCP tools, 711 tests passing, 0 lint errors, 0 type errors
 
 ## 0.13.0 (2026-07-26)
 

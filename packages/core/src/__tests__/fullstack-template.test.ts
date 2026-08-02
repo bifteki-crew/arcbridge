@@ -5,6 +5,7 @@ import { describe, it, expect } from "vitest";
 import { firstAdrTemplate } from "../templates/arc42/09-decisions.js";
 import { githubActionTemplate } from "../templates/sync/github-action.js";
 import { buildingBlocksTemplate } from "../templates/arc42/05-building-blocks.js";
+import { detectServiceLayout } from "../templates/arc42/detect-layout.js";
 import type { InitProjectInput } from "../templates/types.js";
 import type { ArcBridgeConfig } from "../schemas/config.js";
 import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
@@ -60,6 +61,32 @@ describe("fullstack blocks declare a decision, not a set of options", () => {
     const byId = (id: string) => blocks.find((b) => b.id === id)!.code_paths[0];
     expect(byId("frontend-shell")).toBe("frontend/app/");
     expect(byId("frontend-components")).toBe("frontend/src/components/");
+  });
+
+  it("emits forward-slashed paths regardless of how the service path was written", () => {
+    // A service path is hand-authored in config.yaml, so a Windows author can
+    // commit `frontend\\admin` and a Linux runner will read it. Everything in the
+    // index is forward-slashed, so a stray backslash matches no file at all.
+    const cases: [string, string][] = [
+      ["frontend", "frontend/app/"],
+      ["frontend/", "frontend/app/"],
+      ["./frontend", "frontend/app/"],
+      ["frontend\\admin", "frontend/admin/app/"],
+      ["frontend\\", "frontend/app/"],
+      ["frontend//admin", "frontend/admin/app/"],
+    ];
+    for (const [given, expected] of cases) {
+      expect(detectServiceLayout(undefined, given).appDir, `input ${JSON.stringify(given)}`)
+        .toBe(expected);
+    }
+  });
+
+  it("emits no leading slash for a service rooted at the repo itself", () => {
+    for (const given of [".", "", "./"]) {
+      const { appDir, componentsDir } = detectServiceLayout(undefined, given);
+      expect(appDir, `input ${JSON.stringify(given)}`).toBe("app/");
+      expect(componentsDir).toBe("src/components/");
+    }
   });
 
   it("picks the variant that actually exists on disk", () => {

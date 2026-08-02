@@ -57,8 +57,10 @@ export function detectServiceLayout(
   projectRoot: string | undefined,
   servicePath: string,
 ): { appDir: string; componentsDir: string } {
-  const prefix = servicePath.replace(/\/+$/, "");
-  const under = (rel: string): string => `${prefix}/${rel}`;
+  const prefix = normalizeServicePrefix(servicePath);
+  // A service rooted at the repo itself contributes no prefix — concatenating one
+  // would emit a leading "/" and match nothing.
+  const under = (rel: string): string => (prefix ? `${prefix}/${rel}` : rel);
 
   if (!projectRoot) {
     return { appDir: under("app/"), componentsDir: under("src/components/") };
@@ -74,6 +76,28 @@ export function detectServiceLayout(
     : under("src/components/");
 
   return { appDir, componentsDir };
+}
+
+/**
+ * Normalize a configured service path into a forward-slashed prefix with no
+ * leading "./", trailing slash, or doubled separators.
+ *
+ * Backslashes are converted explicitly rather than via `toPosixPath`, which
+ * splits on the *running platform's* separator. That is correct for output of
+ * `path.relative()`, but wrong here: a service path is authored by hand in
+ * `.arcbridge/config.yaml`, so a Windows author can commit `frontend\admin` and
+ * a Linux CI runner will read it — where `sep` is "/" and nothing would be
+ * converted. Everything stored in the index is forward-slashed, so a stray
+ * backslash produces a code_path that silently matches no file.
+ */
+function normalizeServicePrefix(servicePath: string): string {
+  const normalized = servicePath
+    .replace(/\\/g, "/")
+    .replace(/\/+/g, "/")
+    .replace(/^\.\//, "")
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "");
+  return normalized === "." ? "" : normalized;
 }
 
 function detectSrcPrefix(projectRoot?: string): string {
