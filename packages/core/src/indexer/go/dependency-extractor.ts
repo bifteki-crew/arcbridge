@@ -1,4 +1,5 @@
 import type { ExtractedDependency, DependencyKind } from "../dependency-extractor.js";
+import { resolveTargets } from "../name-resolution.js";
 
 /** Minimum fields needed from symbols for dependency extraction */
 export interface SymbolForDeps {
@@ -131,8 +132,7 @@ function extractEmbeddingDeps(
         const embeddedTypeName = extractSimpleTypeName(field);
         if (!embeddedTypeName || embeddedTypeName === typeName) continue;
 
-        const targetIds = lookup.get(embeddedTypeName);
-        if (!targetIds) continue;
+        const targetIds = resolveTargets(embeddedTypeName, lookup, sourceSymbol);
 
         for (const targetId of targetIds) {
           if (targetId === sourceSymbol.id) continue;
@@ -145,8 +145,7 @@ function extractEmbeddingDeps(
         const embeddedName = extractSimpleTypeNameFromNode(field);
         if (!embeddedName || embeddedName === typeName) continue;
 
-        const targetIds = lookup.get(embeddedName);
-        if (!targetIds) continue;
+        const targetIds = resolveTargets(embeddedName, lookup, sourceSymbol);
 
         for (const targetId of targetIds) {
           if (targetId === sourceSymbol.id) continue;
@@ -173,8 +172,7 @@ function extractCallDeps(
   const enclosing = findEnclosingFunctionForNode(node, fileSymbols);
   if (!enclosing) return;
 
-  const targetIds = lookup.get(calledName);
-  if (!targetIds) return;
+  const targetIds = resolveTargets(calledName, lookup, enclosing);
 
   for (const targetId of targetIds) {
     if (targetId === enclosing.id) continue;
@@ -199,8 +197,7 @@ function extractTypeRefDeps(
   if (!enclosing) return;
 
   for (const typeName of typeNames) {
-    const targetIds = lookup.get(typeName);
-    if (!targetIds) continue;
+    const targetIds = resolveTargets(typeName, lookup, enclosing);
 
     for (const targetId of targetIds) {
       if (targetId === enclosing.id) continue;

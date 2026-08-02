@@ -1,4 +1,5 @@
 import type { ExtractedDependency, DependencyKind } from "../dependency-extractor.js";
+import { resolveTargets } from "../name-resolution.js";
 
 /** Minimum fields needed from symbols for dependency extraction */
 export interface SymbolForDeps {
@@ -132,8 +133,7 @@ function extractInheritanceDeps(
     const isInterface = /^I[A-Z]/.test(baseName);
     const kind: DependencyKind = isInterface ? "implements" : "extends";
 
-    const targetIds = lookup.get(baseName);
-    if (!targetIds) continue;
+    const targetIds = resolveTargets(baseName, lookup, sourceSymbol);
 
     for (const targetId of targetIds) {
       // Skip self-references
@@ -160,8 +160,7 @@ function extractCallDeps(
   const enclosingMethod = findEnclosingMethodForNode(node, fileSymbols);
   if (!enclosingMethod) return;
 
-  const targetIds = lookup.get(methodName);
-  if (!targetIds) return;
+  const targetIds = resolveTargets(methodName, lookup, enclosingMethod);
 
   for (const targetId of targetIds) {
     if (targetId === enclosingMethod.id) continue;
@@ -185,8 +184,7 @@ function extractTypeUsageDep(
   const enclosing = findEnclosingMethodForNode(node, fileSymbols);
   if (!enclosing) return;
 
-  const targetIds = lookup.get(typeName);
-  if (!targetIds) return;
+  const targetIds = resolveTargets(typeName, lookup, enclosing);
 
   for (const targetId of targetIds) {
     if (targetId === enclosing.id) continue;
@@ -212,8 +210,7 @@ function extractTypeRefDeps(
   if (!enclosing) return;
 
   for (const typeName of typeNames) {
-    const targetIds = lookup.get(typeName);
-    if (!targetIds) continue;
+    const targetIds = resolveTargets(typeName, lookup, enclosing);
 
     for (const targetId of targetIds) {
       if (targetId === enclosing.id) continue;
