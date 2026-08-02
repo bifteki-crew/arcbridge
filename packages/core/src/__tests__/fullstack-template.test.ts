@@ -6,6 +6,7 @@ import { firstAdrTemplate } from "../templates/arc42/09-decisions.js";
 import { githubActionTemplate } from "../templates/sync/github-action.js";
 import { buildingBlocksTemplate } from "../templates/arc42/05-building-blocks.js";
 import type { InitProjectInput } from "../templates/types.js";
+import type { ArcBridgeConfig } from "../schemas/config.js";
 
 const input = (template: InitProjectInput["template"]): InitProjectInput => ({
   name: "example",
@@ -40,7 +41,9 @@ describe("fullstack ADR references things that exist", () => {
 });
 
 describe("generated sync workflow", () => {
-  const workflow = () => githubActionTemplate({} as never).content ?? "";
+  // The generator ignores its config; cast to the real parameter type rather
+  // than `never`, so this breaks if the signature ever starts mattering.
+  const workflow = () => githubActionTemplate({} as ArcBridgeConfig).content ?? "";
 
   it("installs nothing", () => {
     // `pnpm install --frozen-lockfile` at the repo root fails unless the repo is
@@ -62,5 +65,12 @@ describe("generated sync workflow", () => {
 
   it("does not pin a Node version the runners have deprecated", () => {
     expect(workflow()).not.toContain("node-version: '20'");
+  });
+
+  it("passes -y to npx so it never waits for a prompt on a runner", () => {
+    const text = workflow();
+    const calls = text.match(/npx[^\n]*arcbridge/g) ?? [];
+    expect(calls.length).toBeGreaterThan(0);
+    for (const call of calls) expect(call).toContain("npx -y");
   });
 });
