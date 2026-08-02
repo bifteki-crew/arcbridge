@@ -3,6 +3,17 @@ import type { GeneratedFile } from "./claude-skill.js";
 
 /**
  * Generate the GitHub Action workflow for automated ArcBridge sync.
+ *
+ * Deliberately installs NOTHING. It used to run `pnpm install --frozen-lockfile`
+ * at the repo root, which fails outright unless the repo happens to be a pnpm
+ * workspace rooted at the top — so it broke on plain npm projects, .NET-only and
+ * Unity projects, and any monorepo whose Node package is nested (a fullstack
+ * layout has no root package.json at all). The steps below invoke the published
+ * CLI through `npx`, so there is nothing to install.
+ *
+ * Those npx calls pass `-y`: without it npx asks before fetching a package it
+ * doesn't have cached, which is not a prompt anyone can answer on a CI runner.
+ * This matches how the repository's own composite action invokes the CLI.
  */
 export function githubActionTemplate(_config: ArcBridgeConfig): GeneratedFile {
   const content = `name: ArcBridge Sync
@@ -37,15 +48,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          node-version: '22'
 
       - name: Check for ArcBridge
         id: check
@@ -60,12 +63,16 @@ jobs:
       - name: Run ArcBridge sync
         if: steps.check.outputs.initialized == 'true'
         id: sync
-        run: npx arcbridge sync --json | tee arcbridge-sync-result.json
+        run: npx -y arcbridge sync --json | tee arcbridge-sync-result.json
 
       - name: Check for drift errors
         if: steps.check.outputs.initialized == 'true'
         run: |
-          npx arcbridge drift --json | tee arcbridge-drift-result.json
+          # --reindex is required: .arcbridge/index.db is gitignored, so a CI
+          # checkout has no index. Without it, every building block's code_paths
+          # and every ADR's files look absent and drift reports a pile of false
+          # missing_module / stale_adr findings.
+          npx -y arcbridge drift --reindex --json | tee arcbridge-drift-result.json
           ERRORS=$(node -e "try { const d=JSON.parse(require('fs').readFileSync('arcbridge-drift-result.json','utf8')); console.log(d.drift.filter(e=>e.severity==='error').length); } catch { console.log(0); }")
           if [ "$ERRORS" -gt 0 ]; then
             echo "::error::ArcBridge detected $ERRORS drift error(s) that would block phase completion."
