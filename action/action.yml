@@ -34,7 +34,7 @@ inputs:
   arcbridge-version:
     description: "arcbridge npm version to run."
     required: false
-    default: "0.13.0"
+    default: "0.14.0"
   node-version:
     description: "Node.js version to set up. arcbridge needs >= 22.16; the default pins the tested minimum for deterministic behavior."
     required: false

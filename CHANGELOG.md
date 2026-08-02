@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.14.0 (2026-08-02)
+
+A correctness release. Nearly all of it was found by **building a real fullstack
+example repository** and pushing it — five bugs that unit tests could not have
+surfaced, because each one only appears when a whole project is indexed, or on
+the first CI run of a freshly generated repo.
+
+### Bug Fixes
+
+- **Cross-service contract checking was silently disabled on the default C# configuration.** The Roslyn backend inserted routes *without* `response_type` — its JSON contract had no such field — so `csharp_indexer: "auto"` (which prefers Roslyn whenever the .NET SDK is present, and is what the fullstack template ships) turned off **every field-level contract check** from 0.13.0. The tests only passed because they pin `tree-sitter`. Roslyn now extracts response types, and does it *better* than tree-sitter: it infers the DTO from the method body when the signature is opaque (`IActionResult` + `return Ok(new UserDto())`), resolves minimal-API method-group handlers including handlers declared in another file, and stays silent when a body's returns disagree rather than guessing. On the example repository this is the difference between **11 of 16 endpoints** field-checked and **16 of 16**.
+- **Bare-name calls linked to every namesake in the repository.** The tree-sitter indexers (C#, Python, Go) match calls and type references by name, and each added an edge to *every* symbol sharing that name. A method calling its own `GetById` linked to `GetById` on five unrelated controllers, producing a false **error-severity** `dependency_violation` between building blocks that never touch each other — enough to fail CI, on a name as ordinary as `GetById`. Resolution now narrows when there is local evidence (same declaring scope, then same file) and only keeps the full candidate set when there is none, so a call to `_service.GetAllAsync()` still links to both the interface and its implementation.
+- **Next.js routes were invisible in a monorepo service.** Routes are discovered by directory convention, but the analyzer only ever looked at `<repoRoot>/app` and `<repoRoot>/src/app`. With `services: [{ path: frontend, type: nextjs }]` — the layout the fullstack template itself declares — the app lives at `frontend/app/` and **zero routes** were recorded, silently removing the frontend half of endpoint contracts. It now scans the service's own root while keeping stored IDs repo-relative.
+- **The generated sync workflow failed on the first push, for every template.** It ran `pnpm install --frozen-lockfile` at the repo root, which fails unless the repository happens to be a pnpm workspace rooted at the top — breaking plain npm projects, .NET-only and Unity projects, and any layout whose Node package is nested (a fullstack repo has no root `package.json` at all). The step was also unnecessary, since the workflow invokes the published CLI through `npx`. It also ran `drift` *without* `--reindex`, and since `.arcbridge/index.db` is gitignored, a CI checkout has no index — every block's `code_paths` and every ADR's files then look absent, producing a pile of false `missing_module` / `stale_adr` findings rather than a clean run. Both fixed, and `npx` calls now pass `-y` so they cannot wait for a prompt on a runner.
+- **`fullstack-nextjs-dotnet` generated an ADR pointing at things that do not exist** — block `app-shell` and path `app/`, from the single-service Next.js template, where this layout uses `frontend-shell` and `frontend/app/`. The ADR arrived stale on the first run.
+- **No framework-file ignores for the fullstack template.** Ignore patterns are matched with `startsWith`, so the single-service lists cannot apply (`src/app/layout.` never matches `frontend/src/app/layout.tsx`), and every framework file was reported as an undocumented module.
+- **Windows path separators in the TypeScript index.** `path.relative()` returns backslashes on Windows, so the same file indexed as `src\a.ts` there and `src/a.ts` everywhere else, while building-block `code_paths` are always forward-slashed — drift would have reported every file as undocumented. Normalization is now shared across all five TypeScript boundaries (symbols, dependencies, components, routes, API calls).
+
+### Internal
+
+- The Roslyn tool reports a `capabilities` list, and the indexer warns when an installed tool predates response-type extraction — the .NET tool versions independently of the npm packages, so upgrading one without the other used to fail silently. **`arcbridge-dotnet-indexer` must be updated alongside this release** to get field-level contracts under `auto`.
+- The test suite no longer skips itself in silence: the Roslyn suites raced `dotnet build` at module scope in parallel workers, so the loser threw and `describe.skip` swallowed it — **22 tests were reporting as "skipped" while never running**. The build now happens once in a global setup, any skip is announced with its reason, and the suite exercises the indexer from the checkout rather than whatever global tool a developer happened to have installed. The .NET fixture also never actually built (a 9.0.x package against `net8.0` failed to restore; a malformed `.sln` made `dotnet build` report success while building nothing).
+
+### Stats
+
+- 25 MCP tools, 706 tests passing, 0 lint errors, 0 type errors
+
 ## 0.13.0 (2026-07-26)
 
 Deeper contract checking, plus a way to *see* how the architecture is holding up.
