@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { InitProjectInput, TemplateOutput } from "../types.js";
-import { detectProjectLayout } from "./detect-layout.js";
+import { detectProjectLayout, detectServiceLayout } from "./detect-layout.js";
 
 export function buildingBlocksTemplate(
   input: InitProjectInput,
@@ -36,12 +36,15 @@ export function buildingBlocksTemplate(
               : buildJsBlocks(input, layout);
 
   function buildFullstackBlocks(): BlockDef[] {
+    // One resolved path per block, never a set of alternatives — see
+    // detectServiceLayout for why hedging is permanently wrong.
+    const fe = detectServiceLayout(input.projectRoot, "frontend");
     return [
       {
         id: "frontend-shell",
         name: "Frontend Shell",
         level: 1,
-        code_paths: ["frontend/app/", "frontend/src/app/"],
+        code_paths: [fe.appDir],
         interfaces: [],
         quality_scenarios: ["PERF-01"],
         adrs: [],
@@ -53,7 +56,7 @@ export function buildingBlocksTemplate(
         id: "frontend-components",
         name: "Frontend Components",
         level: 1,
-        code_paths: ["frontend/src/components/", "frontend/components/"],
+        code_paths: [fe.componentsDir],
         interfaces: [],
         quality_scenarios: ["A11Y-01"],
         adrs: [],
@@ -89,7 +92,7 @@ export function buildingBlocksTemplate(
         id: "shared-contracts",
         name: "Shared Contracts",
         level: 1,
-        code_paths: ["shared/", "contracts/"],
+        code_paths: ["contracts/"],
         interfaces: ["frontend-shell", "api-controllers"],
         quality_scenarios: ["MAINT-01"],
         adrs: [],

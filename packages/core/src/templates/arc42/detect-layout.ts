@@ -35,6 +35,47 @@ export function detectProjectLayout(
   return { srcPrefix, appPrefix, entrypoints };
 }
 
+/**
+ * Resolve the layout of a service that lives in a SUBDIRECTORY, returning paths
+ * relative to the repo root (which is what building-block `code_paths` are).
+ *
+ * `detectProjectLayout` probes the repo root, so for a monorepo service it looks
+ * in entirely the wrong place — `<root>/app` rather than `<root>/frontend/app`.
+ * That is why the fullstack template used to hedge and declare BOTH variants of
+ * every path. A hedge is permanently wrong: `missing_module` checks each
+ * code_path independently (correctly — a block owning two real directories
+ * should report when one disappears), so the unused variant produced a finding
+ * nobody could ever resolve.
+ *
+ * One path is chosen instead. When the directory does not exist yet — `init` on
+ * an empty repo genuinely cannot know — the framework's own default is used, and
+ * a later disagreement surfaces as a matched pair (`missing_module` on the
+ * declared path plus `undocumented_module` on the real one) that says exactly
+ * what to change. Wrong-and-actionable beats hedged-and-permanent.
+ */
+export function detectServiceLayout(
+  projectRoot: string | undefined,
+  servicePath: string,
+): { appDir: string; componentsDir: string } {
+  const prefix = servicePath.replace(/\/+$/, "");
+  const under = (rel: string): string => `${prefix}/${rel}`;
+
+  if (!projectRoot) {
+    return { appDir: under("app/"), componentsDir: under("src/components/") };
+  }
+
+  const serviceRoot = join(projectRoot, prefix);
+  const appDir = existsSync(join(serviceRoot, "src", "app"))
+    ? under("src/app/")
+    : under("app/");
+  const componentsDir = existsSync(join(serviceRoot, "components"))
+    && !existsSync(join(serviceRoot, "src", "components"))
+    ? under("components/")
+    : under("src/components/");
+
+  return { appDir, componentsDir };
+}
+
 function detectSrcPrefix(projectRoot?: string): string {
   // No projectRoot (template preview) — default to src/ convention
   if (!projectRoot) return "src/";

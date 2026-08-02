@@ -7,6 +7,9 @@ import { githubActionTemplate } from "../templates/sync/github-action.js";
 import { buildingBlocksTemplate } from "../templates/arc42/05-building-blocks.js";
 import type { InitProjectInput } from "../templates/types.js";
 import type { ArcBridgeConfig } from "../schemas/config.js";
+import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 const input = (template: InitProjectInput["template"]): InitProjectInput => ({
   name: "example",
@@ -37,6 +40,44 @@ describe("fullstack ADR references things that exist", () => {
   it("still emits the single-service ADR for nextjs-app-router", () => {
     const adr = firstAdrTemplate(input("nextjs-app-router"));
     expect(adr.frontmatter.affected_blocks).toEqual(["app-shell"]);
+  });
+});
+
+describe("fullstack blocks declare a decision, not a set of options", () => {
+  it("gives every block exactly one code_path", () => {
+    // Alternates are permanently wrong: missing_module checks each code_path
+    // independently, so the unused variant reports a finding nobody can resolve.
+    const blocks = buildingBlocksTemplate(input("fullstack-nextjs-dotnet"))
+      .frontmatter.blocks as { id: string; code_paths: string[] }[];
+    for (const b of blocks) {
+      expect(b.code_paths.length, `${b.id} declares ${b.code_paths.length} paths`).toBe(1);
+    }
+  });
+
+  it("defaults to the framework convention when nothing exists yet", () => {
+    const blocks = buildingBlocksTemplate(input("fullstack-nextjs-dotnet"))
+      .frontmatter.blocks as { id: string; code_paths: string[] }[];
+    const byId = (id: string) => blocks.find((b) => b.id === id)!.code_paths[0];
+    expect(byId("frontend-shell")).toBe("frontend/app/");
+    expect(byId("frontend-components")).toBe("frontend/src/components/");
+  });
+
+  it("picks the variant that actually exists on disk", () => {
+    const root = mkdtempSync(join(tmpdir(), "arcbridge-layout-"));
+    try {
+      // A frontend using the src/app convention rather than app/.
+      mkdirSync(join(root, "frontend", "src", "app"), { recursive: true });
+      mkdirSync(join(root, "frontend", "src", "components"), { recursive: true });
+      const blocks = buildingBlocksTemplate({
+        ...input("fullstack-nextjs-dotnet"),
+        projectRoot: root,
+      }).frontmatter.blocks as { id: string; code_paths: string[] }[];
+      expect(blocks.find((b) => b.id === "frontend-shell")!.code_paths).toEqual([
+        "frontend/src/app/",
+      ]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 
