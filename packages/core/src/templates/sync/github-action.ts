@@ -81,6 +81,14 @@ jobs:
 
       - name: Create sync PR
         if: steps.check.outputs.initialized == 'true'
+        id: sync_pr
+        # Opening the PR needs "Allow GitHub Actions to create and approve pull
+        # requests", which GitHub leaves OFF by default and which an organization
+        # can disable for all its repositories. Without this the whole job fails
+        # on the last step with a message that never names the setting to change,
+        # after the drift check has already passed. The failure is reported below
+        # instead, so a missing permission is loud but doesn't mask a green run.
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v6
         with:
           commit-message: 'chore: arcbridge sync - update arc42 documentation'
@@ -97,6 +105,16 @@ jobs:
           branch: arcbridge/sync
           delete-branch: true
           labels: arcbridge,documentation
+
+      - name: Explain a blocked sync PR
+        if: steps.check.outputs.initialized == 'true' && steps.sync_pr.outcome == 'failure'
+        run: |
+          echo "::warning::ArcBridge sync ran, but the pull request could not be opened. \
+          The most common cause is that GitHub Actions is not permitted to create pull requests: \
+          enable Settings -> Actions -> General -> 'Allow GitHub Actions to create and approve pull requests' \
+          (an organization owner may need to allow it org-wide first). \
+          The step's own log above has the exact error. Documentation changes were NOT lost - \
+          re-run this workflow once the permission is granted."
 `;
 
   return {

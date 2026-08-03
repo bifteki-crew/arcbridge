@@ -131,6 +131,22 @@ describe("generated sync workflow", () => {
     expect(text).not.toMatch(/arcbridge drift --json/);
   });
 
+  it("does not fail the whole job when it may not open a pull request", () => {
+    // "Allow GitHub Actions to create and approve pull requests" is OFF by
+    // default and an org can disable it everywhere. Without this the job died on
+    // its last step, after the drift check had already passed, with a message
+    // that never named the setting to change.
+    const text = workflow();
+    expect(text).toContain("continue-on-error: true");
+    expect(text).toContain("steps.sync_pr.outcome == 'failure'");
+  });
+
+  it("names the exact setting to enable when the PR is blocked", () => {
+    // A degraded run has to say what to do about it, or it is just a quieter
+    // version of the same dead end.
+    expect(workflow()).toContain("Allow GitHub Actions to create and approve pull requests");
+  });
+
   it("does not pin a Node version the runners have deprecated", () => {
     expect(workflow()).not.toContain("node-version: '20'");
   });
