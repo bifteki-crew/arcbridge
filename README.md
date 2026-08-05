@@ -76,8 +76,37 @@ After a coding session (or in CI via `arcbridge sync`), the sync loop runs in se
    - *Unlinked test* — a quality scenario points to a test file that doesn't exist
    - *Stale ADR* — a decision references deleted files
    - *New dependency* — a package was added without an ADR
+   - *Contract violation* — a frontend calls an endpoint no service serves, uses a
+     method it doesn't allow, or expects a response shape the backend doesn't return
 3. **Verify quality** — run tests linked to quality scenarios and update pass/fail status
 4. **Infer progress** — mark tasks as done when their acceptance criteria are met
+
+### Across services — catch breaks the compiler can't see
+
+Most drift is within one codebase. The expensive kind isn't: a frontend and a
+backend, in different languages, quietly stop agreeing. Nothing fails to compile
+on either side, and the break surfaces at runtime as `undefined`.
+
+ArcBridge indexes both halves — the outbound `fetch`/`axios`/typed-client call
+sites, and the routes your services expose — and compares them:
+
+```
+frontend/src/lib/api/speakers.ts expects field `fullName` from GET /api/speakers
+but the endpoint returns `FullName` (casing differs).
+
+frontend/src/lib/api/venues.ts calls DELETE /api/venues
+but the endpoint only allows GET.
+```
+
+It checks the endpoint exists, the method is allowed, and — where the call site
+annotates its expected type (`apiClient.get<UserDto>(url)`) and the endpoint
+declares its DTO — that the field names and types line up. Casing, missing fields,
+and type disagreements are reported per call site.
+
+Deliberately silent when it can't be sure: if either side's shape is unknown, or
+two services serve the same path with different types, it says nothing rather than
+guessing. See the [fullstack example](https://github.com/bifteki-crew/arcbridge-example-fullstack)
+for five breaks you can cause in one line each and watch get caught.
 
 ### Review — enforce quality at phase boundaries
 
@@ -380,10 +409,62 @@ packages/
 - **v0.6.2 / v0.6.3** (done): Data-safety hardening — atomic writes for source-of-truth files, `refreshFromDocs` rollback on malformed input, service-scoped component cleanup, stderr logging, and path-traversal containment
 - **v0.7.0** (done): Monorepo per-service indexing — each configured service indexed by its own tsconfig and merged into one DB; `arcbridge drift --reindex` for self-contained CI checks; api-service template fix; ArcBridge now indexes itself with a CI drift gate
 - **v0.8.0** (done): **`arcbridge adopt`** — reverse-engineer building blocks from an existing codebase (clusters files, derives interfaces from the real symbol graph); `arcbridge_propose_building_blocks` MCP tool — 35 MCP tools, 578 tests
+- **v0.9.0** (done): Drift-check GitHub Action with a sticky PR comment and severity gate; end-to-end MCP integration tests
+- **v0.10.0** (done): MCP tool consolidation — 35 → 25 tools (smaller schemas, fewer near-duplicates for an agent to choose between); see the [CHANGELOG](CHANGELOG.md) for the old → new mapping
+- **v0.11.0** (done): Validation corpus + deterministic token-savings harness (`@arcbridge/bench`); **diff-scoped drift** (`arcbridge drift --base <ref>`) so a PR is checked against what it actually changed
+- **v0.12.0** (done): **Cross-service contracts** — multi-service indexing for C#/Python/Go, outbound `fetch`/`axios` call sites indexed as the consumer half, and `contract_violation` drift when a call targets an endpoint no service serves or a method it doesn't allow
+- **v0.13.0** (done): **Field-level contract checks** — casing, missing-field and type mismatches between a frontend's declared response type and the backend DTO; **`arcbridge report`**, a self-contained HTML architecture-health dashboard — 25 MCP tools, 669 tests
+- **v0.14.0** (done): Correctness release, almost all of it found by building and pushing a real fullstack example: Roslyn response-type extraction (`csharp_indexer: auto` had silently disabled every field-level check), name-scoped call resolution, Next.js routes in monorepo services, and several generated-artifact fixes — 713 tests
 
-**Next:** a drift-check GitHub Action, then integration tests and MCP tool consolidation. See [`docs/arcbridge-improvement-plan.md`](docs/arcbridge-improvement-plan.md).
+**Next:** the multi-step autonomous benchmark — an unattended loop run with and without ArcBridge, measuring cumulative tokens *and* architectural drift accumulated at the end. See [`docs/arcbridge-improvement-plan.md`](docs/arcbridge-improvement-plan.md).
 
 See [`docs/arcbridge-project-plan.md`](docs/arcbridge-project-plan.md) for the full specification and [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+
+## Worked examples
+
+Two public repositories, both with a committed `.arcbridge/` model and a drift check in CI:
+
+| Repository | Shape | What it shows |
+|---|---|---|
+| [arcbridge-example-bookmarks] | Single-service Next.js | Adopting ArcBridge on an existing codebase |
+| [arcbridge-example-fullstack] | Next.js + ASP.NET Core, 11 blocks, 12 DTOs | Cross-boundary contract checking, with five breaks you can cause in one line each |
+
+[arcbridge-example-bookmarks]: https://github.com/bifteki-crew/arcbridge-example-bookmarks
+[arcbridge-example-fullstack]: https://github.com/bifteki-crew/arcbridge-example-fullstack
+
+## Does it actually save tokens?
+
+Partly measured, and the harness is in this repo — run `pnpm --filter @arcbridge/bench bench:tokens`
+to reproduce. For each question it compares the tokens in ArcBridge's tool response against the
+tokens in the files an agent would otherwise read, using a real BPE tokenizer.
+
+Measured on **real repositories** (this monorepo and the fullstack example), not toy fixtures:
+
+| Question | Baseline | ArcBridge | Saving |
+|---|--:|--:|--:|
+| What does `detectDrift` do and who calls it? | 51,315 | 1,047 | 98% |
+| What's in the core package and what does it depend on? | 215,069 | 1,072 | 99.5% |
+| What endpoints does the API expose? | 2,012 | 384 | 81% |
+| Which components exist, and which are client components? | 5,293 | 420 | 92% |
+
+Where these numbers **don't** support a claim, which matters more than the numbers:
+
+- **"How is this codebase organized?" measures 97–99%, and that's an upper bound.** Its baseline is
+  *read every indexed file* — the ceiling, not what a real agent does. Treat the targeted questions
+  above as the defensible figure.
+- **The contract check scores 99.7% and shouldn't be quoted.** On a clean repo it answers "no drift
+  detected" in 18 tokens while the baseline reads both sides of a service boundary — real work, but
+  it's measuring a cheap negative result.
+- **Quality-scenario questions are excluded entirely.** That knowledge isn't in source code, so no
+  set of files answers it and any percentage would be invented.
+- **On small fixtures the single-symbol question goes *negative*** (−133%): a rich tool response can
+  exceed simply reading a two-line file. That's a scale artifact, reported rather than hidden — the
+  identical question is +98% on a real repo.
+
+This is a deterministic proxy, not a live-agent evaluation. The multi-step autonomous benchmark —
+which measures architectural drift accumulated over an unattended loop, not just tokens — is next.
+See [`packages/bench/README.md`](packages/bench/README.md) for full methodology.
+
 
 ## Troubleshooting & FAQ
 
@@ -391,7 +472,7 @@ See [`docs/arcbridge-project-plan.md`](docs/arcbridge-project-plan.md) for the f
 Check that Node.js is ≥ 22.16 (`node --version`) — ArcBridge uses the built-in `node:sqlite`. Confirm your MCP config points at `npx @arcbridge/mcp-server`, then fully restart the agent (MCP servers are loaded at startup). Most tools take a `target_dir` — pass the absolute project path.
 
 **How do I adopt ArcBridge on an existing codebase?**
-Run `arcbridge init` then `arcbridge adopt` — it reverse-engineers building blocks from your code instead of leaving you to hand-write them. See [Adopting an existing codebase](docs/adopting-existing-codebases.md). There's a complete worked example at [bifteki-crew/arcbridge-example-bookmarks](https://github.com/bifteki-crew/arcbridge-example-bookmarks).
+Run `arcbridge init` then `arcbridge adopt` — it reverse-engineers building blocks from your code instead of leaving you to hand-write them. See [Adopting an existing codebase](docs/adopting-existing-codebases.md). There are two complete worked examples — see [Worked examples](#worked-examples).
 
 **I have a monorepo — how do I index all the packages?**
 List each package under `services` in `.arcbridge/config.yaml` with its `path` and `tsconfig` (relative to `path`). `arcbridge sync`/`adopt` index each service by its own tsconfig and merge them into one model. Per-service indexing currently covers TypeScript.

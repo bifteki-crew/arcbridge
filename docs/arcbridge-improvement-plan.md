@@ -446,9 +446,9 @@ once pays off three times. Contract alignment (0.12.0) is the strategic centerpi
 but is higher-effort and depends on the namespacing fix, so it follows the de-risking
 milestone.
 
-### 0.11.0 — detailed breakdown (NEXT)
+### 0.11.0 — detailed breakdown (SHIPPED)
 
-**F0. Validation corpus + harness** *(the substrate — build this first)*
+**F0. Validation corpus + harness** — **DONE** (0.11.0; corpus extended in 0.14.0 with two live repositories)
 - A small, pinned set of **2–3 projects spanning the shapes that exercise different
   code paths**: a TS frontend (the existing `example-bookmarks`, or a react-vite
   fixture), a backend (`api-service` or `dotnet-webapi` — exercises the C#/route
@@ -473,7 +473,7 @@ milestone.
 - Acceptance: the corpus is committed/pinned; the functional-smoke job is green in
   CI; the token-proxy job emits a deterministic table.
 
-**F1. Token-savings + coherence benchmark harness** *(the credibility artifact — runs on F0's corpus)*
+**F1. Token-savings + coherence benchmark harness** — **Part A (single-shot Q&A) DONE**; Part B (multi-step autonomous) NOT started
 - **Two scenario classes, not one** — reflecting the autonomous-loop reframe:
   - *Single-shot Q&A:* realistic agent questions ("where does auth belong?", "what
     calls `verifyToken`?", "what quality constraints apply to this file?") run two
@@ -493,7 +493,7 @@ milestone.
 - Acceptance: `pnpm bench:tokens` (or similar) produces a deterministic table for the
   single-shot class in CI; the multi-step report is regenerated on demand.
 
-**F2. Diff-scoped drift — `arcbridge drift --base <ref>`** *(also unblocks the Action)*
+**F2. Diff-scoped drift — `arcbridge drift --base <ref>`** — **DONE** (0.11.0)
 - Restrict drift analysis to files changed since `<ref>` (e.g. the PR base), so PR
   checks are fast and comment only on what the PR touched.
 - Wire an optional `base` input into the composite Action for a PR-incremental mode
