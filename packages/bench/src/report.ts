@@ -29,7 +29,6 @@ function medianForKind(
   );
 }
 
-/** Median rows for one member class, or null when that class has no members. */
 /** How many questions of a kind actually produced a saving figure. */
 function sampleSize(
   results: FixtureResult[],
@@ -51,6 +50,7 @@ const KIND_LABELS: [QuestionResult["kind"], string][] = [
   ["contract", "Cross-service contract check"],
 ];
 
+/** Median rows for one member class, or null when that class has no members. */
 function medianTable(results: FixtureResult[], memberKind: "fixture" | "live"): string | null {
   if (!results.some((r) => r.memberKind === memberKind)) return null;
   const rows: string[] = [];
@@ -94,7 +94,7 @@ export function renderMarkdown(results: FixtureResult[], generatedAt: string): s
     "",
     "| Question type | Median saving | n |",
     "|---|--:|--:|",
-    liveTable ?? "| _(no live members)_ | n/a |",
+    liveTable ?? "| _(no live members)_ | n/a | 0 |",
     "",
     "### How to read these, including where they flatter",
     "",
@@ -126,7 +126,7 @@ export function renderMarkdown(results: FixtureResult[], generatedAt: string): s
     "",
     "| Question type | Median saving | n |",
     "|---|--:|--:|",
-    fixtureTable ?? "| _(no fixtures)_ | n/a |",
+    fixtureTable ?? "| _(no fixtures)_ | n/a | 0 |",
     "",
   );
 

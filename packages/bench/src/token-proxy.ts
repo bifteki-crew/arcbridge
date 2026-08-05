@@ -186,7 +186,14 @@ async function runQuestion(
         : q.kind === "component"
           ? "arcbridge_get_component_graph"
           : "arcbridge_check_drift";
-    const answer = await call(tool, { target_dir: projectRoot });
+    // check_drift persists to drift_log by default. A measurement harness must
+    // not mutate what it measures — two corpus members are live repositories
+    // read in place, and a rewritten drift_log would perturb a later `report`
+    // run against them. The other tools here are already read-only.
+    const answer = await call(tool, {
+      target_dir: projectRoot,
+      ...(q.kind === "contract" ? { persist: false } : {}),
+    });
     const prefixes = (q.baselinePrefixes ?? []).map(normalizePrefix);
     const baseline = files.filter((f) => prefixes.some((p) => underPrefix(f.rel, p)));
     if (baseline.length === 0) {
