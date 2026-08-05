@@ -30,14 +30,39 @@ function medianForKind(
 }
 
 /** Median rows for one member class, or null when that class has no members. */
+/** How many questions of a kind actually produced a saving figure. */
+function sampleSize(
+  results: FixtureResult[],
+  kind: QuestionResult["kind"],
+  memberKind: "fixture" | "live",
+): number {
+  return results
+    .filter((r) => r.memberKind === memberKind)
+    .flatMap((r) => r.questions)
+    .filter((q) => q.kind === kind && q.savingPct !== null).length;
+}
+
+const KIND_LABELS: [QuestionResult["kind"], string][] = [
+  ["structure", "Structure / navigation"],
+  ["block", "Module (block) detail"],
+  ["symbol", "Single symbol"],
+  ["route", "API route map"],
+  ["component", "Component graph"],
+  ["contract", "Cross-service contract check"],
+];
+
 function medianTable(results: FixtureResult[], memberKind: "fixture" | "live"): string | null {
   if (!results.some((r) => r.memberKind === memberKind)) return null;
-  const rows: [string, string][] = [
-    ["Structure / navigation", fmt(medianForKind(results, "structure", memberKind))],
-    ["Module (block) detail", fmt(medianForKind(results, "block", memberKind))],
-    ["Single symbol", fmt(medianForKind(results, "symbol", memberKind))],
-  ];
-  return rows.map(([k, v]) => `| ${k} | ${v} |`).join("\n");
+  const rows: string[] = [];
+  for (const [kind, label] of KIND_LABELS) {
+    const n = sampleSize(results, kind, memberKind);
+    if (n === 0) continue;
+    // Sample size is shown because several of these kinds are answered by a
+    // single member today — a "median" of one observation is a data point, and
+    // presenting it like an average over many would overstate it.
+    rows.push(`| ${label} | ${fmt(medianForKind(results, kind, memberKind))} | ${n} |`);
+  }
+  return rows.length > 0 ? rows.join("\n") : null;
 }
 
 function fmt(n: number | null): string {
@@ -67,9 +92,29 @@ export function renderMarkdown(results: FixtureResult[], generatedAt: string): s
     "Measured on corpus members that are real repositories with realistic file sizes.",
     "**These are the numbers to quote.**",
     "",
-    "| Question type | Median saving |",
-    "|---|--:|",
+    "| Question type | Median saving | n |",
+    "|---|--:|--:|",
     liveTable ?? "| _(no live members)_ | n/a |",
+    "",
+    "### How to read these, including where they flatter",
+    "",
+    "- **Structure is an upper bound.** Its baseline is *every indexed file* — what",
+    "  answering with no map at all would cost. A real agent would skim a README and",
+    "  a directory listing first, so treat this as the ceiling, not the expectation.",
+    "- **The targeted questions are the defensible claim.** Module, symbol, route and",
+    "  component all compare against the specific files that genuinely answer them.",
+    "- **The contract check reports a NEGATIVE result.** On a clean repository",
+    "  `check_drift` answers \"no drift detected\" in a few tokens, while the baseline",
+    "  reads both sides of the boundary. The saving is therefore the cost of",
+    "  *verifying* that a frontend and backend still agree — real work, but it is",
+    "  measuring a cheap \"all clear\", not a rich answer. Do not quote it as a",
+    "  headline; it is the least comparable number in this table.",
+    "- **Quality constraints have no baseline at all** and are excluded from the",
+    "  medians. That information does not exist in source code, so no set of files",
+    "  answers the question — an infinite saving against zero would be meaningless.",
+    "  It appears in the per-repository tables as `n/a`.",
+    "- **`n` is the number of observations.** Several kinds are answered by a single",
+    "  corpus member today; a median of one is a data point, not an average.",
     "",
     "## Small fixtures (scale caveat — not representative)",
     "",
@@ -79,8 +124,8 @@ export function renderMarkdown(results: FixtureResult[], generatedAt: string): s
     "fixture-size artifact, not a regression — the same question on a real repo is",
     "strongly positive (see above). Reported for transparency, not as a claim.",
     "",
-    "| Question type | Median saving |",
-    "|---|--:|",
+    "| Question type | Median saving | n |",
+    "|---|--:|--:|",
     fixtureTable ?? "| _(no fixtures)_ | n/a |",
     "",
   );
