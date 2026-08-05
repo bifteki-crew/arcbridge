@@ -41,6 +41,7 @@ committed tree):
 | `ts-api` | fixture | TS backend — lib / routes / middleware |
 | `ts-frontend` | fixture | TS frontend — components / hooks / lib |
 | `arcbridge-self` | **live** | This repo — a real TS monorepo with realistic file sizes |
+| `example-fullstack` | **live** | [arcbridge-example-fullstack] — Next.js + ASP.NET Core, a real service boundary |
 
 **Fixtures** are copied to a temp dir and put through `init` → `adopt --apply` →
 `drift --reindex`. **Live** members are measured *in place* against their existing
@@ -65,9 +66,16 @@ addition.
 - Baselines — the "files an agent would otherwise read":
   - **structure** → every source file (no map ⇒ read everything);
   - **block** → files under the block's code paths;
-  - **symbol** → files that mention the symbol name (grep-then-read).
-- Intent/quality-scenario questions are excluded: that knowledge isn't in the code,
-  so there's no fair token baseline (and it's context file-reading can't provide).
+  - **symbol** → files that mention the symbol name (grep-then-read);
+  - **route** → the files that declare routes (controllers, endpoint groups);
+  - **component** → the component and page files;
+  - **contract** → *both* halves of the boundary: the client call sites and
+    contracts, plus the controllers and DTOs they target.
+- **Quality-scenario questions are measured but never scored.** That knowledge is
+  not in the source, so no set of files answers it and there is no fair baseline.
+  Reported as `n/a` rather than as an infinite saving against zero — "the tool
+  answers something the codebase cannot" is the honest finding, and a percentage
+  there would be fabricated.
 
 ## Reading the numbers (honest caveats)
 
@@ -82,3 +90,13 @@ addition.
   relevant code.
 - **The fixtures' negative symbol number is a scale artifact, not a regression** —
   the identical question inverts to ~+98% on a real repo.
+- **The cross-service contract number is the least comparable one.** On a clean
+  repository `check_drift` answers "no drift detected" in a handful of tokens
+  while the baseline reads both sides of the boundary, so the ratio measures the
+  cost of *verifying* agreement rather than of producing a rich answer. Genuine
+  work — an agent really would have to read both halves to conclude they match —
+  but it is a negative result, and quoting ~99% from it would be cherry-picking.
+- **Watch `n`.** Route, component and contract are answered by one member so far.
+  A median of a single observation is a data point, not an average.
+
+[arcbridge-example-fullstack]: https://github.com/bifteki-crew/arcbridge-example-fullstack

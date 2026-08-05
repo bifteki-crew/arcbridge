@@ -179,6 +179,57 @@ async function runQuestion(
     };
   }
 
+  if (q.kind === "route" || q.kind === "component" || q.kind === "contract") {
+    const tool =
+      q.kind === "route"
+        ? "arcbridge_get_route_map"
+        : q.kind === "component"
+          ? "arcbridge_get_component_graph"
+          : "arcbridge_check_drift";
+    // check_drift persists to drift_log by default. A measurement harness must
+    // not mutate what it measures — two corpus members are live repositories
+    // read in place, and a rewritten drift_log would perturb a later `report`
+    // run against them. The other tools here are already read-only.
+    const answer = await call(tool, {
+      target_dir: projectRoot,
+      ...(q.kind === "contract" ? { persist: false } : {}),
+    });
+    const prefixes = (q.baselinePrefixes ?? []).map(normalizePrefix);
+    const baseline = files.filter((f) => prefixes.some((p) => underPrefix(f.rel, p)));
+    if (baseline.length === 0) {
+      return { ...base, tool, arcbridgeTokens: countTokens(answer), baselineTokens: 0, baselineFiles: 0, savingPct: null, note: "no baseline files matched the declared prefixes" };
+    }
+    const baselineTokens = sumTokens(baseline.map((f) => f.content));
+    const arcbridgeTokens = countTokens(answer);
+    return {
+      ...base,
+      tool: tool.replace("arcbridge_", ""),
+      arcbridgeTokens,
+      baselineTokens,
+      baselineFiles: baseline.length,
+      savingPct: pct(baselineTokens, arcbridgeTokens),
+    };
+  }
+
+  if (q.kind === "quality") {
+    // Deliberately unmeasured. Quality constraints are not derivable from source
+    // code, so there is no set of files an agent could read instead — the honest
+    // report is "no baseline exists", not an infinite saving against zero.
+    const answer = await call("arcbridge_get_quality_scenarios", {
+      target_dir: projectRoot,
+      action: "list",
+    });
+    return {
+      ...base,
+      tool: "get_quality_scenarios",
+      arcbridgeTokens: countTokens(answer),
+      baselineTokens: 0,
+      baselineFiles: 0,
+      savingPct: null,
+      note: "no file-reading baseline exists — this information is not in the source",
+    };
+  }
+
   // symbol
   const search = await call("arcbridge_query_symbols", { target_dir: projectRoot, query: q.symbolName });
   const symbolId = firstSymbolId(search);
