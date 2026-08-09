@@ -1,6 +1,6 @@
 import type { Database } from "./connection.js";
 
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 
 const SCHEMA_SQL = `
 -- Metadata
@@ -176,7 +176,7 @@ CREATE INDEX IF NOT EXISTS idx_phases_status ON phases(status);
 CREATE TABLE IF NOT EXISTS drift_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   detected_at TEXT NOT NULL,
-  kind TEXT NOT NULL CHECK(kind IN ('undocumented_module','missing_module','dependency_violation','unlinked_test','stale_adr','new_dependency','contract_violation')),
+  kind TEXT NOT NULL CHECK(kind IN ('undocumented_module','missing_module','dependency_violation','unlinked_test','stale_adr','new_dependency','contract_violation','contract_unverifiable')),
   severity TEXT NOT NULL DEFAULT 'info' CHECK(severity IN ('info','warning','error')),
   description TEXT NOT NULL,
   affected_block TEXT,

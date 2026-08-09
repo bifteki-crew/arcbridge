@@ -140,6 +140,34 @@ const migrations: Migration[] = [
       addColumnIfMissing(db, "api_calls", "expected_type", "TEXT");
     },
   },
+  {
+    version: 7,
+    up: (db) => {
+      // The 'contract_unverifiable' drift kind: a contract that exists but cannot
+      // be checked (an unannotated call, a type alias with no indexed members, an
+      // endpoint that declares no DTO). SQLite cannot alter a CHECK constraint, so
+      // drift_log is recreated — the same approach v5 took for this table.
+      // Existing rows are copied: they are valid under the wider constraint, and
+      // resolved ones are history worth keeping.
+      db.exec(`
+        CREATE TABLE drift_log_v7 (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          detected_at TEXT NOT NULL,
+          kind TEXT NOT NULL CHECK(kind IN ('undocumented_module','missing_module','dependency_violation','unlinked_test','stale_adr','new_dependency','contract_violation','contract_unverifiable')),
+          severity TEXT NOT NULL DEFAULT 'info' CHECK(severity IN ('info','warning','error')),
+          description TEXT NOT NULL,
+          affected_block TEXT,
+          affected_file TEXT,
+          resolution TEXT CHECK(resolution IN ('accepted','fixed','deferred') OR resolution IS NULL),
+          resolved_at TEXT
+        );
+        INSERT INTO drift_log_v7 (id, detected_at, kind, severity, description, affected_block, affected_file, resolution, resolved_at)
+          SELECT id, detected_at, kind, severity, description, affected_block, affected_file, resolution, resolved_at FROM drift_log;
+        DROP TABLE drift_log;
+        ALTER TABLE drift_log_v7 RENAME TO drift_log;
+      `);
+    },
+  },
 ];
 
 /** Identifiers/type declarations may only be simple SQL-safe tokens. */
