@@ -71,15 +71,19 @@ describe("contract_unverifiable", () => {
     expect(found[0].description).toContain("no matching endpoint declares the type it returns");
   });
 
-  it("names the interface requirement when the expected type has no indexed members", () => {
-    // A `type` alias emits no member symbols, so its fields can never be compared.
+  it("lists the possible causes when the expected type has no indexed members, without asserting one", () => {
     route({ path: "/api/rooms", responseType: "RoomDto" });
     call({ url: "/api/rooms", expected: "Room" });
     field("RoomDto", "Id", "api");
 
     const found = unverifiable();
     expect(found).toHaveLength(1);
-    expect(found[0].description).toContain("`interface`");
+    // A `type` alias is the common explanation but not the only one — the type may
+    // be empty, unindexed, or declared under another service (field lookup is
+    // service-scoped). Naming one cause as fact would misdirect the fix.
+    expect(found[0].description).toContain("no fields are indexed for the expected type");
+    expect(found[0].description).toContain("may be declared as a `type` alias");
+    expect(found[0].description).toContain("not be indexed under this service");
   });
 
   it("reports ambiguous producers instead of silently skipping them", () => {

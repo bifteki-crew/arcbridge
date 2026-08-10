@@ -646,13 +646,21 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
     const actual = loadTypeFields(db, methodRoute.responseType, methodRoute.service, fieldCache);
     if (expected.fields.length === 0 || actual.fields.length === 0) {
       // Which side is opaque changes what the reader should do about it.
+      // State the observation, then the likely causes — do NOT assert one. A type
+      // alias is the common explanation but not the only one: the type may be
+      // empty, may come from a package that isn't indexed, or may be declared
+      // under a different service (field lookup is service-scoped). Naming a
+      // single cause as fact would send readers to fix the wrong thing.
+      const causes =
+        `it may be declared as a \`type\` alias (which emits no members — an \`interface\` is ` +
+        `comparable), be empty, or not be indexed under this service`;
       const side =
         expected.fields.length === 0 && actual.fields.length === 0
-          ? `neither \`${call.expected_type}\` nor \`${methodRoute.responseType}\` has indexed fields`
+          ? `no fields are indexed for either \`${call.expected_type}\` or ` +
+            `\`${methodRoute.responseType}\` — for each, ${causes}`
           : expected.fields.length === 0
-            ? `no fields are indexed for the expected type \`${call.expected_type}\` — a \`type\` alias ` +
-              `emits no members, so declare it as an \`interface\` to have it checked`
-            : `no fields are indexed for the endpoint's type \`${methodRoute.responseType}\``;
+            ? `no fields are indexed for the expected type \`${call.expected_type}\` — ${causes}`
+            : `no fields are indexed for the endpoint's type \`${methodRoute.responseType}\` — ${causes}`;
       entries.push(unverifiableEntry(
         `\`${call.file_path}\` calls \`${call.method} ${url}\` but its response shape cannot be ` +
           `verified: ${side}.`,
