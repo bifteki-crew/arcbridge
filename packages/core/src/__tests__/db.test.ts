@@ -261,6 +261,45 @@ describe("SQLite database", () => {
     });
   });
 
+  describe("schema migration v7", () => {
+    it("widens the drift_log kind constraint and keeps existing rows", () => {
+      const db = openMemoryDatabase();
+      initializeSchema(db);
+
+      // A row written under the older constraint, including a resolved one that
+      // exists purely as history and must survive the table being recreated.
+      db.prepare(
+        "INSERT INTO drift_log (detected_at, kind, severity, description, resolution) VALUES (?, 'undocumented_module', 'warning', ?, ?)",
+      ).run("2026-01-01T00:00:00Z", "kept", "fixed");
+
+      // Simulate a database created before contract_unverifiable existed.
+      db.prepare("UPDATE arcbridge_meta SET value = '6' WHERE key = 'schema_version'").run();
+      migrate(db);
+
+      const version = db
+        .prepare("SELECT value FROM arcbridge_meta WHERE key = 'schema_version'")
+        .get() as { value: string };
+      expect(Number(version.value)).toBe(CURRENT_SCHEMA_VERSION);
+
+      // History preserved through the recreate.
+      const kept = db
+        .prepare("SELECT description, resolution FROM drift_log WHERE description = 'kept'")
+        .get() as { description: string; resolution: string } | undefined;
+      expect(kept?.resolution).toBe("fixed");
+
+      // And the new kind is now accepted.
+      db.prepare(
+        "INSERT INTO drift_log (detected_at, kind, severity, description) VALUES (?, 'contract_unverifiable', 'info', ?)",
+      ).run("2026-01-02T00:00:00Z", "new kind");
+      const added = db
+        .prepare("SELECT kind FROM drift_log WHERE description = 'new kind'")
+        .get() as { kind: string };
+      expect(added.kind).toBe("contract_unverifiable");
+
+      db.close();
+    });
+  });
+
   describe("schema migration v3", () => {
     it("migrates v2 schema to v3 (adds cancelled status)", () => {
       const db = openMemoryDatabase();

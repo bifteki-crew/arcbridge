@@ -9,7 +9,8 @@ export type DriftKind =
   | "unlinked_test"
   | "stale_adr"
   | "new_dependency"
-  | "contract_violation";
+  | "contract_violation"
+  | "contract_unverifiable";
 
 export type DriftSeverity = "info" | "warning" | "error";
 
@@ -587,25 +588,86 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
 
     // Field-level: when the call annotates its expected response type AND the
     // method-matching route knows the DTO it returns, diff the two field sets.
-    if (!call.expected_type) continue;
+    // A call whose expected type is unknown cannot be field-checked. Reporting it
+    // matters more than it looks: the deviations that make a call unobservable —
+    // no type argument, or a `type` alias instead of an interface — are exactly
+    // what a convention-unaware author writes. Staying silent meant the check
+    // went quiet precisely where it was most needed, so wholesale divergence was
+    // invisible while a single slip by a careful author was caught.
+    if (!call.expected_type) {
+      entries.push(unverifiableEntry(
+        `\`${call.file_path}\` calls \`${call.method} ${url}\` without annotating the response type, ` +
+          `so its fields cannot be compared against the endpoint. Add a type argument ` +
+          `(e.g. \`get<SomeDto>(url)\`) to have this contract checked.`,
+        call.file_path,
+      ));
+      continue;
+    }
     // Pick the DTO-bearing route deterministically: SQLite row order isn't
     // guaranteed, so when several services expose the same path+method, sort by
     // (service, responseType) rather than comparing against an arbitrary one.
     const candidates = matching
-      .filter((r) => r.responseType && (r.methods.length === 0 || r.methods.includes(call.method)))
+      // A type predicate rather than a later null check: the filter is what
+      // guarantees a response type is present, so narrowing here avoids a
+      // downstream branch that could never be taken.
+      .filter((r): r is typeof r & { responseType: string } =>
+        Boolean(r.responseType) && (r.methods.length === 0 || r.methods.includes(call.method)),
+      )
       .sort((a, b) =>
         a.service.localeCompare(b.service) || (a.responseType ?? "").localeCompare(b.responseType ?? ""),
       );
     // Ambiguous producers (different services returning different DTOs for the
-    // same endpoint) can't be diffed meaningfully — skip rather than guess.
+    // same endpoint) can't be diffed meaningfully — skip rather than guess, but
+    // say so, because "several services disagree about this endpoint" is itself
+    // worth knowing.
     const distinctDtos = new Set(candidates.map((r) => `${r.service}:${r.responseType}`));
-    if (candidates.length === 0 || distinctDtos.size > 1) continue;
+    if (distinctDtos.size > 1) {
+      entries.push(unverifiableEntry(
+        `\`${call.file_path}\` calls \`${call.method} ${url}\`, but more than one service serves it ` +
+          `with a different response type (${[...distinctDtos].sort().join(", ")}), so the expected ` +
+          `shape cannot be compared against a single producer.`,
+        call.file_path,
+      ));
+      continue;
+    }
+    if (candidates.length === 0) {
+      entries.push(unverifiableEntry(
+        `\`${call.file_path}\` calls \`${call.method} ${url}\` and expects \`${call.expected_type}\`, but ` +
+          `no matching endpoint declares the type it returns, so the two shapes cannot be compared. ` +
+          `Declare the DTO on the endpoint (e.g. \`ActionResult<SomeDto>\`) — or, for C#, the Roslyn ` +
+          `indexer can infer it from the method body.`,
+        call.file_path,
+      ));
+      continue;
+    }
     const methodRoute = candidates[0];
-    if (!methodRoute.responseType) continue;
 
     const expected = loadTypeFields(db, call.expected_type, call.service, fieldCache);
     const actual = loadTypeFields(db, methodRoute.responseType, methodRoute.service, fieldCache);
-    if (expected.fields.length === 0 || actual.fields.length === 0) continue; // shape unknown on a side
+    if (expected.fields.length === 0 || actual.fields.length === 0) {
+      // Which side is opaque changes what the reader should do about it.
+      // State the observation, then the likely causes — do NOT assert one. A type
+      // alias is the common explanation but not the only one: the type may be
+      // empty, may come from a package that isn't indexed, or may be declared
+      // under a different service (field lookup is service-scoped). Naming a
+      // single cause as fact would send readers to fix the wrong thing.
+      const causes =
+        `it may be declared as a \`type\` alias (which emits no members — an \`interface\` is ` +
+        `comparable), be empty, or not be indexed under this service`;
+      const side =
+        expected.fields.length === 0 && actual.fields.length === 0
+          ? `no fields are indexed for either \`${call.expected_type}\` or ` +
+            `\`${methodRoute.responseType}\` — for each, ${causes}`
+          : expected.fields.length === 0
+            ? `no fields are indexed for the expected type \`${call.expected_type}\` — ${causes}`
+            : `no fields are indexed for the endpoint's type \`${methodRoute.responseType}\` — ${causes}`;
+      entries.push(unverifiableEntry(
+        `\`${call.file_path}\` calls \`${call.method} ${url}\` but its response shape cannot be ` +
+          `verified: ${side}.`,
+        call.file_path,
+      ));
+      continue;
+    }
 
     for (const field of expected.fields) {
       const exactMatch = actual.byName.get(field.name);
@@ -646,6 +708,18 @@ function detectContractViolations(db: Database, entries: DriftEntry[]): void {
 
 function contractEntry(description: string, file: string): DriftEntry {
   return { kind: "contract_violation", severity: "warning", description, affectedBlock: null, affectedFile: file };
+}
+
+/**
+ * A contract that exists but cannot be checked.
+ *
+ * `info`, deliberately: nothing is known to be wrong, so this must not fail a
+ * build. Gates are commonly set at `warning` — including in ArcBridge's own
+ * example repository — and promoting unverifiable surface to `warning` would turn
+ * a coverage report into a blocker overnight for every existing user.
+ */
+function unverifiableEntry(description: string, file: string): DriftEntry {
+  return { kind: "contract_unverifiable", severity: "info", description, affectedBlock: null, affectedFile: file };
 }
 
 interface TypeField {
