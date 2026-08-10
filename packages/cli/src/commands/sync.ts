@@ -17,6 +17,7 @@ import {
   type ScenarioTestResult,
   type DriftOptions,
   readBlockSummaries,
+  logWarn,
 } from "@arcbridge/core";
 import { getAdapter, renderArchitectureMap } from "@arcbridge/adapters";
 import { openProjectDb } from "../project.js";
@@ -91,12 +92,10 @@ export async function sync(dir: string, json: boolean): Promise<void> {
           getAdapter(platform).generateProjectConfig(dir, configForDrift.config!, { architecture });
         } catch (err) {
           // Config generation must never fail a sync: the useful work — the
-          // refresh, index and drift check — has already happened.
-          if (!json) {
-            console.log(
-              `  Could not refresh ${platform} config: ${err instanceof Error ? err.message : String(err)}`,
-            );
-          }
+          // refresh, index and drift check — has already happened. Reported via
+          // logWarn so it reaches stderr and cannot contaminate `--json` output,
+          // which callers pipe.
+          logWarn(`Could not refresh ${platform} config`, err);
         }
       }
       if (!json) console.log(`  Refreshed architecture map for: ${platforms.join(", ")}`);

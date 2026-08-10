@@ -40,7 +40,8 @@ export function readBlockSummaries(projectRoot: string): BlockSummary[] {
       codePaths: b.code_paths ?? [],
       responsibility: b.responsibility ?? "",
       interfaces: b.interfaces ?? [],
-      service: b.service ?? null,
+      // The schema defaults this to "main", so it is always a string.
+      service: b.service,
     }));
   } catch {
     return [];

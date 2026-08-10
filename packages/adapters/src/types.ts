@@ -5,8 +5,9 @@ export interface AdapterOptions {
   force?: boolean;
   /**
    * Pre-rendered architecture map, embedded into the instruction file so an agent
-   * has the block layout without having to ask for it. Rendered by the caller
-   * (which has the database) to keep adapters free of storage concerns.
+   * has the block layout without having to ask for it. Rendered by the caller —
+   * which reads the YAML source of truth, so this works during `init` before
+   * anything is indexed — keeping adapters free of any storage concern.
    */
   architecture?: string;
 }

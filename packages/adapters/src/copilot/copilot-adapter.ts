@@ -1,9 +1,9 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
-import type { PlatformAdapter } from "../types.js";
+import type { AdapterOptions, PlatformAdapter } from "../types.js";
 
-function generateCopilotInstructions(config: ArcBridgeConfig): string {
+function generateCopilotInstructions(config: ArcBridgeConfig, architecture?: string): string {
   const lines: string[] = [
     `# ${config.project_name} - Copilot Instructions`,
     "",
@@ -15,6 +15,7 @@ function generateCopilotInstructions(config: ArcBridgeConfig): string {
     "",
     `**Quality Priorities:** ${config.quality_priorities.join(", ")}`,
     "",
+    ...(architecture ? [architecture] : []),
     "## Architecture",
     "",
     "Architecture documentation is in `.arcbridge/arc42/`.",
@@ -83,11 +84,11 @@ function generateAgentFile(role: AgentRole): string {
 export class CopilotAdapter implements PlatformAdapter {
   platform = "copilot";
 
-  generateProjectConfig(targetDir: string, config: ArcBridgeConfig): void {
+  generateProjectConfig(targetDir: string, config: ArcBridgeConfig, options?: AdapterOptions): void {
     const githubDir = join(targetDir, ".github");
     mkdirSync(githubDir, { recursive: true });
 
-    const content = generateCopilotInstructions(config);
+    const content = generateCopilotInstructions(config, options?.architecture);
     writeFileSync(
       join(githubDir, "copilot-instructions.md"),
       content,

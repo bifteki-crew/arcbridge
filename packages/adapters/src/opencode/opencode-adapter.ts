@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
-import type { PlatformAdapter, AdapterOptions } from "../types.js";
+import type { AdapterOptions, PlatformAdapter } from "../types.js";
 import { generateSkills } from "../shared/skills.js";
 import { writeWithMarkerMerge } from "../shared/marker-merge.js";
 import { generateInstructions } from "../shared/instructions.js";
@@ -53,7 +53,7 @@ function generateAgentFile(role: AgentRole): string {
 export class OpenCodeAdapter implements PlatformAdapter {
   platform = "opencode";
 
-  generateProjectConfig(targetDir: string, config: ArcBridgeConfig): void {
+  generateProjectConfig(targetDir: string, config: ArcBridgeConfig, options?: AdapterOptions): void {
     // Generate opencode.json (MCP config)
     const configPath = join(targetDir, "opencode.json");
     if (!existsSync(configPath)) {
@@ -105,7 +105,7 @@ export class OpenCodeAdapter implements PlatformAdapter {
 
     // Generate OPENCODE.md (project instructions — opencode reads AGENTS.md by default,
     // but we use OPENCODE.md + the instructions config field to avoid colliding with Codex)
-    const instructionsContent = generateInstructions(config);
+    const instructionsContent = generateInstructions(config, { architecture: options?.architecture });
     writeWithMarkerMerge(join(targetDir, "OPENCODE.md"), instructionsContent);
   }
 

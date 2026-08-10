@@ -92,9 +92,14 @@ export async function runOnce(arm: Arm, run: number, opts: RunOptions): Promise<
 
     const usage = parseUsage(raw);
     // Remove the harness's own artifacts before measuring, so they cannot be
-    // mistaken for the agent's work.
-    rmSync(promptFile, { force: true });
-    rmSync(join(runRoot, ".bench-mcp.json"), { force: true });
+    // mistaken for the agent's work — unless the tree is being kept for
+    // inspection, where the exact prompt and MCP wiring that produced it are the
+    // first things anyone debugging will want. Neither file is inside a measured
+    // path, so keeping them cannot affect the result.
+    if (!opts.keepTrees) {
+      rmSync(promptFile, { force: true });
+      rmSync(join(runRoot, ".bench-mcp.json"), { force: true });
+    }
 
     const completion = measureCompletion(runRoot);
     const drift = measureDrift(runRoot, opts.subjectRepo);

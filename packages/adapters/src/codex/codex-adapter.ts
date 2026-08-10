@@ -1,13 +1,14 @@
 import { writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
-import type { PlatformAdapter, AdapterOptions } from "../types.js";
+import type { AdapterOptions, PlatformAdapter } from "../types.js";
 import { generateSkills } from "../shared/skills.js";
 import { writeWithMarkerMerge } from "../shared/marker-merge.js";
 import { generateInstructions } from "../shared/instructions.js";
 
-function generateAgentsMd(config: ArcBridgeConfig): string {
+function generateAgentsMd(config: ArcBridgeConfig, architecture?: string): string {
   return generateInstructions(config, {
+    architecture,
     prefix: [
       "## Codex MCP Setup",
       "",
@@ -43,8 +44,8 @@ function generateAgentsMd(config: ArcBridgeConfig): string {
 export class CodexAdapter implements PlatformAdapter {
   platform = "codex";
 
-  generateProjectConfig(targetDir: string, config: ArcBridgeConfig): void {
-    const agentsMdContent = generateAgentsMd(config);
+  generateProjectConfig(targetDir: string, config: ArcBridgeConfig, options?: AdapterOptions): void {
+    const agentsMdContent = generateAgentsMd(config, options?.architecture);
     writeWithMarkerMerge(join(targetDir, "AGENTS.md"), agentsMdContent);
   }
 
