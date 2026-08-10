@@ -10,8 +10,9 @@ import {
   indexConfiguredProject,
   discoverDotnetServices,
   type InitProjectInput,
+  readBlockSummaries,
 } from "@arcbridge/core";
-import { getAdapter } from "@arcbridge/adapters";
+import { getAdapter, renderArchitectureMap } from "@arcbridge/adapters";
 
 interface InitOptions {
   name?: string;
@@ -265,11 +266,14 @@ export async function init(
 
   // 7. Generate platform-specific configs
   if (!json) console.log("Generating platform configs...");
+  // Embed the block map so an agent starts with the architecture instead of
+  // needing to ask for it — see adapters/shared/architecture-map.ts.
+  const architecture = renderArchitectureMap(readBlockSummaries(projectRoot));
   const platformWarnings: string[] = [];
   for (const platform of platforms) {
     try {
       const adapter = getAdapter(platform);
-      adapter.generateProjectConfig(projectRoot, config);
+      adapter.generateProjectConfig(projectRoot, config, { architecture });
       adapter.generateAgentConfigs(projectRoot, roles);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

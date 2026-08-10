@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
-import type { PlatformAdapter, AdapterOptions } from "../types.js";
+import type { AdapterOptions, PlatformAdapter } from "../types.js";
 import { generateSkills } from "../shared/skills.js";
 import { writeWithMarkerMerge } from "../shared/marker-merge.js";
 import { generateInstructions } from "../shared/instructions.js";
@@ -61,7 +61,7 @@ function generateAgentFile(role: AgentRole): string {
 export class GeminiAdapter implements PlatformAdapter {
   platform = "gemini";
 
-  generateProjectConfig(targetDir: string, config: ArcBridgeConfig): void {
+  generateProjectConfig(targetDir: string, config: ArcBridgeConfig, options?: AdapterOptions): void {
     const geminiDir = join(targetDir, ".gemini");
     mkdirSync(geminiDir, { recursive: true });
 
@@ -86,7 +86,7 @@ export class GeminiAdapter implements PlatformAdapter {
     }
 
     // Generate .gemini/styleguide.md and GEMINI.md (same content)
-    const instructionsContent = generateInstructions(config);
+    const instructionsContent = generateInstructions(config, { architecture: options?.architecture });
     writeWithMarkerMerge(join(geminiDir, "styleguide.md"), instructionsContent);
     writeWithMarkerMerge(join(targetDir, "GEMINI.md"), instructionsContent);
   }

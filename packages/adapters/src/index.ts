@@ -29,3 +29,4 @@ export function getAdapter(platform: string): PlatformAdapter {
   }
   return factory();
 }
+export { renderArchitectureMap, type BlockSummary } from "./shared/architecture-map.js";

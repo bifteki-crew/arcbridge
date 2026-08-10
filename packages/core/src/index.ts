@@ -181,3 +181,4 @@ export { logWarn } from "./utils/log.js";
 
 // Template types
 export type { InitProjectInput } from "./templates/types.js";
+export { readBlockSummaries, type BlockSummary } from "./sync/block-summaries.js";
