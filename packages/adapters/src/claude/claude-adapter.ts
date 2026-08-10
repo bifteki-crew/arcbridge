@@ -1,10 +1,10 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentRole, ArcBridgeConfig } from "@arcbridge/core";
-import type { PlatformAdapter } from "../types.js";
+import type { AdapterOptions, PlatformAdapter } from "../types.js";
 import { mcpCommand } from "../shared/mcp-command.js";
 
-function generateClaudeMd(config: ArcBridgeConfig): string {
+function generateClaudeMd(config: ArcBridgeConfig, architecture?: string): string {
   const lines: string[] = [
     `# ${config.project_name}`,
     "",
@@ -15,6 +15,13 @@ function generateClaudeMd(config: ArcBridgeConfig): string {
     `- **Type:** ${config.project_type}`,
     `- **Quality Priorities:** ${config.quality_priorities.join(", ")}`,
     "",
+  ];
+
+  // Placed before the workflow prose deliberately — see architecture-map.ts for
+  // why the map is handed over rather than left for the agent to fetch.
+  if (architecture) lines.push(architecture);
+
+  lines.push(
     "## How to Work in This Project",
     "",
     "This project follows the **Plan → Build → Sync → Review** convention using ArcBridge.",
@@ -70,7 +77,7 @@ function generateClaudeMd(config: ArcBridgeConfig): string {
     "",
     "Then: `arcbridge_manage_phases` (action: complete) — validates three gates: all tasks done, no critical drift, must-have quality scenarios not failing.",
     "",
-  ];
+  );
 
   // Add React/Next.js section only for relevant project types
   if (config.project_type === "nextjs-app-router" || config.project_type === "react-vite") {
@@ -143,8 +150,8 @@ function generateAgentFile(role: AgentRole): string {
 export class ClaudeAdapter implements PlatformAdapter {
   platform = "claude";
 
-  generateProjectConfig(targetDir: string, config: ArcBridgeConfig): void {
-    const arcbridgeContent = generateClaudeMd(config);
+  generateProjectConfig(targetDir: string, config: ArcBridgeConfig, options?: AdapterOptions): void {
+    const arcbridgeContent = generateClaudeMd(config, options?.architecture);
     const claudeMdPath = join(targetDir, "CLAUDE.md");
     const marker = "<!-- arcbridge-generated -->";
 

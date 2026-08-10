@@ -5,6 +5,12 @@ export interface InstructionOptions {
   prefix?: string[];
   /** Lines to append after the shared workflow section */
   suffix?: string[];
+  /**
+   * Rendered architecture map. Placed BEFORE the workflow section on purpose:
+   * an agent that reads only the opening of this file still ends up with the
+   * block layout, which is the part that changes what it does next.
+   */
+  architecture?: string;
 }
 
 /**
@@ -30,6 +36,15 @@ export function generateInstructions(config: ArcBridgeConfig, options?: Instruct
     `- **Type:** ${config.project_type}`,
     `- **Quality Priorities:** ${config.quality_priorities.join(", ")}`,
     "",
+  );
+
+  // Before the workflow prose: an agent that reads only the top of this file
+  // still leaves with the block layout, which is what changes where it puts code.
+  if (options?.architecture) {
+    lines.push(options.architecture);
+  }
+
+  lines.push(
     "## How to Work in This Project",
     "",
     "This project follows the **Plan → Build → Sync → Review** convention using ArcBridge.",

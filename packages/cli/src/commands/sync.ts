@@ -16,7 +16,9 @@ import {
   type ChangedFile,
   type ScenarioTestResult,
   type DriftOptions,
+  readBlockSummaries,
 } from "@arcbridge/core";
+import { getAdapter, renderArchitectureMap } from "@arcbridge/adapters";
 import { openProjectDb } from "../project.js";
 
 interface SyncResult {
@@ -74,6 +76,30 @@ export async function sync(dir: string, json: boolean): Promise<void> {
           console.log(`    ${icon} ${e.kind}: ${e.description}`);
         }
       }
+    }
+
+    // Step 2b: Refresh the architecture map embedded in each platform's
+    // instruction file. Without this the map is written once at init and then
+    // silently rots as blocks change — and a stale map is worse than none,
+    // because an agent trusts it. Regenerating here keeps it in step with the
+    // YAML that was just refreshed.
+    const platforms = configForDrift.config?.platforms ?? [];
+    if (platforms.length > 0) {
+      const architecture = renderArchitectureMap(readBlockSummaries(dir));
+      for (const platform of platforms) {
+        try {
+          getAdapter(platform).generateProjectConfig(dir, configForDrift.config!, { architecture });
+        } catch (err) {
+          // Config generation must never fail a sync: the useful work — the
+          // refresh, index and drift check — has already happened.
+          if (!json) {
+            console.log(
+              `  Could not refresh ${platform} config: ${err instanceof Error ? err.message : String(err)}`,
+            );
+          }
+        }
+      }
+      if (!json) console.log(`  Refreshed architecture map for: ${platforms.join(", ")}`);
     }
 
     // Step 3: Infer task statuses
