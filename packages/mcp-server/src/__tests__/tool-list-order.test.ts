@@ -18,7 +18,11 @@ async function listToolNames(): Promise<string[]> {
   const server = createArcBridgeServer(createContext());
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "order-test", version: "0.0.0" });
-  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  // Server first, then client — matching e2e/lifecycle.test.ts. Connecting both
+  // concurrently works today but depends on neither side of the handshake needing
+  // the other ready first, which is not a guarantee worth resting a test on.
+  await server.connect(serverTransport);
+  await client.connect(clientTransport);
   try {
     const { tools } = await client.listTools();
     return tools.map((t) => t.name);
@@ -29,7 +33,10 @@ async function listToolNames(): Promise<string[]> {
 
 describe("tools/list ordering", () => {
   it("is identical across separate server instances", async () => {
-    const [first, second] = await Promise.all([listToolNames(), listToolNames()]);
+    // Sequential on purpose: running two servers concurrently would add the very
+    // nondeterminism this test exists to rule out.
+    const first = await listToolNames();
+    const second = await listToolNames();
     expect(first.length).toBeGreaterThan(0);
     expect(second).toEqual(first);
   });
@@ -38,7 +45,8 @@ describe("tools/list ordering", () => {
     const server = createArcBridgeServer(createContext());
     const [ct, st] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "order-test", version: "0.0.0" });
-    await Promise.all([server.connect(st), client.connect(ct)]);
+    await server.connect(st);
+    await client.connect(ct);
     try {
       const a = (await client.listTools()).tools.map((t) => t.name);
       const b = (await client.listTools()).tools.map((t) => t.name);
@@ -55,6 +63,10 @@ describe("tools/list ordering", () => {
     // client's cache once for no benefit. Pinning the first entry keeps that a
     // decision rather than an accident.
     const names = await listToolNames();
+    // Checked before indexing: an empty list would otherwise fail as
+    // "undefined !== arcbridge_init_project", which reads like a rename rather
+    // than a server that registered nothing.
+    expect(names.length).toBeGreaterThan(0);
     expect(names[0]).toBe("arcbridge_init_project");
     expect(names).toContain("arcbridge_get_building_blocks");
   });
