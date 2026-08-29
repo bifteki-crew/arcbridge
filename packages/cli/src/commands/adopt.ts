@@ -17,19 +17,6 @@ import {
 } from "@arcbridge/core";
 import { openProjectDb } from "../project.js";
 
-/**
- * Whether the existing model looks hand-curated rather than freshly generated.
- * Adopt writes empty scenario/ADR links and its own generated responsibilities,
- * so any of these being populated means someone has been here since.
- */
-function hasAuthoredContent(existing: ReturnType<typeof readBlockSummaries>): boolean {
-  return existing.some(
-    (b) =>
-      (b.qualityScenarios?.length ?? 0) > 0 ||
-      (b.adrs?.length ?? 0) > 0 ||
-      b.interfaces.length > 0,
-  );
-}
 
 interface AdoptOptions {
   apply?: boolean;
@@ -110,11 +97,17 @@ export async function adopt(dir: string, options: AdoptOptions, json: boolean): 
         // existing blocks are template placeholders; destructive afterwards,
         // because a proposal cannot reconstruct responsibilities, declared
         // interfaces, or links to scenarios and ADRs.
-        if (existing.length > 0 && hasAuthoredContent(existing)) {
+        if (existing.length > 0) {
+          // Stated unconditionally rather than guessed at. There is no reliable
+          // signal for "hand-curated": adopt itself populates `interfaces` from
+          // the dependency graph, and the project templates populate
+          // `quality_scenarios` and `adrs` — so keying on either produces a false
+          // alarm on exactly one of the two normal workflows. The count is a fact,
+          // and naming --merge at the moment it matters is the useful part.
           logWarn(
-            `Replacing ${existing.length} existing building block(s), including hand-written ` +
-              `responsibilities, interfaces and ADR links. Use --merge to refresh code_paths ` +
-              `and keep them. The previous file is recoverable from git.`,
+            `Replacing ${existing.length} existing building block(s) and everything written on ` +
+              `them — responsibilities, declared interfaces, scenario and ADR links. Use ` +
+              `--merge to refresh code_paths and keep those. The previous file is in git.`,
           );
         }
         atomicWriteFileSync(blocksPath, blocksYaml);
