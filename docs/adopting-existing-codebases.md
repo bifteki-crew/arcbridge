@@ -74,3 +74,36 @@ the code, then `apply` and commit.
   structurally, not *why* — that's the part to refine (by hand or with an agent).
 - **Directory-shaped.** Adopt assumes the directory layout roughly reflects the
   architecture. If it doesn't, treat the proposal as a starting point.
+
+## Re-adopting a model you have already curated
+
+`arcbridge adopt --apply` rewrites `05-building-blocks.yaml` wholesale. That is
+what you want the first time — it replaces the template's placeholder blocks with
+something derived from your real code.
+
+It is the wrong tool afterwards. A proposal cannot reconstruct what you wrote:
+responsibilities, the interfaces you deliberately allowed between blocks, and the
+links to quality scenarios and ADRs. Running it again to pick up a moved directory
+would cost you all of it.
+
+```bash
+arcbridge adopt --apply --merge
+```
+
+`--merge` refreshes **only `code_paths`** — the part actually derived from code —
+and keeps everything else from your existing model. It also:
+
+- **never deletes a block** the proposal did not mention. A block can be missing
+  because its code moved, was temporarily removed, or fell below the clustering
+  threshold; drift will tell you if the code is genuinely gone.
+- **skips proposals coarser than what you already have.** On a multi-service
+  project adopt proposes one block per service, so merging naively into a model
+  that already splits `api/` into controllers, services and models would add an
+  overlapping `api/` block and make the model worse.
+
+Blocks are matched by `id`. That is deliberate: matching on overlapping paths
+would silently graft one block's prose onto another when a directory moves
+between them, which is the exact loss this is meant to prevent.
+
+Without `--merge`, `--apply` warns before replacing a model that shows signs of
+having been edited by hand.

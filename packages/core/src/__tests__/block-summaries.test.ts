@@ -46,6 +46,11 @@ blocks:
         interfaces: ["api-services"],
         responsibility: "HTTP surface.",
         service: "api",
+        // Carried so `adopt --merge` can preserve them; the architecture map
+        // ignores these.
+        level: 1,
+        qualityScenarios: [],
+        adrs: [],
       },
     ]);
   });

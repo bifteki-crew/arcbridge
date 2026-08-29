@@ -10,11 +10,31 @@ import {
   atomicWriteFileSync,
   type DriftOptions,
   type AdoptProposal,
+  readBlockSummaries,
+  mergeProposalIntoBlocks,
+  mergedBlocksToBuildingBlocksYaml,
+  logWarn,
 } from "@arcbridge/core";
 import { openProjectDb } from "../project.js";
 
+/**
+ * Whether the existing model looks hand-curated rather than freshly generated.
+ * Adopt writes empty scenario/ADR links and its own generated responsibilities,
+ * so any of these being populated means someone has been here since.
+ */
+function hasAuthoredContent(existing: ReturnType<typeof readBlockSummaries>): boolean {
+  return existing.some(
+    (b) =>
+      (b.qualityScenarios?.length ?? 0) > 0 ||
+      (b.adrs?.length ?? 0) > 0 ||
+      b.interfaces.length > 0,
+  );
+}
+
 interface AdoptOptions {
   apply?: boolean;
+  /** Refresh code_paths from the proposal, keep everything a person wrote. */
+  merge?: boolean;
   service?: string;
   maxBlocks?: number;
 }
@@ -58,9 +78,47 @@ export async function adopt(dir: string, options: AdoptOptions, json: boolean): 
     }
 
     if (options.apply) {
-      // Overwrite the building blocks doc and reload
       const blocksPath = join(dir, ".arcbridge", "arc42", "05-building-blocks.yaml");
-      atomicWriteFileSync(blocksPath, blocksYaml);
+      const existing = readBlockSummaries(dir);
+
+      if (options.merge) {
+        // Refresh only what is derived from code; keep what a person wrote.
+        const merged = mergeProposalIntoBlocks(existing, proposal);
+        atomicWriteFileSync(
+          blocksPath,
+          mergedBlocksToBuildingBlocksYaml(merged.blocks, new Date().toISOString()),
+        );
+        if (!json) {
+          console.log(
+            `Merged: ${merged.updated.length} block(s) had code_paths refreshed, ` +
+              `${merged.added.length} added, ${merged.keptUnmatched.length} kept untouched` +
+              (merged.skippedCoarser.length > 0
+                ? `, ${merged.skippedCoarser.length} proposal(s) skipped as coarser than the existing model.`
+                : "."),
+          );
+          for (const u of merged.updated) {
+            console.log(`  ${u.id}: ${u.before.join(", ") || "—"} -> ${u.after.join(", ") || "—"}`);
+          }
+          for (const id of merged.keptUnmatched) {
+            // Kept rather than deleted, but say so: a block the proposal did not
+            // find may be one whose code is genuinely gone.
+            console.log(`  ${id}: not in the proposal — kept as-is (drift will report it if the code is gone)`);
+          }
+        }
+      } else {
+        // Replaces the file wholesale. Correct for a first adoption, where the
+        // existing blocks are template placeholders; destructive afterwards,
+        // because a proposal cannot reconstruct responsibilities, declared
+        // interfaces, or links to scenarios and ADRs.
+        if (existing.length > 0 && hasAuthoredContent(existing)) {
+          logWarn(
+            `Replacing ${existing.length} existing building block(s), including hand-written ` +
+              `responsibilities, interfaces and ADR links. Use --merge to refresh code_paths ` +
+              `and keep them. The previous file is recoverable from git.`,
+          );
+        }
+        atomicWriteFileSync(blocksPath, blocksYaml);
+      }
       refreshFromDocs(db, dir);
 
       // Confirm the inverse property: no undocumented modules remain

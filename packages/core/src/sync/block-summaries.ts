@@ -11,6 +11,15 @@ export interface BlockSummary {
   responsibility: string;
   interfaces: string[];
   service?: string | null;
+  /**
+   * Carried so `adopt --merge` can preserve them. The architecture map ignores
+   * these, but a merge that dropped them would quietly delete the links a person
+   * made between a block and its quality scenarios or decisions — exactly the
+   * loss the merge exists to prevent.
+   */
+  level?: number;
+  qualityScenarios?: string[];
+  adrs?: string[];
 }
 
 /**
@@ -42,6 +51,9 @@ export function readBlockSummaries(projectRoot: string): BlockSummary[] {
       interfaces: b.interfaces ?? [],
       // The schema defaults this to "main", so it is always a string.
       service: b.service,
+      level: b.level,
+      qualityScenarios: b.quality_scenarios ?? [],
+      adrs: b.adrs ?? [],
     }));
   } catch {
     return [];

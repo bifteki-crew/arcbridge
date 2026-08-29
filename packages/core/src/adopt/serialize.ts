@@ -1,5 +1,6 @@
 import { stringify } from "yaml";
 import type { AdoptProposal } from "./propose.js";
+import type { MergedBlock } from "./merge.js";
 
 /**
  * Render a proposal as a `05-building-blocks.yaml` document matching
@@ -41,4 +42,28 @@ export function proposalToBuildingBlocksYaml(
   };
 
   return header + stringify(data);
+}
+
+/**
+ * Serialize an already-merged block set. Unlike the proposal serializer, the
+ * header says the file is merged rather than generated — because most of what is
+ * in it was written by a person, and a reader should not be told to treat their
+ * own prose as auto-generated output.
+ */
+export function mergedBlocksToBuildingBlocksYaml(
+  blocks: MergedBlock[],
+  lastSynced: string,
+): string {
+  const header = [
+    `# Building blocks: code_paths refreshed by \`arcbridge adopt --merge\`,`,
+    `# everything else preserved from the existing model.`,
+    "",
+  ].join("\n");
+
+  return header + stringify({
+    section: "building-blocks",
+    schema_version: 1,
+    last_synced: lastSynced,
+    blocks,
+  });
 }
