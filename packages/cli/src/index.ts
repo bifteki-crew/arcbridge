@@ -45,6 +45,8 @@ Init options:
 
 Adopt options:
   --apply            Write the proposal to .arcbridge/arc42/05-building-blocks.yaml (default: write to .arcbridge/proposals/ only)
+  --merge            With --apply: refresh code_paths from the proposal but keep existing responsibilities,
+                     interfaces, quality scenarios and ADR links. Use when re-adopting a curated model.
   --service <name>   Limit the proposal to one configured service
   --max-blocks <n>   Max blocks when subdividing a single service (default: 12). Multi-service projects get one block per service regardless; use --service to subdivide one.
 
@@ -71,6 +73,7 @@ interface ParsedArgs {
   force: boolean;
   reindex: boolean;
   apply: boolean;
+  merge: boolean;
   service?: string;
   maxBlocks?: number;
   base?: string;
@@ -89,6 +92,7 @@ function parseArgs(args: string[]): ParsedArgs {
   let force = false;
   let reindex = false;
   let apply = false;
+  let merge = false;
   let service: string | undefined;
   let maxBlocks: number | undefined;
   let base: string | undefined;
@@ -114,6 +118,8 @@ function parseArgs(args: string[]): ParsedArgs {
       reindex = true;
     } else if (arg === "--apply") {
       apply = true;
+    } else if (arg === "--merge") {
+      merge = true;
     } else if (arg === "--service" && i + 1 < args.length) {
       service = args[++i]!;
     } else if (arg === "--out") {
@@ -162,7 +168,7 @@ function parseArgs(args: string[]): ParsedArgs {
     spec,
     force,
     reindex,
-    apply,
+    apply, merge,
     service,
     maxBlocks,
     base,
@@ -193,7 +199,7 @@ async function main(): Promise<void> {
         await sync(dir, json);
         break;
       case "adopt":
-        await adopt(dir, { apply: parsed.apply, service: parsed.service, maxBlocks: parsed.maxBlocks }, json);
+        await adopt(dir, { apply: parsed.apply, merge: parsed.merge, service: parsed.service, maxBlocks: parsed.maxBlocks }, json);
         break;
       case "status":
         await status(dir, json);

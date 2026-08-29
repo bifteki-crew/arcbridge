@@ -104,3 +104,48 @@ upper bound, but its result is close to a foregone conclusion.
 
 The run refuses to start, with reasons, if the `claude` CLI is missing, the
 subject has no committed model, or the .NET SDK is absent.
+
+## Results so far, and what they do not show
+
+Three runs per arm have not yet been done, because two pilots plus one
+post-intervention run showed the experiment cannot currently detect an effect of
+the size being looked for. Recorded here rather than quietly retried.
+
+| Run | Arm | Drift added | Tokens | Cost | ArcBridge tool calls |
+|---|---|--:|--:|--:|--:|
+| pilot 2 | baseline | 0 | 3,588,562 | $2.41 | 0 |
+| pilot 2 | arcbridge | 0 | 2,472,442 | $1.36 | 0 |
+| post-#98/#99 | baseline | 0 | 2,136,844 | $1.45 | 0 |
+| post-#98/#99 | arcbridge | 0 | 2,456,941 | $1.39 | 0 |
+
+**Run-to-run variance swamps the effect.** The baseline arm moved from 3.59M to
+2.14M tokens — **−40% on the same arm, same task, same model**. The between-arm
+difference was −31% in one run and **+15% in the other**: it changed sign. At one
+run per arm nothing here is distinguishable from noise.
+
+**No agent has added drift in any run.** The "drift 5" both arms reported after
+#98 is the subject repository's own standing `contract_unverifiable` count, which
+is why this harness now reports the delta. The task creates no new drift because
+every file a plausible solution adds lands inside an already-declared block.
+
+**No agent has called an ArcBridge tool, in any run.** That motivated embedding
+the architecture map (#99), but the map's effect is itself unmeasured — see below.
+
+### What it would take to get a number worth quoting
+
+1. **More runs.** To resolve a 15% effect against ~40% noise needs roughly 5–8
+   runs per arm, not 3. At about $1.50 a session that is $15–25 per measurement.
+2. **A task that can actually accumulate drift.** The current one cannot. It needs
+   a change whose natural placement is genuinely ambiguous, or one that modifies
+   existing code across a boundary, so that misplacement and undeclared
+   dependencies are reachable outcomes rather than impossible ones.
+3. **Separate adoption from efficacy.** An arm that is *told* to use the tools
+   measures whether they help; the current arm measures whether an agent reaches
+   for them unprompted. Those are different questions and the runs above conflate
+   them.
+
+Until those are done, the honest summary is: **this harness has produced two
+substantive findings and zero publishable numbers.** The findings — that contract
+checking was silent exactly where it was needed, and that agents do not reach for
+the tools unattended — came from diagnosing null results, not from the results
+themselves.

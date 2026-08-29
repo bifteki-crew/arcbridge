@@ -9,6 +9,16 @@ export interface DriftSummary {
   errors: number;
   warnings: number;
   byKind: Record<string, number>;
+  /**
+   * Drift the AGENT added: total minus whatever the subject repository already
+   * had. This is the number that answers the question; `total` alone is a floor.
+   *
+   * The first post-intervention run made the distinction concrete — both arms
+   * reported drift 5, which looked like a result until it turned out the pristine
+   * repository also reports 5. Neither agent had introduced anything at all.
+   */
+  added: number;
+  addedByKind: Record<string, number>;
 }
 
 export interface Completion {
@@ -28,7 +38,12 @@ export interface Completion {
  * baseline is not penalised for lacking a file — it is measured against the same
  * architecture it was unknowingly building inside.
  */
-export function measureDrift(runRoot: string, pristineRepo: string): DriftSummary {
+export function measureDrift(
+  runRoot: string,
+  pristineRepo: string,
+  /** The subject's own drift before any agent touched it. Omit to treat it as zero. */
+  floor?: DriftSummary,
+): DriftSummary {
   const modelDir = join(runRoot, ".arcbridge");
   // The baseline arm deleted it; the ArcBridge arm may have edited it, and an
   // edited model would move the goalposts. Both get the pristine one.
@@ -48,12 +63,29 @@ export function measureDrift(runRoot: string, pristineRepo: string): DriftSummar
   const byKind: Record<string, number> = {};
   for (const e of entries) byKind[e.kind] = (byKind[e.kind] ?? 0) + 1;
 
+  const addedByKind: Record<string, number> = {};
+  for (const [kind, n] of Object.entries(byKind)) {
+    const before = floor?.byKind[kind] ?? 0;
+    if (n - before !== 0) addedByKind[kind] = n - before;
+  }
+
   return {
     total: entries.length,
     errors: entries.filter((e) => e.severity === "error").length,
     warnings: entries.filter((e) => e.severity === "warning").length,
     byKind,
+    added: entries.length - (floor?.total ?? 0),
+    addedByKind,
   };
+}
+
+/**
+ * The subject repository's drift before any run, measured with the same code
+ * path so the two numbers are comparable. Measured against a pristine copy rather
+ * than the working tree, which may be dirty.
+ */
+export function measureDriftFloor(pristineRepo: string, scratchRoot: string): DriftSummary {
+  return measureDrift(scratchRoot, pristineRepo);
 }
 
 /** Did the agent actually do the job? Measured, not asked. */
