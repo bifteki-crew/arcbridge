@@ -55,8 +55,8 @@ export function renderLoopReport(results: RunResult[], meta: LoopMeta): string {
     "",
     "## Results",
     "",
-    "| Arm | Completed | Drift at end (median) | Drift range | Tokens (median) | Cost (median) |",
-    "|---|--:|--:|--:|--:|--:|",
+    "| Arm | Completed | Drift ADDED (median) | Added range | Drift total | Tokens (median) | Cost (median) |",
+    "|---|--:|--:|--:|--:|--:|--:|",
   ];
 
   for (const arm of arms) {
@@ -67,12 +67,13 @@ export function renderLoopReport(results: RunResult[], meta: LoopMeta): string {
       continue;
     }
     const completed = rs.filter((r) => r.completion.complete).length;
-    const drifts = rs.map((r) => r.drift.total);
+    const added = rs.map((r) => r.drift.added);
+    const totals = rs.map((r) => r.drift.total);
     const tokens = rs.map((r) => r.usage.totalTokens);
     const costs = rs.map((r) => r.usage.costUsd);
     lines.push(
-      `| ${label} | ${completed}/${rs.length} | ${fmt(median(drifts) ?? 0)} | ${range(drifts)} | ` +
-        `${fmt(median(tokens) ?? 0)} | $${(median(costs) ?? 0).toFixed(2)} |`,
+      `| ${label} | ${completed}/${rs.length} | ${fmt(median(added) ?? 0)} | ${range(added)} | ` +
+        `${fmt(median(totals) ?? 0)} | ${fmt(median(tokens) ?? 0)} | $${(median(costs) ?? 0).toFixed(2)} |`,
     );
   }
 
@@ -80,7 +81,7 @@ export function renderLoopReport(results: RunResult[], meta: LoopMeta): string {
     "",
     "### Drift by kind",
     "",
-    "What each arm actually broke, which matters more than the totals.",
+    "What each arm actually ADDED, net of the drift the subject already had.",
     "",
     "| Arm | Kind | Occurrences (summed across runs) |",
     "|---|---|--:|",
@@ -89,7 +90,7 @@ export function renderLoopReport(results: RunResult[], meta: LoopMeta): string {
     const rs = forArm(results, arm);
     const summed: Record<string, number> = {};
     for (const r of rs) {
-      for (const [kind, n] of Object.entries(r.drift.byKind)) {
+      for (const [kind, n] of Object.entries(r.drift.addedByKind)) {
         summed[kind] = (summed[kind] ?? 0) + n;
       }
     }
@@ -135,7 +136,10 @@ export function renderLoopReport(results: RunResult[], meta: LoopMeta): string {
     "",
     "## How to read this, and what it does not show",
     "",
-    "- **Drift is the point.** Tokens are secondary; the claim being tested is whether",
+    "- **Read the ADDED column, not the total.** The subject repository has standing",
+  "  drift of its own; an arm that changed nothing still reports that floor. Only",
+  "  the delta is attributable to the agent.",
+  "- **Drift is the point.** Tokens are secondary; the claim being tested is whether",
     "  an agent working unattended stays architecturally coherent. Compare the drift",
     "  columns first, and only compare tokens between runs that actually COMPLETED —",
     "  an arm that gave up early looks cheap for the wrong reason.",

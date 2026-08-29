@@ -3,7 +3,13 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ARMS, prepareRunTree, type Arm, type ArmId } from "./arms.js";
-import { measureCompletion, measureDrift, type Completion, type DriftSummary } from "./measure.js";
+import {
+  measureCompletion,
+  measureDrift,
+  measureDriftFloor,
+  type Completion,
+  type DriftSummary,
+} from "./measure.js";
 
 /**
  * Token usage as the CLI actually reports it.
@@ -46,6 +52,8 @@ export interface RunResult {
 
 export interface RunOptions {
   subjectRepo: string;
+  /** The subject's own drift before any run, so each result can report the delta. */
+  driftFloor?: DriftSummary;
   model: string;
   maxTurns: number;
   /** Keep the produced trees for inspection instead of deleting them. */
@@ -102,7 +110,7 @@ export async function runOnce(arm: Arm, run: number, opts: RunOptions): Promise<
     }
 
     const completion = measureCompletion(runRoot);
-    const drift = measureDrift(runRoot, opts.subjectRepo);
+    const drift = measureDrift(runRoot, opts.subjectRepo, opts.driftFloor);
 
     return {
       arm: arm.id,
@@ -123,7 +131,7 @@ export async function runOnce(arm: Arm, run: number, opts: RunOptions): Promise<
       error: err instanceof Error ? err.message.slice(0, 400) : String(err),
       usage: emptyUsage(),
       completion: { built: false, buildDetail: "run failed", artifacts: [], complete: false },
-      drift: { total: 0, errors: 0, warnings: 0, byKind: {} },
+      drift: { total: 0, errors: 0, warnings: 0, byKind: {}, added: 0, addedByKind: {} },
       durationMs: Date.now() - started,
     };
   } finally {
@@ -215,14 +223,32 @@ function emptyUsage(): Usage {
 
 /** Every arm, `repeats` times each. Interleaved so a drifting service affects both arms alike. */
 export async function runSuite(repeats: number, opts: RunOptions): Promise<RunResult[]> {
+  // Measured once: the subject does not change between runs, and without it every
+  // result reports the repository's own standing drift as though the agent caused
+  // it. The first post-intervention run showed both arms at "drift 5" — which was
+  // the repository's floor, not anything either agent did.
+  const floorRoot = mkdtempSync(join(tmpdir(), "arcbridge-loop-floor-"));
+  let driftFloor: DriftSummary;
+  try {
+    prepareRunTree(opts.subjectRepo, floorRoot);
+    driftFloor = measureDriftFloor(opts.subjectRepo, floorRoot);
+    console.error(
+      `  subject's own drift before any run: ${driftFloor.total} ` +
+        `(${JSON.stringify(driftFloor.byKind)})`,
+    );
+  } finally {
+    rmSync(floorRoot, { recursive: true, force: true });
+  }
+
+  const optsWithFloor: RunOptions = { ...opts, driftFloor };
   const results: RunResult[] = [];
   for (let run = 1; run <= repeats; run++) {
     for (const arm of ARMS) {
       console.error(`  running ${arm.id} (${run}/${repeats})…`);
-      const r = await runOnce(arm, run, opts);
+      const r = await runOnce(arm, run, optsWithFloor);
       console.error(
         r.ok
-          ? `    done: complete=${r.completion.complete} drift=${r.drift.total} ` +
+          ? `    done: complete=${r.completion.complete} driftAdded=${r.drift.added} (total ${r.drift.total}) ` +
               `tokens=${r.usage.totalTokens.toLocaleString()} cost=$${r.usage.costUsd.toFixed(2)} ` +
               `arcbridgeTools=${r.usage.arcbridgeToolCalls}`
           : `    FAILED: ${r.error}`,
