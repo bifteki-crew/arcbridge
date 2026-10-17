@@ -13,7 +13,7 @@
   "dependencies": {
     "@arcbridge/core": "workspace:*",
     "@arcbridge/mcp-server": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "gpt-tokenizer": "^2.9.0",
     "yaml": "^2.5.0"
   },
