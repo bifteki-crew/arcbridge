@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.15.0 (2026-10-23)
+
+A release about **not being quietly wrong**. Every substantial item below is a
+place where the tooling produced silence or a green tick where it should have
+spoken up: a contract check that returned nothing, an architecture map four
+adapters dropped, an `adopt` that overwrote prose without saying so, a test
+suite that reported a pass while a third of a subsystem never ran, and a
+dependency pipeline that had been failing for a month in a way nobody read.
+
+### Features
+
+- **Contracts that cannot be checked are now reported instead of passing silently.** When a frontend call had no annotated response type, or no indexed service exposed the endpoint, the field-level checker simply returned nothing — indistinguishable from "verified, no mismatch". Exactly the case where a developer most needs to know, and exactly where the tool was quietest. These now surface as `contract_unverifiable` at `info` severity, listing the possible causes without asserting one. Expect new `info` findings on any repository with untyped API calls; they are not regressions, they are the checker admitting what it does not know.
+- **The architecture map now arrives with every agent session.** Each platform's always-loaded instruction file embeds a compact table of building blocks, the paths they own, what they may depend on, and their responsibility. The reason is measured rather than assumed: `get_building_blocks` answers in ~300 tokens against a ~300,000-token codebase, so the information is effectively free — but an unattended agent, given the tools *and* a convention file telling it in bold to use them, called them **zero times across every benchmark run**. It read files instead, which at the moment of choosing is cheaper and more certain. Instruction had already lost to the path of least resistance, so handing the map over removes the choice. The tools remain for the questions a static summary cannot answer.
+- **`adopt --apply --merge` refreshes `code_paths` without destroying the model.** Re-running `adopt --apply` replaced building blocks wholesale, discarding every responsibility, declared interface, scenario link and ADR link a person had written. `--merge` takes code paths from the proposal and keeps everything authored, matching on block id. It also refuses to flatten a model that is already finer-grained than the proposal, which only showed up when run against a real repository — every unit test passed while it turned a good 11-block model into a worse 13-block one. The non-merge path now always states what it is about to replace, rather than guessing whether anyone would mind.
+- **`tools/list` ordering is deterministic**, pinned by a test. Tool order was incidental to registration; a client that caches by position could have been silently reordered by an unrelated refactor.
+
+### Security
+
+- **Two High advisories in the published .NET tool** — `Microsoft.Build` 17.7.2 (CVE-2025-26646, CVE-2025-55247) and `System.Formats.Asn1` 7.0.0 (CVE-2024-38095), both transitive through Roslyn's `Workspaces.MSBuild` 4.12.0. **Dependabot never raised these: every alert on this repository has been npm**, so they had gone unnoticed entirely. Pinned to 17.8.43 and 8.0.1, keeping Roslyn on 4.12 (4.14 still requests MSBuild 17.7.2 on `net8.0`) with `ExcludeAssets="runtime"` so `Microsoft.Build.Locator` keeps loading the SDK's own MSBuild. **If you installed `arcbridge-dotnet-indexer` for the Roslyn C# backend, update it with this release.**
+- **`@modelcontextprotocol/sdk` to 1.32.1**, closing three advisories on our one direct production dependency. Protocol negotiation is unchanged — `SUPPORTED_PROTOCOL_VERSIONS` is identical, still topping out at `2025-11-25`.
+- **`js-yaml` to 3.15.2**, clearing four highs on the only advisory reachable in production code: `gray-matter` parses frontmatter from your arc42 markdown. No override needed — the patched release already satisfied the declared range, so the lockfile had simply drifted behind it.
+- Transitive bumps for `fast-uri`, `proxy-addr`, `hono`, `brace-expansion` and `source-map-js`. Most of these live inside the MCP SDK's HTTP server, which ArcBridge never instantiates, being stdio-only; they are fixed so that `npm audit` on your project stays quiet, not because they were reachable.
+- Known and unfixable: `braces` 3.0.3 (high), via `globby` → `fast-glob` → `micromatch`. The advisory range is `<=3.0.3` with no patched release and current globby still requires it.
+
+### Bug Fixes
+
+- **A blocked sync PR warns instead of failing the job.** "Allow GitHub Actions to create and approve pull requests" is off by default on GitHub and can be disabled org-wide, so the generated sync workflow's drift check would pass and the job would then die on its last step with a permissions error that looked like a drift failure.
+
+### Internal
+
+- **Dependency maintenance had been silently blocked for a month.** Seven `pnpm.overrides` entries, added in March to force transitive packages past advisories, had all been satisfied by natural resolution for months — they pinned nothing. But Dependabot regenerates `pnpm-lock.yaml` *without* the overrides block, so every one of its pull requests died on `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` before running a single test. Eight sat open and red for that one reason. One of the overrides was also a range rather than a floor, quietly force-upgrading vite across a major boundary. Removing them unblocked the queue; **no overrides were re-added to resolve the advisories above**, because that would have re-created the blockage.
+- **A skipped Roslyn suite is now a failure where .NET is guaranteed.** Those suites switch themselves off when the toolchain is unavailable — correct on a laptop without the SDK, indistinguishable in the summary from the toolchain breaking. It has cost twice now: the 0.14.0 `dotnet build` race, and the vitest 4 upgrade, which drops per-package configuration without warning and left them reporting `9 passed | 33 skipped`, exit 0. `ARCBRIDGE_REQUIRE_DOTNET=1` in CI turns any such skip into an error.
+- **vitest 4**, with projects moved from the removed `vitest.workspace.ts` into a root config — done as a separate change first, so the version bump could not smuggle in a silent loss of coverage. Also fixed the flakiest file in CI: a suite declaring `{ timeout: 60_000 }` whose actual work sits in a hook, and hooks keep vitest's 10s default rather than inheriting it.
+- **F1 benchmark, Part A and Part B.** Part A extends the deterministic token proxy to route, component and contract questions. Part B is the multi-step autonomous harness — it has produced two substantive findings and, honestly, **zero publishable numbers**: run-to-run variance swamps the effect being looked for (one arm moved 40% between identical runs, and the between-arm difference changed sign). Recorded in `packages/bench/AUTONOMOUS.md` rather than quietly retried, along with what it would take to get a number worth quoting.
+- README brought up to date after six releases — its roadmap had stopped at 0.8.0, which is a poor look for a tool that detects drift.
+
+### Stats
+
+- 25 MCP tools, 7 project templates, 5 agent platforms, 751 tests passing, 0 lint errors, 0 type errors
+
 ## 0.14.0 (2026-08-02)
 
 A correctness release. Nearly all of it was found by **building a real fullstack
