@@ -313,7 +313,10 @@ describeIfDotnet("Roslyn response_type extraction", { timeout: 60_000 }, () => {
     db = openMemoryDatabase();
     initializeSchema(db);
     await indexProject(db, { projectRoot: FIXTURE_DIR, language: "csharp" });
-  });
+    // Explicit, because the suite's `{ timeout: 60_000 }` governs tests only —
+    // hooks keep vitest's 10s default. A full Roslyn index belongs on the
+    // 60s budget this suite already asks for.
+  }, 60_000);
 
   afterAll(() => db?.close());
 

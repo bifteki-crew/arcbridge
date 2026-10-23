@@ -33,7 +33,15 @@ jobs:
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm lint
+      # setup-dotnet above guarantees the SDK, so the Roslyn-backed suites have
+      # no legitimate reason to skip here. They skip themselves when the
+      # toolchain is unavailable — right on a laptop without .NET, but
+      # indistinguishable in the summary from the toolchain breaking. This makes
+      # any such skip a failure: a vitest bump once dropped the global setup's
+      # configuration and the suites reported "9 passed | 33 skipped", exit 0.
       - run: pnpm test
+        env:
+          ARCBRIDGE_REQUIRE_DOTNET: "1"
       # Dogfood: run ArcBridge's own drift check against its committed
       # .arcbridge/ model. Reindexes the monorepo and fails on error-severity
       # drift (e.g. an undeclared cross-block dependency or undocumented module).

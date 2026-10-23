@@ -293,7 +293,14 @@ describeIfDotnet("field-level contracts through the Roslyn backend", { timeout: 
     // inference feeds the detector, not just declared signatures.
     await indexProject(db, { projectRoot: FIXTURE_DIR, language: "csharp", service: "api" });
     await indexProject(db, { projectRoot: webRoot, language: "typescript", service: "frontend" });
-  });
+    // The suite's `{ timeout: 60_000 }` sets the TEST timeout; hooks have a
+    // separate budget that stays at vitest's 10s default and does not inherit
+    // it. Nearly all the work is in this hook — two full indexing passes, one
+    // of them Roslyn — so the declared 60s never covered the slow part. It fits
+    // in ~3.5s idle and overruns 10s whenever the .NET suites run alongside it,
+    // which made this the flakiest file in CI for a reason that was never about
+    // the code under test.
+  }, 60_000);
 
   afterEach(() => {
     db.close();

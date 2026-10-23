@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { dotnetRequired, dotnetRequiredError } from "./src/__tests__/helpers/dotnet-ready.js";
 
 /**
  * Build the .NET indexer and its test fixture ONCE, before any test worker
@@ -22,11 +23,13 @@ export default async function setup(): Promise<void> {
   try {
     execFileSync("dotnet", ["--version"], { encoding: "utf-8" });
   } catch {
+    if (dotnetRequired()) throw dotnetRequiredError("the .NET SDK is not installed");
     console.warn("[dotnet] SDK not found — Roslyn-backed suites will be SKIPPED.");
     return;
   }
 
   if (!existsSync(indexerProject)) {
+    if (dotnetRequired()) throw dotnetRequiredError(`${indexerProject} does not exist`);
     console.warn(`[dotnet] ${indexerProject} missing — Roslyn-backed suites will be SKIPPED.`);
     return;
   }
@@ -45,6 +48,9 @@ export default async function setup(): Promise<void> {
       const detail = [e.message, e.stdout?.toString(), e.stderr?.toString()]
         .filter((part) => part && part.trim().length > 0)
         .join("\n");
+      if (dotnetRequired()) {
+        throw dotnetRequiredError(`building the ${label} failed\n${detail || String(err)}`);
+      }
       console.warn(
         `[dotnet] building the ${label} failed — Roslyn-backed suites will be SKIPPED.\n` +
           (detail || String(err)),
