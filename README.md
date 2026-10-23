@@ -415,8 +415,9 @@ packages/
 - **v0.12.0** (done): **Cross-service contracts** — multi-service indexing for C#/Python/Go, outbound `fetch`/`axios` call sites indexed as the consumer half, and `contract_violation` drift when a call targets an endpoint no service serves or a method it doesn't allow
 - **v0.13.0** (done): **Field-level contract checks** — casing, missing-field and type mismatches between a frontend's declared response type and the backend DTO; **`arcbridge report`**, a self-contained HTML architecture-health dashboard — 25 MCP tools, 669 tests
 - **v0.14.0** (done): Correctness release, almost all of it found by building and pushing a real fullstack example: Roslyn response-type extraction (`csharp_indexer: auto` had silently disabled every field-level check), name-scoped call resolution, Next.js routes in monorepo services, and several generated-artifact fixes — 713 tests
+- **v0.15.0** (done): Reporting what the tool *cannot* verify instead of staying silent — `contract_unverifiable` drift, the architecture map embedded in every agent's instruction file (because an unattended agent given the tools called them zero times), `adopt --apply --merge` so re-adopting no longer discards authored prose, and two High advisories patched in the published .NET tool — 751 tests
 
-**Next:** the multi-step autonomous benchmark — an unattended loop run with and without ArcBridge, measuring cumulative tokens *and* architectural drift accumulated at the end. See [`docs/arcbridge-improvement-plan.md`](docs/arcbridge-improvement-plan.md).
+**Next:** the multi-step autonomous benchmark needs a redesign before it can report anything. The harness runs, but run-to-run variance swamps the effect: one arm moved 40% between identical runs and the between-arm difference changed sign. The task has to be one where misplacement is actually reachable, and adoption has to be separated from efficacy. See [`packages/bench/AUTONOMOUS.md`](packages/bench/AUTONOMOUS.md) for what the current runs do and do not show, and [`docs/arcbridge-improvement-plan.md`](docs/arcbridge-improvement-plan.md).
 
 See [`docs/arcbridge-project-plan.md`](docs/arcbridge-project-plan.md) for the full specification and [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
@@ -482,7 +483,7 @@ Use the [ArcBridge Drift Check action](action/README.md):
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: bifteki-crew/arcbridge/action@v0.14.0   # pin to a release tag or commit SHA in real workflows
+- uses: bifteki-crew/arcbridge/action@v0.15.0   # pin to a release tag or commit SHA in real workflows
 ```
 
 It runs `arcbridge drift --reindex` (self-contained — rebuilds the index from the committed `.arcbridge/` YAML on a fresh checkout), writes a job summary, keeps a sticky PR comment updated, and fails on drift at/above a configurable severity threshold. Prefer pinning the action to a release tag or full commit SHA over `@main` (see the [action README](action/README.md)). Or call `arcbridge drift --reindex` directly — it exits non-zero on error-severity drift.
