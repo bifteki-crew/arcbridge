@@ -27,6 +27,16 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.12.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.12.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.3" />
+    <!-- Workspaces.MSBuild 4.12.0 pulls MSBuild 17.7.2 and System.Formats.Asn1 7.0.0.
+         Pin the patched releases without moving Roslyn off 4.12.
+         ExcludeAssets="runtime" is required by Microsoft.Build.Locator, which loads
+         the SDK's MSBuild instead of copying these assemblies into the output. -->
+    <PackageReference Include="Microsoft.Build" Version="17.8.43" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.8.43" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.8.43" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.8.43" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.NET.StringTools" Version="17.8.43" ExcludeAssets="runtime" />
+    <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
   </ItemGroup>
 
 </Project>
