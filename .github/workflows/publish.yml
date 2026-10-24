@@ -32,7 +32,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm typecheck
+      # setup-dotnet above guarantees the SDK, so the Roslyn-backed suites have
+      # no legitimate reason to skip. Without this they turn themselves off when
+      # the toolchain is unavailable and the run still exits 0 — which on the
+      # publish path means shipping on the strength of a suite that never
+      # exercised the C# indexer. Matches ci.yml; see dotnet-ready.ts.
       - run: pnpm test
+        env:
+          ARCBRIDGE_REQUIRE_DOTNET: "1"
       - run: pnpm -r publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

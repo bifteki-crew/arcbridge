@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { resolve } from "node:path";
 import {
   REQUIRE_DOTNET_ENV,
@@ -36,7 +36,22 @@ describe("the ARCBRIDGE_REQUIRE_DOTNET guard", () => {
   it("skips quietly when unset, so a machine without the SDK stays usable", () => {
     delete process.env.ARCBRIDGE_REQUIRE_DOTNET;
     expect(dotnetRequired()).toBe(false);
-    expect(dotnetReady(nowhere)).toBe(false);
+
+    // Captured rather than allowed through, for two reasons. It asserts the
+    // skip is announced — an unannounced skip is the whole failure this guard
+    // exists to prevent. And it keeps this deliberate warning out of the CI
+    // log, where it is indistinguishable from a real one: it reads as
+    // "SKIPPING Roslyn-backed suite: /dotnet-indexer/... does not exist",
+    // a root-relative path produced only by the fake directory above, and it
+    // cost a genuine false alarm while auditing a release's test run.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      expect(dotnetReady(nowhere)).toBe(false);
+      expect(warn).toHaveBeenCalledOnce();
+      expect(String(warn.mock.calls[0]?.[0])).toMatch(/SKIPPING Roslyn-backed suite/);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("throws when set, so CI cannot report a skip as a pass", () => {
